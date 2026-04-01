@@ -1,0 +1,116 @@
+name: Deploy - Production
+
+on:
+  push:
+    tags: [ 'v*' ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+        - staging
+        - production
+
+env:
+  REGISTRY: ghcr.io
+  DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+  DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup SSH
+      uses: webfactory/ssh-agent@v0.9.0
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+        
+    - name: Add host to known hosts
+      run: |
+        mkdir -p ~/.ssh
+        ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts
+        
+    - name: Deploy to server
+      run: |
+        # Create deployment directory
+        ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} '
+          mkdir -p ~/hrecos-dashboard && cd ~/hrecos-dashboard
+          
+          # Create docker-compose override for production
+          cat > docker-compose.prod.yml << "EOF"
+        version: "3.9"
+        services:
+          db:
+            environment:
+              POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
+            volumes:
+              - db_data_prod:/var/lib/postgresql/data
+            
+          backend:
+            image: ghcr.io/${{ github.repository }}-backend:${{ github.ref_name }}
+            environment:
+              - DATABASE_URL=postgresql+asyncpg://postgres:${{ secrets.DB_PASSWORD }}@db:5432/hrecos
+              - EMAIL_ENABLED=true
+              - SMTP_USER=${{ secrets.SMTP_USER }}
+              - SMTP_PASS=${{ secrets.SMTP_PASS }}
+              - ALERT_EMAIL=${{ secrets.ALERT_EMAIL }}
+              - SMS_ENABLED=${{ secrets.SMS_ENABLED }}
+              - TWILIO_SID=${{ secrets.TWILIO_SID }}
+              - TWILIO_TOKEN=${{ secrets.TWILIO_TOKEN }}
+              - SLACK_ENABLED=${{ secrets.SLACK_ENABLED }}
+              - SLACK_WEBHOOK=${{ secrets.SLACK_WEBHOOK }}
+              
+          frontend:
+            image: ghcr.io/${{ github.repository }}-frontend:${{ github.ref_name }}
+            
+        volumes:
+          db_data_prod:
+        EOF
+        '
+        
+    - name: Copy files to server
+      run: |
+        # Copy init scripts and configs
+        scp -r init-scripts ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:~/hrecos-dashboard/
+        scp nginx.conf ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:~/hrecos-dashboard/
+        
+    - name: Start services
+      run: |
+        ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} '
+          cd ~/hrecos-dashboard
+          
+          # Login to GitHub Container Registry
+          echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          
+          # Pull latest images
+          docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
+          
+          # Start services
+          docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+          
+          # Cleanup old images
+          docker image prune -af
+          
+          # Health check
+          sleep 30
+          curl -f http://localhost:8000/health || exit 1
+        '
+        
+    - name: Notify deployment
+      if: always()
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#deployments'
+        text: 'HRECOS Dashboard deployed to production'
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+      if: env.SLACK_WEBHOOK_URL != ''

@@ -1,0 +1,16 @@
+# Default owners for everything in the repo
+* @bass
+
+# Backend code
+/backend/ @bass
+
+# Frontend code
+/frontend/ @bass
+
+# Infrastructure
+/docker-compose.yml @bass
+/nginx.conf @bass
+/.github/workflows/ @bass
+
+# Database migrations
+/init-scripts/ @bass
