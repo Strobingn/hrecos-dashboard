@@ -1,0 +1,77 @@
+version: "3.9"
+
+services:
+  db:
+    image: timescale/timescaledb:latest-pg14
+    container_name: hrecos-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: hrecos
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - hrecos-network
+
+  backend:
+    build: ./backend
+    container_name: hrecos-backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/hrecos
+      - HRECOS_API_URL=https://hrecos.org/api/data
+      - EMAIL_ENABLED=false
+      - SMTP_HOST=smtp.gmail.com
+      - SMTP_PORT=587
+      - SMTP_USER=
+      - SMTP_PASS=
+      - FROM_EMAIL=alerts@hrecos-dashboard.local
+      - ALERT_EMAIL=admin@example.com
+      - SMS_ENABLED=false
+      - TWILIO_SID=
+      - TWILIO_TOKEN=
+      - TWILIO_FROM=
+      - ALERT_PHONE=+1234567890
+      - SLACK_ENABLED=false
+      - SLACK_WEBHOOK=
+    volumes:
+      - ./backend/app:/app/app
+    networks:
+      - hrecos-network
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  frontend:
+    image: nginx:alpine
+    container_name: hrecos-frontend
+    restart: unless-stopped
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    networks:
+      - hrecos-network
+
+volumes:
+  db_data:
+    driver: local
+
+networks:
+  hrecos-network:
+    driver: bridge

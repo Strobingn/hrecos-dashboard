@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HRECOS Dashboard - Hudson River Environmental Monitoring</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%);
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid #334155;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 {
+            font-size: 1.5rem;
+            color: #60a5fa;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .status-operational {
+            background: #065f46;
+            color: #6ee7b7;
+        }
+        
+        .status-warning {
+            background: #92400e;
+            color: #fcd34d;
+        }
+        
+        .status-critical {
+            background: #991b1b;
+            color: #fca5a5;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .metric-card {
+            background: #1e293b;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            border: 1px solid #334155;
+            transition: all 0.3s ease;
+        }
+        
+        .metric-card:hover {
+            border-color: #60a5fa;
+            transform: translateY(-2px);
+        }
+        
+        .metric-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: #94a3b8;
+            margin-bottom: 0.5rem;
+        }
+        
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #f8fafc;
+        }
+        
+        .metric-unit {
+            font-size: 0.875rem;
+            color: #64748b;
+            margin-left: 0.25rem;
+        }
+        
+        .metric-change {
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+        }
+        
+        .positive { color: #34d399; }
+        .negative { color: #f87171; }
+        
+        .section {
+            background: #1e293b;
+            border-radius: 0.75rem;
+            border: 1px solid #334155;
+            margin-bottom: 2rem;
+            overflow: hidden;
+        }
+        
+        .section-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #334155;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .section-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #f8fafc;
+        }
+        
+        .section-body {
+            padding: 1.5rem;
+        }
+        
+        #map {
+            height: 400px;
+            border-radius: 0.5rem;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+        
+        .stations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+        }
+        
+        .station-card {
+            background: #0f172a;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            border: 1px solid #334155;
+        }
+        
+        .station-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .station-name {
+            font-weight: 600;
+            color: #60a5fa;
+        }
+        
+        .station-status {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #34d399;
+        }
+        
+        .station-data {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+        }
+        
+        .data-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.875rem;
+        }
+        
+        .data-label {
+            color: #64748b;
+        }
+        
+        .data-value {
+            font-weight: 500;
+            color: #e2e8f0;
+        }
+        
+        .alerts-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .alert-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            margin-bottom: 0.5rem;
+            background: #0f172a;
+        }
+        
+        .alert-severity {
+            width: 4px;
+            height: 40px;
+            border-radius: 2px;
+        }
+        
+        .severity-critical { background: #ef4444; }
+        .severity-high { background: #f97316; }
+        .severity-medium { background: #eab308; }
+        .severity-low { background: #3b82f6; }
+        
+        .alert-content {
+            flex: 1;
+        }
+        
+        .alert-title {
+            font-weight: 500;
+            color: #f8fafc;
+            font-size: 0.875rem;
+        }
+        
+        .alert-time {
+            font-size: 0.75rem;
+            color: #64748b;
+            margin-top: 0.25rem;
+        }
+        
+        .last-updated {
+            text-align: center;
+            padding: 1rem;
+            color: #64748b;
+            font-size: 0.875rem;
+        }
+        
+        .refresh-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: background 0.2s;
+        }
+        
+        .refresh-btn:hover {
+            background: #2563eb;
+        }
+        
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+            color: #64748b;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .updating {
+            animation: pulse 1.5s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🌊 HRECOS Dashboard</h1>
+        <span id="system-status" class="status-badge status-operational">Operational</span>
+    </div>
+    
+    <div class="container">
+        <!-- Metrics Overview -->
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-label">Stations Online</div>
+                <div class="metric-value" id="stations-count">5</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Avg Temperature</div>
+                <div class="metric-value">
+                    <span id="avg-temp">--</span><span class="metric-unit">°C</span>
+                </div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Avg Flow Rate</div>
+                <div class="metric-value">
+                    <span id="avg-flow">--</span><span class="metric-unit">m³/s</span>
+                </div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Active Alerts</div>
+                <div class="metric-value" id="active-alerts">0</div>
+            </div>
+        </div>
+        
+        <!-- Map Section -->
+        <div class="section">
+            <div class="section-header">
+                <span class="section-title">📍 Station Locations</span>
+            </div>
+            <div class="section-body">
+                <div id="map"></div>
+            </div>
+        </div>
+        
+        <!-- Charts Section -->
+        <div class="section">
+            <div class="section-header">
+                <span class="section-title">📈 24-Hour Trends</span>
+                <select id="chart-station" class="refresh-btn" style="background: #1e293b;">
+                    <option value="newburgh">Newburgh</option>
+                    <option value="beacon">Beacon</option>
+                    <option value="westpoint">West Point</option>
+                    <option value="poughkeepsie">Poughkeepsie</option>
+                    <option value="albany">Albany</option>
+                </select>
+            </div>
+            <div class="section-body">
+                <div class="chart-container">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Live Stations -->
+        <div class="section">
+            <div class="section-header">
+                <span class="section-title">🎯 Live Station Data</span>
+                <button class="refresh-btn" onclick="refreshData()">🔄 Refresh</button>
+            </div>
+            <div class="section-body">
+                <div id="stations-container" class="stations-grid">
+                    <div class="loading">Loading station data...</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Alerts -->
+        <div class="section">
+            <div class="section-header">
+                <span class="section-title">⚠️ Recent Anomalies</span>
+            </div>
+            <div class="section-body">
+                <div id="alerts-container" class="alerts-list">
+                    <div class="loading">Loading alerts...</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="last-updated">
+            Last updated: <span id="last-updated">--</span>
+        </div>
+    </div>
+    
+    <script>
+        const API_BASE = window.location.hostname === 'localhost' 
+            ? 'http://localhost:8000' 
+            : '/api';
+        
+        let map;
+        let trendChart;
+        let stationsData = {};
+        
+        // Initialize map
+        function initMap() {
+            map = L.map('map').setView([41.5, -74.0], 9);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+            
+            const stations = [
+                { key: 'newburgh', name: 'Newburgh', lat: 41.5034, lon: -74.0104 },
+                { key: 'beacon', name: 'Beacon', lat: 41.5085, lon: -73.9736 },
+                { key: 'westpoint', name: 'West Point', lat: 41.3917, lon: -73.9481 },
+                { key: 'poughkeepsie', name: 'Poughkeepsie', lat: 41.7083, lon: -73.9425 },
+                { key: 'albany', name: 'Albany', lat: 42.6526, lon: -73.7562 }
+            ];
+            
+            stations.forEach(s => {
+                L.marker([s.lat, s.lon])
+                    .addTo(map)
+                    .bindPopup(`<b>${s.name}</b><br>Station ID: ${s.key}`);
+            });
+        }
+        
+        // Initialize chart
+        function initChart() {
+            const ctx = document.getElementById('trendChart').getContext('2d');
+            trendChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'Temperature (°C)',
+                            data: [],
+                            borderColor: '#60a5fa',
+                            backgroundColor: 'rgba(96, 165, 250, 0.1)',
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Flow (m³/s)',
+                            data: [],
+                            borderColor: '#34d399',
+                            backgroundColor: 'rgba(52, 211, 153, 0.1)',
+                            tension: 0.4,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            labels: { color: '#e2e8f0' }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#94a3b8' },
+                            grid: { color: '#334155' }
+                        },
+                        y: {
+                            ticks: { color: '#94a3b8' },
+                            grid: { color: '#334155' },
+                            title: { display: true, text: 'Temperature (°C)', color: '#94a3b8' }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            ticks: { color: '#34d399' },
+                            grid: { drawOnChartArea: false },
+                            title: { display: true, text: 'Flow (m³/s)', color: '#34d399' }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Fetch dashboard data
+        async function fetchDashboard() {
+            try {
+                const response = await fetch(`${API_BASE}/api/dashboard`);
+                const data = await response.json();
+                
+                stationsData = data.latest_readings;
+                
+                // Update metrics
+                document.getElementById('stations-count').textContent = data.stations_online;
+                document.getElementById('active-alerts').textContent = data.alerts.pending;
+                
+                // Calculate averages
+                let totalTemp = 0, totalFlow = 0, count = 0;
+                Object.values(stationsData).forEach(reading => {
+                    if (reading.temp) { totalTemp += reading.temp; count++; }
+                    if (reading.flow) totalFlow += reading.flow;
+                });
+                
+                if (count > 0) {
+                    document.getElementById('avg-temp').textContent = (totalTemp / count).toFixed(1);
+                    document.getElementById('avg-flow').textContent = (totalFlow / count).toFixed(0);
+                }
+                
+                updateStationsGrid(stationsData);
+                document.getElementById('last-updated').textContent = new Date().toLocaleString();
+                
+            } catch (error) {
+                console.error('Error fetching dashboard:', error);
+                document.getElementById('system-status').className = 'status-badge status-warning';
+                document.getElementById('system-status').textContent = 'Connection Issue';
+            }
+        }
+        
+        // Update stations grid
+        function updateStationsGrid(readings) {
+            const container = document.getElementById('stations-container');
+            const stationNames = {
+                newburgh: 'Newburgh',
+                beacon: 'Beacon',
+                westpoint: 'West Point',
+                poughkeepsie: 'Poughkeepsie',
+                albany: 'Albany'
+            };
+            
+            container.innerHTML = Object.entries(readings).map(([key, data]) => `
+                <div class="station-card">
+                    <div class="station-header">
+                        <span class="station-name">${stationNames[key] || key}</span>
+                        <span class="station-status"></span>
+                    </div>
+                    <div class="station-data">
+                        <div class="data-item">
+                            <span class="data-label">Temperature</span>
+                            <span class="data-value">${data.temp ? data.temp.toFixed(1) + ' °C' : '--'}</span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">Flow</span>
+                            <span class="data-value">${data.flow ? data.flow.toFixed(0) + ' m³/s' : '--'}</span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">Turbidity</span>
+                            <span class="data-value">${data.turbidity ? data.turbidity.toFixed(1) + ' NTU' : '--'}</span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">Updated</span>
+                            <span class="data-value">${new Date(data.timestamp).toLocaleTimeString()}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // Fetch and update chart
+        async function updateChart(station) {
+            try {
+                const response = await fetch(`${API_BASE}/api/historical/${station}?hours=24`);
+                const data = await response.json();
+                
+                const labels = data.data.map(d => new Date(d.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}));
+                const temps = data.data.map(d => d.temp);
+                const flows = data.data.map(d => d.flow);
+                
+                trendChart.data.labels = labels.reverse();
+                trendChart.data.datasets[0].data = temps.reverse();
+                trendChart.data.datasets[1].data = flows.reverse();
+                trendChart.update();
+                
+            } catch (error) {
+                console.error('Error fetching historical data:', error);
+            }
+        }
+        
+        // Fetch anomalies
+        async function fetchAnomalies() {
+            try {
+                const response = await fetch(`${API_BASE}/api/anomalies?limit=10`);
+                const data = await response.json();
+                
+                const container = document.getElementById('alerts-container');
+                
+                if (data.anomalies.length === 0) {
+                    container.innerHTML = '<div style="text-align:center;color:#64748b;padding:2rem;">No anomalies detected in recent period</div>';
+                    return;
+                }
+                
+                container.innerHTML = data.anomalies.map(a => `
+                    <div class="alert-item">
+                        <div class="alert-severity severity-${a.severity}"></div>
+                        <div class="alert-content">
+                            <div class="alert-title">${a.type.toUpperCase()} anomaly at ${a.station}</div>
+                            <div class="alert-time">${new Date(a.timestamp).toLocaleString()} • Value: ${a.value.toFixed(2)}</div>
+                        </div>
+                    </div>
+                `).join('');
+                
+            } catch (error) {
+                console.error('Error fetching anomalies:', error);
+            }
+        }
+        
+        // Refresh all data
+        function refreshData() {
+            fetchDashboard();
+            fetchAnomalies();
+            updateChart(document.getElementById('chart-station').value);
+        }
+        
+        // Event listeners
+        document.getElementById('chart-station').addEventListener('change', (e) => {
+            updateChart(e.target.value);
+        });
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            initMap();
+            initChart();
+            refreshData();
+            
+            // Auto-refresh every 60 seconds
+            setInterval(refreshData, 60000);
+        });
+    </script>
+</body>
+</html>
