@@ -59,7 +59,7 @@ def generate_mock_data(station_id: str) -> Dict:
     
     return {
         "timestamp": now.isoformat(),
-        "temp": round(base_temp, 2),  # Fahrenheit
+        "temp": round(base_temp, 2),
         "flow": round(max(0, base_flow), 2),
         "turbidity": round(max(0, base_turbidity), 2),
         "salinity": round(random.uniform(0.1, 2.0), 3) if random.random() > 0.1 else None,
@@ -158,7 +158,7 @@ def fetch_historical_data(station_key: str, hours: int = 24) -> List[Dict]:
         ts = end_time - timedelta(minutes=15 * i)
         readings.append({
             "timestamp": ts.isoformat(),
-            "temp": round(59 + random.gauss(0, 1.8), 2),  # Fahrenheit
+            "temp": round(15 + random.gauss(0, 1), 2),
             "flow": round(500 + random.gauss(0, 50), 2),
             "turbidity": round(10 + random.gauss(0, 2), 2),
         })

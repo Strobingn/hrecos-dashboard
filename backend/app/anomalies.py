@@ -128,7 +128,7 @@ class AnomalyDetector:
 
 # Threshold-based detection for critical alerts
 THRESHOLDS = {
-    'temp': {'min': 0, 'max': 30, 'critical_max': 35},
+    'temp': {'min': 32, 'max': 86, 'critical_max': 95}  # Fahrenheit thresholds,
     'flow': {'min': 100, 'max': 5000, 'critical_min': 50},
     'turbidity': {'min': 0, 'max': 100, 'critical_max': 200},
     'dissolved_oxygen': {'min': 4, 'max': 15, 'critical_min': 2},

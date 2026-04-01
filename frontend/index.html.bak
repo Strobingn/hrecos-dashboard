@@ -301,7 +301,7 @@
             <div class="metric-card">
                 <div class="metric-label">Avg Temperature</div>
                 <div class="metric-value">
-                    <span id="avg-temp">--</span><span class="metric-unit">°F</span>
+                    <span id="avg-temp">--</span><span class="metric-unit">°C</span>
                 </div>
             </div>
             <div class="metric-card">
@@ -416,7 +416,7 @@
                     labels: [],
                     datasets: [
                         {
-                            label: 'Temperature (°F)',
+                            label: 'Temperature (°C)',
                             data: [],
                             borderColor: '#60a5fa',
                             backgroundColor: 'rgba(96, 165, 250, 0.1)',
@@ -452,7 +452,7 @@
                         y: {
                             ticks: { color: '#94a3b8' },
                             grid: { color: '#334155' },
-                            title: { display: true, text: 'Temperature (°F)', color: '#94a3b8' }
+                            title: { display: true, text: 'Temperature (°C)', color: '#94a3b8' }
                         },
                         y1: {
                             type: 'linear',
@@ -521,7 +521,7 @@
                     <div class="station-data">
                         <div class="data-item">
                             <span class="data-label">Temperature</span>
-                            <span class="data-value">${data.temp ? data.temp.toFixed(1) + ' °F' : '--'}</span>
+                            <span class="data-value">${data.temp ? data.temp.toFixed(1) + ' °C' : '--'}</span>
                         </div>
                         <div class="data-item">
                             <span class="data-label">Flow</span>
@@ -542,12 +542,6 @@
         
         // Fetch and update chart
         async function updateChart(station) {
-            // Clear existing data to prevent accumulation
-            if (trendChart) {
-                trendChart.data.labels = [];
-                trendChart.data.datasets[0].data = [];
-                trendChart.data.datasets[1].data = [];
-            }
             try {
                 const response = await fetch(`${API_BASE}/api/historical/${station}?hours=24`);
                 const data = await response.json();
@@ -559,7 +553,7 @@
                 trendChart.data.labels = labels.reverse();
                 trendChart.data.datasets[0].data = temps.reverse();
                 trendChart.data.datasets[1].data = flows.reverse();
-                trendChart.update("none"); trendChart.render();
+                trendChart.update();
                 
             } catch (error) {
                 console.error('Error fetching historical data:', error);
