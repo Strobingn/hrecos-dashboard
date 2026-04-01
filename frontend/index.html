@@ -1,620 +1,963 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HRECOS Dashboard - Hudson River Environmental Monitoring</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #0f172a;
-            color: #e2e8f0;
-            min-height: 100vh;
-        }
-        
-        .header {
-            background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%);
-            padding: 1.5rem 2rem;
-            border-bottom: 1px solid #334155;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .header h1 {
-            font-size: 1.5rem;
-            color: #60a5fa;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        .status-badge {
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-        
-        .status-operational {
-            background: #065f46;
-            color: #6ee7b7;
-        }
-        
-        .status-warning {
-            background: #92400e;
-            color: #fcd34d;
-        }
-        
-        .status-critical {
-            background: #991b1b;
-            color: #fca5a5;
-        }
-        
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 2rem;
-        }
-        
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-        
-        .metric-card {
-            background: #1e293b;
-            border-radius: 0.75rem;
-            padding: 1.5rem;
-            border: 1px solid #334155;
-            transition: all 0.3s ease;
-        }
-        
-        .metric-card:hover {
-            border-color: #60a5fa;
-            transform: translateY(-2px);
-        }
-        
-        .metric-label {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            color: #94a3b8;
-            margin-bottom: 0.5rem;
-        }
-        
-        .metric-value {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #f8fafc;
-        }
-        
-        .metric-unit {
-            font-size: 0.875rem;
-            color: #64748b;
-            margin-left: 0.25rem;
-        }
-        
-        .metric-change {
-            font-size: 0.875rem;
-            margin-top: 0.5rem;
-        }
-        
-        .positive { color: #34d399; }
-        .negative { color: #f87171; }
-        
-        .section {
-            background: #1e293b;
-            border-radius: 0.75rem;
-            border: 1px solid #334155;
-            margin-bottom: 2rem;
-            overflow: hidden;
-        }
-        
-        .section-header {
-            padding: 1rem 1.5rem;
-            border-bottom: 1px solid #334155;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .section-title {
-            font-size: 1rem;
-            font-weight: 600;
-            color: #f8fafc;
-        }
-        
-        .section-body {
-            padding: 1.5rem;
-        }
-        
-        #map {
-            height: 400px;
-            border-radius: 0.5rem;
-        }
-        
-        .chart-container {
-            position: relative;
-            height: 300px;
-        }
-        
-        .stations-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1rem;
-        }
-        
-        .station-card {
-            background: #0f172a;
-            border-radius: 0.5rem;
-            padding: 1rem;
-            border: 1px solid #334155;
-        }
-        
-        .station-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-        }
-        
-        .station-name {
-            font-weight: 600;
-            color: #60a5fa;
-        }
-        
-        .station-status {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #34d399;
-        }
-        
-        .station-data {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 0.75rem;
-        }
-        
-        .data-item {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.875rem;
-        }
-        
-        .data-label {
-            color: #64748b;
-        }
-        
-        .data-value {
-            font-weight: 500;
-            color: #e2e8f0;
-        }
-        
-        .alerts-list {
-            max-height: 300px;
-            overflow-y: auto;
-        }
-        
-        .alert-item {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 0.75rem;
-            border-radius: 0.5rem;
-            margin-bottom: 0.5rem;
-            background: #0f172a;
-        }
-        
-        .alert-severity {
-            width: 4px;
-            height: 40px;
-            border-radius: 2px;
-        }
-        
-        .severity-critical { background: #ef4444; }
-        .severity-high { background: #f97316; }
-        .severity-medium { background: #eab308; }
-        .severity-low { background: #3b82f6; }
-        
-        .alert-content {
-            flex: 1;
-        }
-        
-        .alert-title {
-            font-weight: 500;
-            color: #f8fafc;
-            font-size: 0.875rem;
-        }
-        
-        .alert-time {
-            font-size: 0.75rem;
-            color: #64748b;
-            margin-top: 0.25rem;
-        }
-        
-        .last-updated {
-            text-align: center;
-            padding: 1rem;
-            color: #64748b;
-            font-size: 0.875rem;
-        }
-        
-        .refresh-btn {
-            background: #3b82f6;
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 0.375rem;
-            cursor: pointer;
-            font-size: 0.875rem;
-            transition: background 0.2s;
-        }
-        
-        .refresh-btn:hover {
-            background: #2563eb;
-        }
-        
-        .loading {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 200px;
-            color: #64748b;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-        
-        .updating {
-            animation: pulse 1.5s infinite;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HRECOS Cornwall Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    :root, [data-theme="light"] {
+      --text-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
+      --text-sm: clamp(0.875rem, 0.8rem + 0.35vw, 1rem);
+      --text-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+      --text-lg: clamp(1.125rem, 1rem + 0.75vw, 1.5rem);
+      --text-xl: clamp(1.5rem, 1.2rem + 1.25vw, 2.25rem);
+
+      --space-1: 0.25rem;
+      --space-2: 0.5rem;
+      --space-3: 0.75rem;
+      --space-4: 1rem;
+      --space-5: 1.25rem;
+      --space-6: 1.5rem;
+      --space-8: 2rem;
+      --space-10: 2.5rem;
+      --space-12: 3rem;
+      --space-16: 4rem;
+
+      --color-bg: #f7f6f2;
+      --color-surface: #f9f8f5;
+      --color-surface-2: #fbfbf9;
+      --color-surface-offset: #f3f0ec;
+      --color-surface-dynamic: #e6e4df;
+      --color-divider: #dcd9d5;
+      --color-border: #d4d1ca;
+      --color-text: #28251d;
+      --color-text-muted: #7a7974;
+      --color-text-faint: #bab9b4;
+      --color-text-inverse: #f9f8f4;
+      --color-primary: #01696f;
+      --color-primary-hover: #0c4e54;
+      --color-success: #437a22;
+      --color-error: #a12c7b;
+      --color-blue: #006494;
+      --color-orange: #da7101;
+      --radius-sm: 0.375rem;
+      --radius-md: 0.5rem;
+      --radius-lg: 0.75rem;
+      --radius-xl: 1rem;
+      --radius-full: 9999px;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,.06);
+      --shadow-md: 0 4px 12px rgba(0,0,0,.08);
+      --shadow-lg: 0 12px 32px rgba(0,0,0,.12);
+      --transition-interactive: 180ms cubic-bezier(0.16, 1, 0.3, 1);
+      --font-body: 'Satoshi', Inter, sans-serif;
+      --font-display: 'Satoshi', Inter, sans-serif;
+      --content-wide: 1200px;
+    }
+
+    [data-theme="dark"] {
+      --color-bg: #171614;
+      --color-surface: #1c1b19;
+      --color-surface-2: #201f1d;
+      --color-surface-offset: #1d1c1a;
+      --color-surface-dynamic: #2d2c2a;
+      --color-divider: #262523;
+      --color-border: #393836;
+      --color-text: #cdccca;
+      --color-text-muted: #979692;
+      --color-text-faint: #6a6966;
+      --color-text-inverse: #2b2a28;
+      --color-primary: #4f98a3;
+      --color-primary-hover: #227f8b;
+      --color-success: #6daa45;
+      --color-error: #d163a7;
+      --color-blue: #5591c7;
+      --color-orange: #fdab43;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,.2);
+      --shadow-md: 0 4px 12px rgba(0,0,0,.3);
+      --shadow-lg: 0 12px 32px rgba(0,0,0,.4);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      min-height: 100vh;
+      line-height: 1.6;
+      font-family: var(--font-body);
+      font-size: var(--text-base);
+      color: var(--color-text);
+      background: var(--color-bg);
+      -webkit-font-smoothing: antialiased;
+    }
+    img, svg, canvas { display: block; max-width: 100%; }
+    button, input, select { font: inherit; color: inherit; }
+    button { cursor: pointer; }
+    a { color: inherit; }
+    :focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; border-radius: var(--radius-sm); }
+    .sr-only {
+      position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden;
+      clip:rect(0,0,0,0); white-space:nowrap; border:0;
+    }
+
+    .app-shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 280px 1fr;
+    }
+
+    .sidebar {
+      background: var(--color-surface);
+      border-right: 1px solid rgba(40,37,29,.12);
+      padding: var(--space-6);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-6);
+      position: sticky;
+      top: 0;
+      height: 100vh;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
+
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      border-radius: var(--radius-lg);
+      background: linear-gradient(160deg, var(--color-primary), var(--color-blue));
+      display: grid;
+      place-items: center;
+      color: white;
+      box-shadow: var(--shadow-md);
+      flex: 0 0 auto;
+    }
+
+    .brand h1 {
+      font-family: var(--font-display);
+      font-size: var(--text-lg);
+      line-height: 1.15;
+    }
+
+    .brand p, .sidebar-section p, .subtle {
+      color: var(--color-text-muted);
+      font-size: var(--text-sm);
+    }
+
+    .sidebar-card, .card {
+      background: var(--color-surface-2);
+      border: 1px solid rgba(40,37,29,.10);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .sidebar-card {
+      padding: var(--space-4);
+    }
+
+    .legend { display: grid; gap: var(--space-3); }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-3);
+      font-size: var(--text-sm);
+    }
+    .dot {
+      width: 12px; height: 12px; border-radius: var(--radius-full); flex: 0 0 auto;
+      margin-right: var(--space-2);
+      display: inline-block;
+    }
+    .legend-label { display: flex; align-items: center; }
+
+    .main {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: color-mix(in srgb, var(--color-bg) 88%, transparent);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(40,37,29,.10);
+      padding: var(--space-4) var(--space-6);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-4);
+    }
+
+    .topbar-title h2 {
+      font-size: var(--text-xl);
+      line-height: 1.1;
+    }
+
+    .controls {
+      display: flex;
+      gap: var(--space-3);
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .btn, .select {
+      min-height: 44px;
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(40,37,29,.12);
+      background: var(--color-surface);
+      padding: 0 var(--space-4);
+      transition: all var(--transition-interactive);
+    }
+
+    .btn:hover, .select:hover { border-color: var(--color-primary); }
+    .btn.primary {
+      background: var(--color-primary);
+      color: var(--color-text-inverse);
+      border-color: var(--color-primary);
+    }
+    .btn.primary:hover { background: var(--color-primary-hover); }
+
+    .content {
+      padding: var(--space-6);
+      display: grid;
+      gap: var(--space-6);
+      max-width: var(--content-wide);
+      width: 100%;
+    }
+
+    .hero-grid, .kpi-grid, .chart-grid, .bottom-grid {
+      display: grid;
+      gap: var(--space-6);
+    }
+    .hero-grid { grid-template-columns: 1.3fr .9fr; }
+    .kpi-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .chart-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .bottom-grid { grid-template-columns: 1.1fr .9fr; }
+
+    .card {
+      padding: var(--space-5);
+      overflow: hidden;
+    }
+
+    .card h3 {
+      font-size: var(--text-lg);
+      line-height: 1.2;
+      margin-bottom: var(--space-2);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: var(--space-4);
+      margin-bottom: var(--space-4);
+    }
+
+    .metric-value {
+      font-size: var(--text-xl);
+      line-height: 1;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums lining-nums;
+      margin-bottom: var(--space-2);
+    }
+
+    .metric-delta {
+      font-size: var(--text-sm);
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-1) var(--space-2);
+      border-radius: var(--radius-full);
+      background: var(--color-surface-offset);
+    }
+    .up { color: var(--color-success); }
+    .down { color: var(--color-error); }
+
+    #map {
+      width: 100%;
+      min-height: 380px;
+      border-radius: calc(var(--radius-xl) - var(--space-1));
+      border: 1px solid rgba(40,37,29,.1);
+    }
+
+    .station-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: var(--text-sm);
+    }
+    .station-table th, .station-table td {
+      text-align: left;
+      padding: var(--space-3) var(--space-2);
+      border-bottom: 1px solid var(--color-divider);
+      font-variant-numeric: tabular-nums lining-nums;
+    }
+    .station-table th { color: var(--color-text-muted); font-weight: 500; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: 0.2rem 0.65rem;
+      border-radius: var(--radius-full);
+      font-size: var(--text-xs);
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      font-weight: 700;
+      background: var(--color-surface-offset);
+    }
+    .badge.ok { color: var(--color-success); }
+    .badge.alert { color: var(--color-error); }
+    .badge.info { color: var(--color-blue); }
+
+    .event-list {
+      display: grid;
+      gap: var(--space-3);
+    }
+    .event-item {
+      padding: var(--space-4);
+      border-radius: var(--radius-lg);
+      background: var(--color-surface-offset);
+      border: 1px solid rgba(40,37,29,.08);
+    }
+    .event-item strong { display: block; margin-bottom: var(--space-1); }
+    .event-item time { color: var(--color-text-muted); font-size: var(--text-xs); }
+
+    .footer-note {
+      color: var(--color-text-muted);
+      font-size: var(--text-sm);
+    }
+
+    .mobile-toggle { display: none; }
+
+    @media (max-width: 1100px) {
+      .app-shell { grid-template-columns: 1fr; }
+      .sidebar {
+        position: fixed;
+        left: 0; top: 0; bottom: 0;
+        width: min(90vw, 320px);
+        transform: translateX(-102%);
+        transition: transform var(--transition-interactive);
+        z-index: 80;
+      }
+      .sidebar.open { transform: translateX(0); }
+      .mobile-toggle { display: inline-flex; }
+      .hero-grid, .bottom-grid, .chart-grid, .kpi-grid { grid-template-columns: 1fr; }
+      .topbar { padding-inline: var(--space-4); }
+      .content { padding: var(--space-4); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
 </head>
 <body>
-    <div class="header">
-        <h1>🌊 HRECOS Dashboard</h1>
-        <span id="system-status" class="status-badge status-operational">Operational</span>
-    </div>
-    
-    <div class="container">
-        <!-- Metrics Overview -->
-        <div class="metrics-grid">
-            <div class="metric-card">
-                <div class="metric-label">Stations Online</div>
-                <div class="metric-value" id="stations-count">5</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-label">Avg Temperature</div>
-                <div class="metric-value">
-                    <span id="avg-temp">--</span><span class="metric-unit">°F</span>
-                </div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-label">Avg Flow Rate</div>
-                <div class="metric-value">
-                    <span id="avg-flow">--</span><span class="metric-unit">m³/s</span>
-                </div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-label">Active Alerts</div>
-                <div class="metric-value" id="active-alerts">0</div>
-            </div>
+  <a class="sr-only" href="#main-content">Skip to content</a>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-mark" aria-label="HRECOS logo">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 14c2.1 0 2.1-1.6 4.2-1.6S9.3 14 11.4 14s2.1-1.6 4.2-1.6 2.1 1.6 4.2 1.6"/>
+            <path d="M3 18c2.1 0 2.1-1.6 4.2-1.6S9.3 18 11.4 18s2.1-1.6 4.2-1.6 2.1 1.6 4.2 1.6"/>
+            <path d="M12 4v8"/>
+            <circle cx="12" cy="4" r="1.6" fill="currentColor" stroke="none"/>
+          </svg>
         </div>
-        
-        <!-- Map Section -->
-        <div class="section">
-            <div class="section-header">
-                <span class="section-title">📍 Station Locations</span>
-            </div>
-            <div class="section-body">
-                <div id="map"></div>
-            </div>
+        <div>
+          <h1>HRECOS</h1>
+          <p>Cornwall corridor dashboard</p>
         </div>
-        
-        <!-- Charts Section -->
-        <div class="section">
-            <div class="section-header">
-                <span class="section-title">📈 24-Hour Trends</span>
-                <select id="chart-station" class="refresh-btn" style="background: #1e293b;">
-                    <option value="newburgh">Newburgh</option>
-                    <option value="beacon">Beacon</option>
-                    <option value="westpoint">West Point</option>
-                    <option value="poughkeepsie">Poughkeepsie</option>
-                    <option value="albany">Albany</option>
-                </select>
-            </div>
-            <div class="section-body">
-                <div class="chart-container">
-                    <canvas id="trendChart"></canvas>
-                </div>
-            </div>
+      </div>
+
+      <section class="sidebar-section sidebar-card">
+        <p style="margin-bottom: var(--space-3);">Station set</p>
+        <div class="legend">
+          <div class="legend-item"><span class="legend-label"><span class="dot" style="background:#01696f"></span>Newburgh</span><span>River mile 60</span></div>
+          <div class="legend-item"><span class="legend-label"><span class="dot" style="background:#a12c7b"></span>Beacon</span><span>River mile 61</span></div>
+          <div class="legend-item"><span class="legend-label"><span class="dot" style="background:#437a22"></span>West Point</span><span>River mile 52</span></div>
         </div>
-        
-        <!-- Live Stations -->
-        <div class="section">
-            <div class="section-header">
-                <span class="section-title">🎯 Live Station Data</span>
-                <button class="refresh-btn" onclick="refreshData()">🔄 Refresh</button>
-            </div>
-            <div class="section-body">
-                <div id="stations-container" class="stations-grid">
-                    <div class="loading">Loading station data...</div>
-                </div>
-            </div>
+      </section>
+
+      <section class="sidebar-section sidebar-card">
+        <p style="margin-bottom: var(--space-3);">Analytics logic</p>
+        <div class="legend" style="gap: var(--space-2);">
+          <span class="subtle">10-minute synthetic polling cadence</span>
+          <span class="subtle">1-hour temperature delta tracking</span>
+          <span class="subtle">30-minute flow delta tracking</span>
+          <span class="subtle">Z-score style spike flags</span>
         </div>
-        
-        <!-- Recent Alerts -->
-        <div class="section">
-            <div class="section-header">
-                <span class="section-title">⚠️ Recent Anomalies</span>
-            </div>
-            <div class="section-body">
-                <div id="alerts-container" class="alerts-list">
-                    <div class="loading">Loading alerts...</div>
-                </div>
-            </div>
+      </section>
+
+      <section class="sidebar-section sidebar-card">
+        <p style="margin-bottom: var(--space-3);">Integration path</p>
+        <div class="legend" style="gap: var(--space-2);">
+          <span class="subtle">REST API or CSV ingest</span>
+          <span class="subtle">Timescale-ready schema</span>
+          <span class="subtle">Acoustic node overlay panel</span>
         </div>
-        
-        <div class="last-updated">
-            Last updated: <span id="last-updated">--</span>
+      </section>
+    </aside>
+
+    <main class="main" id="main-content">
+      <header class="topbar">
+        <div class="controls">
+          <button class="btn mobile-toggle" id="menuBtn" aria-label="Toggle navigation">☰</button>
+          <div class="topbar-title">
+            <h2>Hudson environmental monitor</h2>
+            <p class="subtle">Prototype for Newburgh, Beacon, and West Point</p>
+          </div>
         </div>
-    </div>
-    
-    <script>
-        const API_BASE = window.location.hostname === 'localhost' 
-            ? 'http://localhost:8000' 
-            : '/api';
-        
-        let map;
-        let trendChart;
-        let stationsData = {};
-        
-        // Initialize map
-        function initMap() {
-            map = L.map('map').setView([41.5, -74.0], 9);
-            
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors'
-            }).addTo(map);
-            
-            const stations = [
-                { key: 'newburgh', name: 'Newburgh', lat: 41.5034, lon: -74.0104 },
-                { key: 'beacon', name: 'Beacon', lat: 41.5085, lon: -73.9736 },
-                { key: 'westpoint', name: 'West Point', lat: 41.3917, lon: -73.9481 },
-                { key: 'poughkeepsie', name: 'Poughkeepsie', lat: 41.7083, lon: -73.9425 },
-                { key: 'albany', name: 'Albany', lat: 42.6526, lon: -73.7562 }
-            ];
-            
-            stations.forEach(s => {
-                L.marker([s.lat, s.lon])
-                    .addTo(map)
-                    .bindPopup(`<b>${s.name}</b><br>Station ID: ${s.key}`);
-            });
+        <div class="controls">
+          <select class="select" id="timeWindow" aria-label="Time window selector">
+            <option value="24">Past 24 hours</option>
+            <option value="48">Past 48 hours</option>
+            <option value="72">Past 72 hours</option>
+          </select>
+          <button class="btn" id="refreshBtn">Refresh feed</button>
+          <button class="btn" id="pollingBtn" aria-pressed="false">Auto refresh off</button>
+          <button class="btn" id="themeToggle" data-theme-toggle aria-label="Switch theme">◐</button>
+          <button class="btn primary" id="simulateBtn">Simulate anomaly</button>
+        </div>
+      </header>
+
+      <section class="content">
+        <section class="hero-grid">
+          <article class="card">
+            <div class="card-header">
+              <div>
+                <h3>Station map</h3>
+                <p class="subtle">Live-style geospatial view with popup sensor summaries.</p>
+              </div>
+              <span class="badge info" id="updateStatus">Feed healthy</span>
+            </div>
+            <div id="map"></div>
+          </article>
+
+          <article class="card">
+            <div class="card-header">
+              <div>
+                <h3>Current readings</h3>
+                <p class="subtle">Latest values and trigger state by station.</p>
+              </div>
+            </div>
+            <table class="station-table">
+              <thead>
+                <tr>
+                  <th>Station</th>
+                  <th>Temp</th>
+                  <th>Flow</th>
+                  <th>Turbidity</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="stationTableBody"></tbody>
+            </table>
+          </article>
+        </section>
+
+        <section class="kpi-grid" id="kpis"></section>
+
+        <section class="chart-grid">
+          <article class="card">
+            <div class="card-header">
+              <div>
+                <h3>Water temperature trend</h3>
+                <p class="subtle">Hourly shape with 1-hour delta context.</p>
+              </div>
+            </div>
+            <canvas id="tempChart" height="140"></canvas>
+          </article>
+
+          <article class="card">
+            <div class="card-header">
+              <div>
+                <h3>River flow trend</h3>
+                <p class="subtle">Discharge pattern with 30-minute spike detection.</p>
+              </div>
+            </div>
+            <canvas id="flowChart" height="140"></canvas>
+          </article>
+        </section>
+
+        <section class="bottom-grid">
+          <article class="card">
+            <div class="card-header">
+              <div>
+                <h3>Event stream</h3>
+                <p class="subtle">Latest synthetic trigger detections for integration testing.</p>
+              </div>
+            </div>
+            <div class="event-list" id="eventList"></div>
+          </article>
+
+          <article class="card">
+            <div class="card-header">
+              <div>
+                <h3>Publishable analytics</h3>
+                <p class="subtle">Snapshot metrics suitable for export or external API payloads.</p>
+              </div>
+            </div>
+            <div id="summaryPanel" class="legend"></div>
+          </article>
+        </section>
+
+        <p class="footer-note">Prototype note: this standalone build uses simulated HRECOS-style time series so you can validate layout, analytics, and later swap in a real fetch layer without changing the interface contract.</p>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const stationConfig = {
+      newburgh: { name: 'Newburgh', lat: 41.5032, lon: -73.9715, color: '#01696f', tempBase: 53.2, flowBase: 7350, turbBase: 7.5 },
+      beacon: { name: 'Beacon', lat: 41.5055, lon: -73.9690, color: '#a12c7b', tempBase: 52.5, flowBase: 7125, turbBase: 7.9 },
+      westpoint: { name: 'West Point', lat: 41.3805, lon: -73.9631, color: '#437a22', tempBase: 51.6, flowBase: 6890, turbBase: 8.6 }
+    };
+
+    const apiBase = window.HRECOS_API_BASE || '';
+    const sampleMs = 10 * 60 * 1000;
+
+    const state = {
+      hours: 24,
+      points: 144,
+      records: {},
+      events: [],
+      markers: {},
+      charts: { temp: null, flow: null },
+      anomalyBoost: false,
+      pollingEnabled: false,
+      refreshTimer: null,
+      theme: matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+    };
+
+    document.documentElement.setAttribute('data-theme', state.theme);
+
+    function normalizeTimestamp(value) {
+      return value instanceof Date ? value : new Date(value);
+    }
+
+    function formatTime(value) {
+      return normalizeTimestamp(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function formatNumber(n, digits = 1) {
+      return new Intl.NumberFormat('en-US', { maximumFractionDigits: digits, minimumFractionDigits: digits }).format(n);
+    }
+
+    function seededNoise(i, scale = 1) {
+      return (Math.sin(i * 1.73) + Math.cos(i * 0.61) + Math.sin(i * 0.17)) * scale;
+    }
+
+    function stddev(values) {
+      if (!values.length) return 0;
+      const mean = values.reduce((a, b) => a + b, 0) / values.length;
+      const variance = values.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / values.length;
+      return Math.sqrt(variance);
+    }
+
+    function maxPoints() {
+      return state.hours * 6;
+    }
+
+    function recomputeStation(records) {
+      const temps = [];
+      const flows = [];
+      for (let i = 0; i < records.length; i++) {
+        const row = records[i];
+        temps.push(row.temp);
+        flows.push(row.flow);
+        const temp1h = i >= 6 ? records[i - 6].temp : null;
+        const flow30m = i >= 3 ? records[i - 3].flow : null;
+        row.tempDelta = temp1h == null ? 0 : row.temp - temp1h;
+        row.flowDelta = flow30m == null ? 0 : row.flow - flow30m;
+        row.tempSpike = i >= 24 && row.tempDelta > stddev(temps.slice(Math.max(0, temps.length - 24))) * 2;
+        row.flowSpike = i >= 12 && row.flowDelta > stddev(flows.slice(Math.max(0, flows.length - 12))) * 2;
+      }
+      return records;
+    }
+
+    function generateInitialSeries() {
+      const now = new Date();
+      const totalPoints = maxPoints();
+      const out = {};
+      Object.entries(stationConfig).forEach(([key, cfg], idx) => {
+        const rows = [];
+        for (let i = totalPoints - 1; i >= 0; i--) {
+          const step = totalPoints - i;
+          rows.push({
+            timestamp: new Date(now.getTime() - i * sampleMs),
+            temp: cfg.tempBase + Math.sin(step / 9 + idx) * 0.45 + seededNoise(step + idx, 0.12),
+            flow: cfg.flowBase + Math.sin(step / 7 + idx * 0.7) * 180 + seededNoise(step + idx * 4, 40),
+            turbidity: Math.max(1.2, cfg.turbBase + Math.cos(step / 8 + idx) * 0.65 + seededNoise(step + idx * 3, 0.18))
+          });
         }
-        
-        // Initialize chart
-        function initChart() {
-            const ctx = document.getElementById('trendChart').getContext('2d');
-            trendChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: [],
-                    datasets: [
-                        {
-                            label: 'Temperature (°F)',
-                            data: [],
-                            borderColor: '#60a5fa',
-                            backgroundColor: 'rgba(96, 165, 250, 0.1)',
-                            tension: 0.4
-                        },
-                        {
-                            label: 'Flow (m³/s)',
-                            data: [],
-                            borderColor: '#34d399',
-                            backgroundColor: 'rgba(52, 211, 153, 0.1)',
-                            tension: 0.4,
-                            yAxisID: 'y1'
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: {
-                        mode: 'index',
-                        intersect: false
-                    },
-                    plugins: {
-                        legend: {
-                            labels: { color: '#e2e8f0' }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            ticks: { color: '#94a3b8' },
-                            grid: { color: '#334155' }
-                        },
-                        y: {
-                            ticks: { color: '#94a3b8' },
-                            grid: { color: '#334155' },
-                            title: { display: true, text: 'Temperature (°F)', color: '#94a3b8' }
-                        },
-                        y1: {
-                            type: 'linear',
-                            display: true,
-                            position: 'right',
-                            ticks: { color: '#34d399' },
-                            grid: { drawOnChartArea: false },
-                            title: { display: true, text: 'Flow (m³/s)', color: '#34d399' }
-                        }
-                    }
-                }
-            });
-        }
-        
-        // Fetch dashboard data
-        async function fetchDashboard() {
-            try {
-                const response = await fetch(`${API_BASE}/api/dashboard`);
-                const data = await response.json();
-                
-                stationsData = data.latest_readings;
-                
-                // Update metrics
-                document.getElementById('stations-count').textContent = data.stations_online;
-                document.getElementById('active-alerts').textContent = data.alerts.pending;
-                
-                // Calculate averages
-                let totalTemp = 0, totalFlow = 0, count = 0;
-                Object.values(stationsData).forEach(reading => {
-                    if (reading.temp) { totalTemp += reading.temp; count++; }
-                    if (reading.flow) totalFlow += reading.flow;
-                });
-                
-                if (count > 0) {
-                    document.getElementById('avg-temp').textContent = (totalTemp / count).toFixed(1);
-                    document.getElementById('avg-flow').textContent = (totalFlow / count).toFixed(0);
-                }
-                
-                updateStationsGrid(stationsData);
-                document.getElementById('last-updated').textContent = new Date().toLocaleString();
-                
-            } catch (error) {
-                console.error('Error fetching dashboard:', error);
-                document.getElementById('system-status').className = 'status-badge status-warning';
-                document.getElementById('system-status').textContent = 'Connection Issue';
-            }
-        }
-        
-        // Update stations grid
-        function updateStationsGrid(readings) {
-            const container = document.getElementById('stations-container');
-            const stationNames = {
-                newburgh: 'Newburgh',
-                beacon: 'Beacon',
-                westpoint: 'West Point',
-                poughkeepsie: 'Poughkeepsie',
-                albany: 'Albany'
-            };
-            
-            container.innerHTML = Object.entries(readings).map(([key, data]) => `
-                <div class="station-card">
-                    <div class="station-header">
-                        <span class="station-name">${stationNames[key] || key}</span>
-                        <span class="station-status"></span>
-                    </div>
-                    <div class="station-data">
-                        <div class="data-item">
-                            <span class="data-label">Temperature</span>
-                            <span class="data-value">${data.temp ? data.temp.toFixed(1) + ' °F' : '--'}</span>
-                        </div>
-                        <div class="data-item">
-                            <span class="data-label">Flow</span>
-                            <span class="data-value">${data.flow ? data.flow.toFixed(0) + ' m³/s' : '--'}</span>
-                        </div>
-                        <div class="data-item">
-                            <span class="data-label">Turbidity</span>
-                            <span class="data-value">${data.turbidity ? data.turbidity.toFixed(1) + ' NTU' : '--'}</span>
-                        </div>
-                        <div class="data-item">
-                            <span class="data-label">Updated</span>
-                            <span class="data-value">${new Date(data.timestamp).toLocaleTimeString()}</span>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        }
-        
-        // Fetch and update chart
-        async function updateChart(station) {
-            // Clear existing data to prevent accumulation
-            if (trendChart) {
-                trendChart.data.labels = [];
-                trendChart.data.datasets[0].data = [];
-                trendChart.data.datasets[1].data = [];
-            }
-            try {
-                const response = await fetch(`${API_BASE}/api/historical/${station}?hours=24`);
-                const data = await response.json();
-                
-                const labels = data.data.map(d => new Date(d.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}));
-                const temps = data.data.map(d => d.temp);
-                const flows = data.data.map(d => d.flow);
-                
-                trendChart.data.labels = labels.reverse();
-                trendChart.data.datasets[0].data = temps.reverse();
-                trendChart.data.datasets[1].data = flows.reverse();
-                trendChart.update("none"); trendChart.render();
-                
-            } catch (error) {
-                console.error('Error fetching historical data:', error);
-            }
-        }
-        
-        // Fetch anomalies
-        async function fetchAnomalies() {
-            try {
-                const response = await fetch(`${API_BASE}/api/anomalies?limit=10`);
-                const data = await response.json();
-                
-                const container = document.getElementById('alerts-container');
-                
-                if (data.anomalies.length === 0) {
-                    container.innerHTML = '<div style="text-align:center;color:#64748b;padding:2rem;">No anomalies detected in recent period</div>';
-                    return;
-                }
-                
-                container.innerHTML = data.anomalies.map(a => `
-                    <div class="alert-item">
-                        <div class="alert-severity severity-${a.severity}"></div>
-                        <div class="alert-content">
-                            <div class="alert-title">${a.type.toUpperCase()} anomaly at ${a.station}</div>
-                            <div class="alert-time">${new Date(a.timestamp).toLocaleString()} • Value: ${a.value.toFixed(2)}</div>
-                        </div>
-                    </div>
-                `).join('');
-                
-            } catch (error) {
-                console.error('Error fetching anomalies:', error);
-            }
-        }
-        
-        // Refresh all data
-        function refreshData() {
-            fetchDashboard();
-            fetchAnomalies();
-            updateChart(document.getElementById('chart-station').value);
-        }
-        
-        // Event listeners
-        document.getElementById('chart-station').addEventListener('change', (e) => {
-            updateChart(e.target.value);
+        out[key] = recomputeStation(rows);
+      });
+      return out;
+    }
+
+    function nextSyntheticRow(key) {
+      const cfg = stationConfig[key];
+      const idx = Object.keys(stationConfig).indexOf(key);
+      const rows = state.records[key];
+      const last = rows[rows.length - 1];
+      const step = rows.length + 1;
+      return {
+        timestamp: new Date(normalizeTimestamp(last.timestamp).getTime() + sampleMs),
+        temp: cfg.tempBase + Math.sin(step / 9 + idx) * 0.45 + seededNoise(step + idx, 0.12) + (state.anomalyBoost && key !== 'westpoint' ? 1.35 : 0),
+        flow: cfg.flowBase + Math.sin(step / 7 + idx * 0.7) * 180 + seededNoise(step + idx * 4, 40) + (state.anomalyBoost && key === 'westpoint' ? 820 : 0),
+        turbidity: Math.max(1.2, cfg.turbBase + Math.cos(step / 8 + idx) * 0.65 + seededNoise(step + idx * 3, 0.18) + (state.anomalyBoost ? 0.9 : 0))
+      };
+    }
+
+    async function fetchBackendHistory() {
+      if (!apiBase) return null;
+      try {
+        const res = await fetch(`${apiBase}/api/history?hours=${state.hours}&anomaly=${state.anomalyBoost}`);
+        if (!res.ok) return null;
+        const raw = await res.json();
+        const out = {};
+        Object.keys(raw).forEach(key => {
+          out[key] = raw[key].slice(-maxPoints()).map(row => ({
+            timestamp: normalizeTimestamp(row.timestamp),
+            temp: row.temp,
+            flow: row.flow,
+            turbidity: row.turbidity,
+            tempDelta: row.tempDelta ?? 0,
+            flowDelta: row.flowDelta ?? 0,
+            tempSpike: !!row.tempSpike,
+            flowSpike: !!row.flowSpike
+          }));
         });
-        
-        // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
-            initMap();
-            initChart();
-            refreshData();
-            
-            // Auto-refresh every 60 seconds
-            setInterval(refreshData, 60000);
+        return out;
+      } catch {
+        return null;
+      }
+    }
+
+    async function resetData() {
+      const backend = await fetchBackendHistory();
+      state.records = backend || generateInitialSeries();
+      Object.keys(state.records).forEach(key => {
+        state.records[key] = state.records[key].slice(-maxPoints());
+      });
+    }
+
+    function advanceDataOneStep() {
+      Object.keys(stationConfig).forEach(key => {
+        const rows = state.records[key];
+        if (rows.length >= maxPoints()) rows.shift();
+        rows.push(nextSyntheticRow(key));
+        recomputeStation(rows);
+      });
+    }
+
+    function latestOf(key) {
+      const rows = state.records[key] || [];
+      return rows[rows.length - 1];
+    }
+
+    function stationDeltaMean(field) {
+      return Object.keys(stationConfig).reduce((acc, key) => acc + latestOf(key)[field], 0) / Object.keys(stationConfig).length;
+    }
+
+    function averageAtOffset(field, offset) {
+      const vals = Object.keys(stationConfig).map(key => {
+        const arr = state.records[key];
+        const idx = Math.max(0, arr.length - 1 - offset);
+        return arr[idx][field];
+      });
+      return vals.reduce((a, b) => a + b, 0) / vals.length;
+    }
+
+    function buildKPIs() {
+      const kpiRoot = document.getElementById('kpis');
+      const latestStations = Object.keys(stationConfig).map(k => latestOf(k));
+      const avgTemp = latestStations.reduce((a,b) => a + b.temp, 0) / latestStations.length;
+      const avgFlow = latestStations.reduce((a,b) => a + b.flow, 0) / latestStations.length;
+      const avgTurb = latestStations.reduce((a,b) => a + b.turbidity, 0) / latestStations.length;
+      const spikes = latestStations.filter(r => r.tempSpike || r.flowSpike).length;
+      const cards = [
+        { label: 'Avg water temp', value: `${formatNumber(avgTemp)} °F`, delta: stationDeltaMean('tempDelta'), positive: stationDeltaMean('tempDelta') >= 0 },
+        { label: 'Avg flow', value: `${formatNumber(avgFlow, 0)} cfs`, delta: stationDeltaMean('flowDelta'), positive: stationDeltaMean('flowDelta') >= 0, digits: 0 },
+        { label: 'Avg turbidity', value: `${formatNumber(avgTurb)} NTU`, delta: avgTurb - averageAtOffset('turbidity', 6), positive: (avgTurb - averageAtOffset('turbidity', 6)) <= 0 },
+        { label: 'Active alerts', value: `${spikes}`, delta: spikes, positive: spikes === 0, suffix: spikes === 1 ? ' station flagged' : ' stations flagged' }
+      ];
+      kpiRoot.innerHTML = cards.map(card => {
+        const deltaDisplay = card.label === 'Active alerts'
+          ? `${card.delta}${card.suffix}`
+          : `${card.positive ? '▲' : '▼'} ${formatNumber(Math.abs(card.delta), card.digits ?? 1)} ${card.label === 'Avg flow' ? 'vs 30m' : 'vs baseline'}`;
+        return `
+          <article class="card">
+            <div class="subtle" style="margin-bottom: var(--space-3);">${card.label}</div>
+            <div class="metric-value">${card.value}</div>
+            <span class="metric-delta ${card.positive ? 'up' : 'down'}">${deltaDisplay}</span>
+          </article>
+        `;
+      }).join('');
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('stationTableBody');
+      tbody.innerHTML = Object.entries(stationConfig).map(([key, cfg]) => {
+        const r = latestOf(key);
+        const statusClass = (r.tempSpike || r.flowSpike) ? 'alert' : 'ok';
+        const statusText = r.tempSpike ? 'Temp spike' : r.flowSpike ? 'Flow spike' : 'Stable';
+        return `
+          <tr>
+            <td><span class="legend-label"><span class="dot" style="background:${cfg.color}"></span>${cfg.name}</span></td>
+            <td>${formatNumber(r.temp)} °F</td>
+            <td>${formatNumber(r.flow, 0)} cfs</td>
+            <td>${formatNumber(r.turbidity)} NTU</td>
+            <td><span class="badge ${statusClass}">${statusText}</span></td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function collectEvents() {
+      const events = [];
+      Object.entries(stationConfig).forEach(([key, cfg]) => {
+        state.records[key].slice(-18).forEach(row => {
+          if (row.tempSpike) events.push({ station: cfg.name, type: 'Temperature spike', ts: normalizeTimestamp(row.timestamp), detail: `${formatNumber(row.tempDelta)} °F rise over 1h` });
+          if (row.flowSpike) events.push({ station: cfg.name, type: 'Flow spike', ts: normalizeTimestamp(row.timestamp), detail: `${formatNumber(row.flowDelta, 0)} cfs rise over 30m` });
         });
-    </script>
+      });
+      state.events = events.sort((a,b) => b.ts - a.ts).slice(0, 6);
+      if (!state.events.length) state.events = [{ station: 'System', type: 'No active alerts', ts: new Date(), detail: 'All stations remain within expected trend bands.' }];
+    }
+
+    function renderEvents() {
+      const root = document.getElementById('eventList');
+      root.innerHTML = state.events.map(evt => `
+        <article class="event-item">
+          <strong>${evt.type} · ${evt.station}</strong>
+          <div>${evt.detail}</div>
+          <time>${evt.ts.toLocaleString()}</time>
+        </article>
+      `).join('');
+    }
+
+    function renderSummary() {
+      const root = document.getElementById('summaryPanel');
+      const correlationSignal = state.events.filter(e => /spike/i.test(e.type)).length >= 2 ? 'Multi-station trigger pattern observed.' : 'No cross-station cascade currently detected.';
+      const warmest = Object.entries(stationConfig).map(([key, cfg]) => ({ name: cfg.name, temp: latestOf(key).temp })).sort((a,b) => b.temp - a.temp)[0];
+      const strongestFlow = Object.entries(stationConfig).map(([key, cfg]) => ({ name: cfg.name, flow: latestOf(key).flow })).sort((a,b) => b.flow - a.flow)[0];
+      const latestTime = Object.keys(stationConfig).map(k => normalizeTimestamp(latestOf(k).timestamp)).sort((a,b) => b-a)[0];
+      root.innerHTML = `
+        <div class="legend-item"><span class="subtle">Warmest station</span><strong>${warmest.name} · ${formatNumber(warmest.temp)} °F</strong></div>
+        <div class="legend-item"><span class="subtle">Highest flow</span><strong>${strongestFlow.name} · ${formatNumber(strongestFlow.flow, 0)} cfs</strong></div>
+        <div class="legend-item"><span class="subtle">Trigger summary</span><strong>${correlationSignal}</strong></div>
+        <div class="legend-item"><span class="subtle">Latest timestamp</span><strong>${latestTime.toLocaleString()}</strong></div>
+        <div class="legend-item"><span class="subtle">Export payload</span><strong>station, timestamp, temp, flow, turbidity, temp_delta_1h, flow_delta_30m</strong></div>
+      `;
+    }
+
+    function chartOptions() {
+      const css = getComputedStyle(document.documentElement);
+      const text = css.getPropertyValue('--color-text').trim();
+      const muted = css.getPropertyValue('--color-text-muted').trim();
+      const divider = css.getPropertyValue('--color-divider').trim();
+      return {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false,
+        normalized: true,
+        parsing: false,
+        interaction: { mode: 'nearest', intersect: false },
+        plugins: {
+          legend: { labels: { color: text, boxWidth: 12, usePointStyle: true, font: { family: 'Satoshi' } } },
+          tooltip: { backgroundColor: css.getPropertyValue('--color-surface').trim(), titleColor: text, bodyColor: text, borderColor: divider, borderWidth: 1 }
+        },
+        scales: {
+          x: { ticks: { color: muted, maxTicksLimit: 8 }, grid: { color: divider } },
+          y: { ticks: { color: muted }, grid: { color: divider } }
+        }
+      };
+    }
+
+    function buildDataset(key, metric) {
+      return state.records[key].map(row => row[metric]);
+    }
+
+    function initCharts() {
+      const labels = state.records.newburgh.map(row => formatTime(row.timestamp));
+      state.charts.temp = new Chart(document.getElementById('tempChart'), {
+        type: 'line',
+        data: {
+          labels,
+          datasets: Object.entries(stationConfig).map(([key, cfg]) => ({
+            label: cfg.name,
+            data: buildDataset(key, 'temp'),
+            borderColor: cfg.color,
+            backgroundColor: cfg.color + '22',
+            pointRadius: 0,
+            tension: 0.28,
+            borderWidth: 2
+          }))
+        },
+        options: chartOptions()
+      });
+      state.charts.flow = new Chart(document.getElementById('flowChart'), {
+        type: 'line',
+        data: {
+          labels: [...labels],
+          datasets: Object.entries(stationConfig).map(([key, cfg]) => ({
+            label: cfg.name,
+            data: buildDataset(key, 'flow'),
+            borderColor: cfg.color,
+            backgroundColor: cfg.color + '22',
+            pointRadius: 0,
+            tension: 0.25,
+            borderWidth: 2
+          }))
+        },
+        options: chartOptions()
+      });
+    }
+
+    function syncCharts() {
+      const labels = state.records.newburgh.map(row => formatTime(row.timestamp));
+      state.charts.temp.data.labels.length = 0;
+      state.charts.flow.data.labels.length = 0;
+      labels.forEach(label => {
+        state.charts.temp.data.labels.push(label);
+        state.charts.flow.data.labels.push(label);
+      });
+      Object.keys(stationConfig).forEach((key, i) => {
+        const tempData = state.charts.temp.data.datasets[i].data;
+        const flowData = state.charts.flow.data.datasets[i].data;
+        tempData.length = 0;
+        flowData.length = 0;
+        state.records[key].forEach(row => {
+          tempData.push(Number(row.temp.toFixed(2)));
+          flowData.push(Math.round(row.flow));
+        });
+      });
+      state.charts.temp.options = chartOptions();
+      state.charts.flow.options = chartOptions();
+      state.charts.temp.update('none');
+      state.charts.flow.update('none');
+    }
+
+    function initMap() {
+      const map = L.map('map', { zoomControl: true }).setView([41.45, -73.97], 11);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
+      Object.entries(stationConfig).forEach(([key, cfg]) => {
+        const marker = L.circleMarker([cfg.lat, cfg.lon], {
+          radius: 9,
+          color: cfg.color,
+          weight: 3,
+          fillColor: cfg.color,
+          fillOpacity: .65
+        }).addTo(map);
+        state.markers[key] = marker;
+      });
+    }
+
+    function updateMapPopups() {
+      Object.entries(stationConfig).forEach(([key, cfg]) => {
+        const r = latestOf(key);
+        const marker = state.markers[key];
+        if (!marker || !r) return;
+        marker.setStyle({ radius: (r.tempSpike || r.flowSpike) ? 11 : 9 });
+        marker.bindPopup(`
+          <strong>${cfg.name}</strong><br>
+          Temp: ${formatNumber(r.temp)} °F<br>
+          Flow: ${formatNumber(r.flow, 0)} cfs<br>
+          Turbidity: ${formatNumber(r.turbidity)} NTU<br>
+          Status: ${(r.tempSpike || r.flowSpike) ? 'Trigger detected' : 'Stable'}
+        `);
+      });
+    }
+
+    function updateStatus() {
+      const badge = document.getElementById('updateStatus');
+      const source = apiBase ? 'API connected' : 'Local simulation';
+      badge.textContent = state.anomalyBoost ? 'Anomaly simulation active' : source;
+      badge.className = `badge ${state.anomalyBoost ? 'alert' : 'info'}`;
+    }
+
+    function updatePollingButton() {
+      const btn = document.getElementById('pollingBtn');
+      btn.textContent = state.pollingEnabled ? 'Auto refresh on' : 'Auto refresh off';
+      btn.setAttribute('aria-pressed', String(state.pollingEnabled));
+      btn.classList.toggle('primary', state.pollingEnabled);
+    }
+
+    async function fullRender({ reset = false } = {}) {
+      if (reset) {
+        await resetData();
+      } else if (!apiBase) {
+        advanceDataOneStep();
+      } else {
+        await resetData();
+      }
+      updateStatus();
+      buildKPIs();
+      renderTable();
+      collectEvents();
+      renderEvents();
+      renderSummary();
+      if (!state.charts.temp || !state.charts.flow) initCharts();
+      else syncCharts();
+      updateMapPopups();
+    }
+
+    function applyPolling() {
+      if (state.refreshTimer) clearInterval(state.refreshTimer);
+      state.refreshTimer = null;
+      if (state.pollingEnabled) {
+        state.refreshTimer = setInterval(() => {
+          if (!document.hidden) fullRender({ reset: false });
+        }, sampleMs);
+      }
+      updatePollingButton();
+    }
+
+    document.getElementById('refreshBtn').addEventListener('click', () => fullRender({ reset: true }));
+    document.getElementById('simulateBtn').addEventListener('click', async () => {
+      state.anomalyBoost = !state.anomalyBoost;
+      await fullRender({ reset: true });
+    });
+    document.getElementById('timeWindow').addEventListener('change', async (e) => {
+      state.hours = Number(e.target.value);
+      state.points = maxPoints();
+      await fullRender({ reset: true });
+    });
+    document.getElementById('pollingBtn').addEventListener('click', () => {
+      state.pollingEnabled = !state.pollingEnabled;
+      applyPolling();
+    });
+    document.getElementById('themeToggle').addEventListener('click', () => {
+      state.theme = state.theme === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', state.theme);
+      if (state.charts.temp && state.charts.flow) syncCharts();
+    });
+    document.getElementById('menuBtn').addEventListener('click', () => {
+      document.getElementById('sidebar').classList.toggle('open');
+    });
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 1100) document.getElementById('sidebar').classList.remove('open');
+    });
+
+    initMap();
+    fullRender({ reset: true });
+    applyPolling();
+  </script>
 </body>
 </html>
