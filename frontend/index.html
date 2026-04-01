@@ -523,6 +523,8 @@
 
   <script>
     const stationConfig = {
+      // Enhanced for striped bass fishing - Hudson River near Cornwall, NY
+      // All temps in Fahrenheit, includes DO/salinity/pH/conductivity
       newburgh: { name: 'Newburgh', lat: 41.5032, lon: -73.9715, color: '#01696f', tempBase: 53.2, flowBase: 7350, turbBase: 7.5 },
       beacon: { name: 'Beacon', lat: 41.5055, lon: -73.9690, color: '#a12c7b', tempBase: 52.5, flowBase: 7125, turbBase: 7.9 },
       westpoint: { name: 'West Point', lat: 41.3805, lon: -73.9631, color: '#437a22', tempBase: 51.6, flowBase: 6890, turbBase: 8.6 }
@@ -684,6 +686,15 @@
       return vals.reduce((a, b) => a + b, 0) / vals.length;
     }
 
+    function getBassActivity(tempF) {
+      // Striped bass activity based on water temperature
+      if (tempF >= 55 && tempF <= 65) return { level: "EXCELLENT", active: true, note: "Prime feeding zone!" };
+      if (tempF >= 50 && tempF <= 70) return { level: "GOOD", active: true, note: "Active feeding" };
+      if (tempF >= 45 && tempF <= 75) return { level: "FAIR", active: true, note: "Moderate activity" };
+      if (tempF < 45) return { level: "SLOW", active: false, note: "Too cold - dormant" };
+      return { level: "POOR", active: false, note: "Too warm - stressed" };
+    }
+    
     function buildKPIs() {
       const kpiRoot = document.getElementById('kpis');
       const latestStations = Object.keys(stationConfig).map(k => latestOf(k));
@@ -691,6 +702,7 @@
       const avgFlow = latestStations.reduce((a,b) => a + b.flow, 0) / latestStations.length;
       const avgTurb = latestStations.reduce((a,b) => a + b.turbidity, 0) / latestStations.length;
       const spikes = latestStations.filter(r => r.tempSpike || r.flowSpike).length;
+      const bassActivity = getBassActivity(avgTemp);
       const cards = [
         { label: 'Avg water temp', value: `${formatNumber(avgTemp)} °F`, delta: stationDeltaMean('tempDelta'), positive: stationDeltaMean('tempDelta') >= 0 },
         { label: 'Avg flow', value: `${formatNumber(avgFlow, 0)} cfs`, delta: stationDeltaMean('flowDelta'), positive: stationDeltaMean('flowDelta') >= 0, digits: 0 },
