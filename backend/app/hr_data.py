@@ -50,6 +50,55 @@ NDBC_COL_MAP = {
     "DEWP": "dewpoint",
 }
 
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Unit conversions — all output in US Imperial
+#
+# USGS:     temp °C → °F (no unit option for param 00010)
+#           gage_height ft³, discharge ft³/s already imperial
+# NOAA:     requested in metric → converted here
+# NDBC:     temp °C → °F, wind m/s → mph, pressure hPa → inHg
+# ─────────────────────────────────────────────────────────────────────────────
+
+TEMP_FIELDS  = {"temp", "air_temp", "dewpoint"}
+WIND_FIELDS  = {"wind_speed", "wind_gust"}   # m/s → mph
+PRESS_FIELDS = {"pressure"}                   # hPa → inHg
+
+
+def _c_to_f(c) -> Optional[float]:
+    if c is None:
+        return None
+    return round(c * 9 / 5 + 32, 2)
+
+
+def _ms_to_mph(ms) -> Optional[float]:
+    """Meters per second → miles per hour."""
+    if ms is None:
+        return None
+    return round(ms * 2.23694, 2)
+
+
+def _hpa_to_inhg(hpa) -> Optional[float]:
+    """Hectopascals → inches of mercury."""
+    if hpa is None:
+        return None
+    return round(hpa * 0.02953, 3)
+
+
+def _to_imperial(reading: Dict) -> Dict:
+    """Convert all metric values to US Imperial in-place."""
+    for field in TEMP_FIELDS:
+        if field in reading:
+            reading[field] = _c_to_f(reading[field])
+    for field in WIND_FIELDS:
+        if field in reading:
+            reading[field] = _ms_to_mph(reading[field])
+    for field in PRESS_FIELDS:
+        if field in reading:
+            reading[field] = _hpa_to_inhg(reading[field])
+    return reading
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Station registry — Tappan Zee (RM 25) through Albany (RM 143)
 # Sorted by river mile (upstream)
@@ -146,7 +195,7 @@ def _parse_usgs_response(data: dict) -> Optional[Dict]:
             reading[field] = None if val == -999999.0 else round(val, 3)
         except (TypeError, ValueError):
             reading[field] = None
-    return reading
+    return _to_imperial(reading)
 
 
 def _fetch_usgs_sync(site_id: str) -> Optional[Dict]:
@@ -218,7 +267,7 @@ def _fetch_noaa_sync(station_id: str) -> Optional[Dict]:
                     reading[field] = None
         except Exception:
             continue
-    return reading if len(reading) > 1 else None
+    return _to_imperial(reading) if len(reading) > 1 else None
 
 
 async def _fetch_noaa_async(station_id: str) -> Optional[Dict]:
@@ -251,7 +300,7 @@ async def _fetch_noaa_async(station_id: str) -> Optional[Dict]:
                         reading[field] = None
             except Exception:
                 continue
-    return reading if len(reading) > 1 else None
+    return _to_imperial(reading) if len(reading) > 1 else None
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -276,7 +325,7 @@ def _parse_ndbc_text(text: str) -> Optional[Dict]:
     for col, field in NDBC_COL_MAP.items():
         val = row.get(col, "MM")
         reading[field] = None if val == "MM" else float(val) if _is_float(val) else None
-    return reading
+    return _to_imperial(reading)
 
 
 def _is_float(v: str) -> bool:
@@ -408,7 +457,7 @@ def generate_mock_data(station_id: str) -> Dict:
     import random
     return {
         "timestamp": datetime.utcnow().isoformat(),
-        "temp":             round(10.0 + random.gauss(0, 2), 2),
+        "temp":             round((10.0 + random.gauss(0, 2)) * 9/5 + 32, 2),  # °F
         "flow":             round(max(0, 500 + random.gauss(0, 100)), 2),
         "turbidity":        round(max(0, 10 + random.gauss(0, 3)), 2),
         "dissolved_oxygen": round(random.uniform(7.0, 12.0), 2),
@@ -424,7 +473,7 @@ def _generate_mock_historical(hours: int) -> List[Dict]:
     return [
         {
             "timestamp": (end_time - timedelta(minutes=15 * i)).isoformat(),
-            "temp":      round(10.0 + random.gauss(0, 1), 2),
+            "temp":      round((10.0 + random.gauss(0, 1)) * 9/5 + 32, 2),
             "flow":      round(500 + random.gauss(0, 50), 2),
             "turbidity": round(10 + random.gauss(0, 2), 2),
         }
