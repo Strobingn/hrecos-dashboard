@@ -2,9 +2,7 @@ import pandas as pd
 import numpy as np
 from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import StandardScaler
-from typing import Dict, List, Optional, Tuple
-from datetime import datetime
-import json
+from typing import Dict, List
 
 class AnomalyDetector:
     """AI-powered anomaly detection for HRECOS environmental data"""
@@ -128,7 +126,7 @@ class AnomalyDetector:
 
 # Threshold-based detection for critical alerts
 THRESHOLDS = {
-    'temp': {'min': 32, 'max': 86, 'critical_max': 95}  # Fahrenheit thresholds,
+    'temp': {'min': 32, 'max': 86, 'critical_max': 95},  # Fahrenheit
     'flow': {'min': 100, 'max': 5000, 'critical_min': 50},
     'turbidity': {'min': 0, 'max': 100, 'critical_max': 200},
     'dissolved_oxygen': {'min': 4, 'max': 15, 'critical_min': 2},

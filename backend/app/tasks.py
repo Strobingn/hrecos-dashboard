@@ -10,8 +10,7 @@ from app.db import async_session
 from app.models import HRECOSReading, AnomalyLog
 from app.hr_data import STATIONS, fetch_station_sync
 from app.anomalies import AnomalyDetector, check_thresholds
-from app.alerts import alert_manager, send_bulk_alerts
-from app.tides import get_next_tide_change, get_current_tide
+from app.alerts import send_bulk_alerts
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -82,7 +81,6 @@ class HRECOSScheduler:
     async def fetch_on_tide_change(self):
         """Fetch data when tide changes or every hour"""
         from app.tides import get_current_tide, should_poll_data
-        import time
         
         now = datetime.utcnow()
         

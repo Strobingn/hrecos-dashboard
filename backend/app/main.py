@@ -1,20 +1,18 @@
-import os
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
-from typing import List, Optional, Dict, Any
+from typing import Optional
 
-from fastapi import FastAPI, Depends, HTTPException, Query, BackgroundTasks
+from fastapi import FastAPI, Depends, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 from sqlalchemy import select, desc, func
 from sqlalchemy.ext.asyncio import AsyncSession
 import pandas as pd
 
-from app.db import get_db, engine, async_session
+from app.db import get_db, engine
 from app.models import Base, HRECOSReading, AnomalyLog
 from app.hr_data import STATIONS, fetch_all_stations, fetch_historical_data
-from app.tasks import start_scheduler, stop_scheduler, scheduler
-from app.anomalies import AnomalyDetector, check_thresholds
+from app.tasks import start_scheduler, stop_scheduler
+from app.anomalies import AnomalyDetector
 from app.alerts import alert_manager
 from app.tides import get_tide_predictions, get_current_tide
 

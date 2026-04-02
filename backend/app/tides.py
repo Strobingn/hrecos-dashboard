@@ -7,7 +7,6 @@ Station: 8518490 (Newburgh) - closest to Cornwall
 import requests
 from datetime import datetime, timedelta
 from typing import Dict, Optional, List
-import os
 
 # NOAA Station IDs near Cornwall, NY
 # 8518490 = Newburgh (closest, ~3 miles south)
