@@ -16,6 +16,7 @@ from app.hr_data import STATIONS, fetch_all_stations, fetch_historical_data
 from app.tasks import start_scheduler, stop_scheduler, scheduler
 from app.anomalies import AnomalyDetector, check_thresholds
 from app.alerts import alert_manager
+from app.tides import get_tide_predictions, get_current_tide
 
 # Lifespan context manager for startup/shutdown events
 @asynccontextmanager
@@ -370,6 +371,39 @@ async def get_alert_config():
 # ============================================================================
 # Dashboard Data Endpoint
 # ============================================================================
+
+@app.get("/api/tides")
+async def get_tides(hours: int = Query(48, ge=1, le=168)):
+    """Get tide predictions for Cornwall, NY area"""
+    try:
+        tides = get_tide_predictions(hours=hours)
+        current = get_current_tide()
+        return {
+            "station": "8518490",  # Newburgh - closest to Cornwall
+            "location": "Cornwall, NY Area",
+            "hours": hours,
+            "current": current,
+            "predictions": [
+                {
+                    "time": t["time"].isoformat(),
+                    "height": t["height"],
+                    "type": t["type"]
+                }
+                for t in tides[:24]  # Limit to 24 points
+            ]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching tides: {str(e)}")
+
+
+@app.get("/api/tides/current")
+async def get_current_tide_info():
+    """Get current tide status for Cornwall, NY"""
+    try:
+        return get_current_tide()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching current tide: {str(e)}")
+
 
 @app.get("/api/dashboard")
 async def get_dashboard_data(db: AsyncSession = Depends(get_db)):

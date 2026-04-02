@@ -11,6 +11,7 @@ from app.models import HRECOSReading, AnomalyLog
 from app.hr_data import STATIONS, fetch_station_sync
 from app.anomalies import AnomalyDetector, check_thresholds
 from app.alerts import alert_manager, send_bulk_alerts
+from app.tides import get_next_tide_change, get_current_tide
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -22,17 +23,19 @@ class HRECOSScheduler:
         self.scheduler = None
         self.detector = AnomalyDetector(contamination=0.05)
         self._data_buffer: Dict[str, list] = {name: [] for name in STATIONS.keys()}
+        self._last_fetch_time = None
+        self._last_tide_type = None
         
     def start(self):
         """Start the scheduler with configured jobs"""
         self.scheduler = AsyncIOScheduler()
         
-        # Data fetching job - every 10 minutes
+        # Tide-based data fetching - check every minute for tide changes
         self.scheduler.add_job(
-            self.fetch_and_save_all,
-            trigger=IntervalTrigger(minutes=10),
+            self.fetch_on_tide_change,
+            trigger=IntervalTrigger(minutes=1),
             id='fetch_data',
-            name='Fetch HRECOS Data',
+            name='Fetch HRECOS Data (Tide-Based)',
             replace_existing=True
         )
         
@@ -61,7 +64,7 @@ class HRECOSScheduler:
         )
         
         self.scheduler.start()
-        logger.info("Scheduler started with jobs: fetch_data (10min), detect_anomalies (15min), cleanup_data (daily)")
+        logger.info("Scheduler started with jobs: fetch_data (tide-based), detect_anomalies (15min), cleanup_data (daily)")
         
     def stop(self):
         """Stop the scheduler"""
@@ -76,6 +79,33 @@ class HRECOSScheduler:
         else:
             logger.info(f"Job {event.job_id} completed successfully")
     
+    async def fetch_on_tide_change(self):
+        """Fetch data when tide changes or every hour"""
+        from app.tides import get_current_tide, should_poll_data
+        import time
+        
+        now = datetime.utcnow()
+        
+        # Check if we should fetch (tide change or hourly)
+        if not should_poll_data():
+            return
+        
+        # Prevent duplicate fetches
+        if self._last_fetch_time and (now - self._last_fetch_time).total_seconds() < 300:
+            return
+        
+        current_tide = get_current_tide()
+        tide_type = current_tide.get("current_type", "unknown")
+        
+        # Log tide info
+        logger.info(f"Fetching data at {now} - Tide: {tide_type}, Height: {current_tide.get('current_height', 'N/A')} ft")
+        
+        self._last_fetch_time = now
+        self._last_tide_type = tide_type
+        
+        # Call the actual fetch
+        await self.fetch_and_save_all()
+
     async def fetch_and_save_all(self):
         """Fetch data from all stations and save to database"""
         logger.info(f"[{datetime.utcnow()}] Fetching data from all stations...")

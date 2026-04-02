@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>HRECOS Cornwall Dashboard</title>
+  <title>HRECOS Cornwall, NY - Striped Bass Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
@@ -380,7 +380,7 @@
         </div>
         <div>
           <h1>HRECOS</h1>
-          <p>Cornwall corridor dashboard</p>
+          <p>Cornwall, NY - Hudson River Striped Bass Monitoring</p>
         </div>
       </div>
 
@@ -418,8 +418,8 @@
         <div class="controls">
           <button class="btn mobile-toggle" id="menuBtn" aria-label="Toggle navigation">☰</button>
           <div class="topbar-title">
-            <h2>Hudson environmental monitor</h2>
-            <p class="subtle">Prototype for Newburgh, Beacon, and West Point</p>
+            <h2>Cornwall, NY - Striped Bass Monitor</h2>
+            <p class="subtle">Hudson River data for Newburgh, Beacon, and West Point stations</p>
           </div>
         </div>
         <div class="controls">
@@ -492,6 +492,17 @@
             </div>
             <canvas id="flowChart" height="140"></canvas>
           </article>
+
+          <article class="card" style="grid-column: 1 / -1;">
+            <div class="card-header">
+              <div>
+                <h3>Tide Chart - Cornwall, NY</h3>
+                <p class="subtle">Hudson River tide predictions from Newburgh station. Data polls automatically at tide changes.</p>
+              </div>
+              <div id="tideInfo" class="subtle"></div>
+            </div>
+            <canvas id="tideChart" height="160"></canvas>
+          </article>
         </section>
 
         <section class="bottom-grid">
@@ -537,7 +548,7 @@
       records: {},
       events: [],
       markers: {},
-      charts: { temp: null, flow: null },
+      charts: { temp: null, flow: null, tide: null },
       anomalyBoost: false,
       pollingEnabled: false,
       refreshTimer: null,
@@ -776,6 +787,71 @@
       `;
     }
 
+    // Tide data for Cornwall, NY
+    let tideData = { predictions: [], current: null };
+    
+    async function fetchTideData() {
+      try {
+        const res = await fetch(`${apiBase}/api/tides?hours=48`);
+        if (!res.ok) return;
+        tideData = await res.json();
+        updateTideChart();
+        updateTideInfo();
+      } catch (e) {
+        console.error('Tide fetch failed:', e);
+      }
+    }
+    
+    function updateTideInfo() {
+      const info = document.getElementById('tideInfo');
+      if (!info || !tideData.current) return;
+      const current = tideData.current;
+      info.innerHTML = `Current: <strong>${current.current_height?.toFixed(1) || '--'} ft</strong> (${current.current_type}) | Next ${current.next_type}: <strong>${current.next_time ? new Date(current.next_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '--'}</strong>`;
+    }
+    
+    function initTideChart() {
+      const ctx = document.getElementById('tideChart');
+      if (!ctx) return;
+      
+      state.charts.tide = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [{
+            label: 'Tide Height (ft)',
+            data: [],
+            borderColor: '#01696f',
+            backgroundColor: 'rgba(1, 105, 111, 0.1)',
+            fill: true,
+            tension: 0.4,
+            pointRadius: 0
+          }]
+        },
+        options: {
+          ...chartOptions(),
+          plugins: {
+            ...chartOptions().plugins,
+            title: {
+              display: false
+            }
+          }
+        }
+      });
+      
+      fetchTideData();
+    }
+    
+    function updateTideChart() {
+      if (!state.charts.tide || !tideData.predictions) return;
+      
+      const labels = tideData.predictions.map(p => new Date(p.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}));
+      const heights = tideData.predictions.map(p => p.height);
+      
+      state.charts.tide.data.labels = labels;
+      state.charts.tide.data.datasets[0].data = heights;
+      state.charts.tide.update('none');
+    }
+
     function chartOptions() {
       const css = getComputedStyle(document.documentElement);
       const text = css.getPropertyValue('--color-text').trim();
@@ -837,6 +913,9 @@
         },
         options: chartOptions()
       });
+      
+      // Initialize tide chart
+      initTideChart();
     }
 
     function syncCharts() {
