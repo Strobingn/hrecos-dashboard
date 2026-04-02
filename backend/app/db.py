@@ -1,35 +1,37 @@
 import os
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import NullPool
+from sqlalchemy.pool import StaticPool
 from dotenv import load_dotenv
 
 load_dotenv()
 
+# Use SQLite for local dev when no PostgreSQL available
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql+asyncpg://postgres:postgres@db:5432/hrecos"
+    "sqlite+aiosqlite:////tmp/hrecos.db"
 )
 
-# Create async engine with connection pooling
+# SQLite needs StaticPool + connect_args for async use
+connect_args = {"check_same_thread": False} if "sqlite" in DATABASE_URL else {}
+
 engine = create_async_engine(
-    DATABASE_URL, 
+    DATABASE_URL,
     echo=False,
-    poolclass=NullPool,  # Use NullPool for serverless/async environments
-    future=True
+    connect_args=connect_args,
+    poolclass=StaticPool if "sqlite" in DATABASE_URL else None,
 )
 
-# Create async session factory
 async_session = sessionmaker(
-    engine, 
-    class_=AsyncSession, 
+    engine,
+    class_=AsyncSession,
     expire_on_commit=False,
     autocommit=False,
-    autoflush=False
+    autoflush=False,
 )
 
+
 async def get_db():
-    """Dependency for FastAPI to get database session"""
     async with async_session() as session:
         try:
             yield session
