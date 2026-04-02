@@ -461,7 +461,7 @@
                   <th>Station</th>
                   <th>Temp</th>
                   <th>Flow</th>
-                  <th>Turbidity</th><th>DO</th>
+                  <th>Turbidity</th><th>DO</th><th>pH</th><th>Salinity</th>
                   <th>Status</th>
                 </tr>
               </thead>
@@ -523,9 +523,9 @@
 
   <script>
     const stationConfig = {
-      newburgh: { name: 'Newburgh', lat: 41.5032, lon: -73.9715, color: '#01696f', tempBase: 53.2, doBase: 8.5, flowBase: 7350, turbBase: 7.5 },
-      beacon: { name: 'Beacon', lat: 41.5055, lon: -73.9690, color: '#a12c7b', tempBase: 52.5, doBase: 8.6, flowBase: 7125, turbBase: 7.9 },
-      westpoint: { name: 'West Point', lat: 41.3805, lon: -73.9631, color: '#437a22', tempBase: 51.6, doBase: 8.8, flowBase: 6890, turbBase: 8.6 }
+      newburgh: { name: 'Newburgh', lat: 41.5032, lon: -73.9715, color: '#01696f', tempBase: 53.2, doBase: 8.5, phBase: 7.4, salinityBase: 0.18, conductivityBase: 285, flowBase: 7350, turbBase: 7.5 },
+      beacon: { name: 'Beacon', lat: 41.5055, lon: -73.9690, color: '#a12c7b', tempBase: 52.5, doBase: 8.6, phBase: 7.5, salinityBase: 0.12, conductivityBase: 278, flowBase: 7125, turbBase: 7.9 },
+      westpoint: { name: 'West Point', lat: 41.3805, lon: -73.9631, color: '#437a22', tempBase: 51.6, doBase: 8.8, phBase: 7.6, salinityBase: 0.08, conductivityBase: 265, flowBase: 6890, turbBase: 8.6 }
     };
 
     const apiBase = window.HRECOS_API_BASE || '';
@@ -603,7 +603,11 @@
             timestamp: new Date(now.getTime() - i * sampleMs),
             temp: cfg.tempBase + Math.sin(step / 9 + idx) * 0.45 + seededNoise(step + idx, 0.12),
             flow: cfg.flowBase + Math.sin(step / 7 + idx * 0.7) * 180 + seededNoise(step + idx * 4, 40),
-            turbidity: Math.max(1.2, cfg.turbBase + Math.cos(step / 8 + idx) * 0.65 + seededNoise(step + idx * 3, 0.18))
+            turbidity: Math.max(1.2, cfg.turbBase + Math.cos(step / 8 + idx) * 0.65 + seededNoise(step + idx * 3, 0.18)),
+            dissolvedOxygen: cfg.doBase + seededNoise(step + idx, 0.25),
+            ph: cfg.phBase + seededNoise(step + idx * 2, 0.08),
+            salinity: cfg.salinityBase + seededNoise(step + idx * 3, 0.02),
+            conductivity: cfg.conductivityBase + seededNoise(step + idx * 4, 12)
           });
         }
         out[key] = recomputeStation(rows);
@@ -621,7 +625,11 @@
         timestamp: new Date(normalizeTimestamp(last.timestamp).getTime() + sampleMs),
         temp: cfg.tempBase + Math.sin(step / 9 + idx) * 0.45 + seededNoise(step + idx, 0.12) + (state.anomalyBoost && key !== 'westpoint' ? 1.35 : 0),
         flow: cfg.flowBase + Math.sin(step / 7 + idx * 0.7) * 180 + seededNoise(step + idx * 4, 40) + (state.anomalyBoost && key === 'westpoint' ? 820 : 0),
-        turbidity: Math.max(1.2, cfg.turbBase + Math.cos(step / 8 + idx) * 0.65 + seededNoise(step + idx * 3, 0.18) + (state.anomalyBoost ? 0.9 : 0))
+        turbidity: Math.max(1.2, cfg.turbBase + Math.cos(step / 8 + idx) * 0.65 + seededNoise(step + idx * 3, 0.18) + (state.anomalyBoost ? 0.9 : 0)),
+        dissolvedOxygen: cfg.doBase + seededNoise(step + idx, 0.25) + (state.anomalyBoost ? -1.2 : 0),
+        ph: cfg.phBase + seededNoise(step + idx * 2, 0.08),
+        salinity: cfg.salinityBase + seededNoise(step + idx * 3, 0.02),
+        conductivity: cfg.conductivityBase + seededNoise(step + idx * 4, 12)
       };
     }
 
@@ -723,7 +731,7 @@
             <td><span class="legend-label"><span class="dot" style="background:${cfg.color}"></span>${cfg.name}</span></td>
             <td>${formatNumber(r.temp)} °F</td>
             <td>${formatNumber(r.flow, 0)} cfs</td>
-            <td>${formatNumber(r.turbidity)}</td><td>${formatNumber(r.dissolvedOxygen || cfg.doBase, 1)}</td>
+            <td>${formatNumber(r.turbidity)}</td><td>${formatNumber(r.dissolvedOxygen || cfg.doBase, 1)}</td><td>${formatNumber(r.ph || cfg.phBase, 1)}</td><td>${formatNumber(r.salinity || cfg.salinityBase, 2)}</td>
             <td><span class="badge ${statusClass}">${statusText}</span></td>
           </tr>
         `;
