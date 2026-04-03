@@ -6,7 +6,6 @@ from fastapi import FastAPI, Depends, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select, desc, func
 from sqlalchemy.ext.asyncio import AsyncSession
-import pandas as pd
 
 from app.db import get_db, engine
 from app.models import Base, HRECOSReading, AnomalyLog
@@ -294,6 +293,10 @@ async def run_anomaly_detection(station: str, db: AsyncSession = Depends(get_db)
             raise HTTPException(status_code=400, detail="Insufficient data for anomaly detection (need at least 10 readings)")
         
         # Run detection
+        try:
+            import pandas as pd
+        except ImportError:
+            raise HTTPException(status_code=503, detail="ML anomaly detection not available in mobile mode. Install pandas and scikit-learn.")
         df = pd.DataFrame([
             {
                 "timestamp": r.timestamp,

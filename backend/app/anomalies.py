@@ -1,177 +1,128 @@
-import pandas as pd
-import numpy as np
-from sklearn.ensemble import IsolationForest
-from sklearn.preprocessing import StandardScaler
 from typing import Dict, List
 
+# Try to import heavy ML deps — gracefully degrade if unavailable (mobile mode)
+try:
+    import pandas as pd
+    import numpy as np
+    from sklearn.ensemble import IsolationForest
+    from sklearn.preprocessing import StandardScaler
+    ML_AVAILABLE = True
+except ImportError:
+    ML_AVAILABLE = False
+
+
 class AnomalyDetector:
-    """AI-powered anomaly detection for HRECOS environmental data"""
-    
+    """AI-powered anomaly detection. Falls back to threshold-only on mobile."""
+
     def __init__(self, contamination: float = 0.05):
         self.contamination = contamination
-        self.model = None
-        self.scaler = StandardScaler()
         self.is_fitted = False
-        
-    def prepare_features(self, df: pd.DataFrame) -> np.ndarray:
-        """Extract and scale features for anomaly detection"""
-        feature_cols = ["temp", "flow", "turbidity"]
-        if "salinity" in df.columns:
-            feature_cols.append("salinity")
-        if "dissolved_oxygen" in df.columns:
-            feature_cols.append("dissolved_oxygen")
-        if "ph" in df.columns:
-            feature_cols.append("ph")
-            
-        # Fill NaN with column means
-        features = df[feature_cols].copy()
-        features = features.fillna(features.mean())
-        
-        # Add derived features for better detection
+        if ML_AVAILABLE:
+            self.scaler = StandardScaler()
+            self.model = None
+
+    def prepare_features(self, df):
+        feature_cols = [c for c in ["temp", "flow", "turbidity", "dissolved_oxygen", "ph"]
+                        if c in df.columns]
+        features = df[feature_cols].copy().fillna(df[feature_cols].mean())
         if len(features) > 1:
-            features['temp_change'] = features['temp'].diff().fillna(0)
-            features['flow_change'] = features['flow'].diff().fillna(0)
+            features["temp_change"] = features["temp"].diff().fillna(0)
+            features["flow_change"] = features.get("flow", features["temp"] * 0).diff().fillna(0)
         else:
-            features['temp_change'] = 0
-            features['flow_change'] = 0
-            
+            features["temp_change"] = 0
+            features["flow_change"] = 0
         return features.values
-    
-    def fit(self, df: pd.DataFrame) -> 'AnomalyDetector':
-        """Train the anomaly detection model"""
-        if len(df) < 10:
-            print("Insufficient data for training")
+
+    def fit(self, df) -> "AnomalyDetector":
+        if not ML_AVAILABLE or len(df) < 10:
             return self
-            
         features = self.prepare_features(df)
-        scaled_features = self.scaler.fit_transform(features)
-        
+        scaled = self.scaler.fit_transform(features)
         self.model = IsolationForest(
             contamination=self.contamination,
             random_state=42,
             n_estimators=100,
-            max_samples='auto'
         )
-        self.model.fit(scaled_features)
+        self.model.fit(scaled)
         self.is_fitted = True
         return self
-    
-    def detect(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Detect anomalies in the dataset"""
-        if not self.is_fitted or len(df) < 1:
-            df['anomaly'] = 1  # Normal
-            df['anomaly_score'] = 0.5
+
+    def detect(self, df):
+        if not ML_AVAILABLE or not self.is_fitted or len(df) < 1:
+            df["anomaly"] = 1
+            df["anomaly_score"] = 0.5
             return df
-        
         features = self.prepare_features(df)
-        scaled_features = self.scaler.transform(features)
-        
-        # Predict: -1 = anomaly, 1 = normal
-        predictions = self.model.predict(scaled_features)
-        scores = self.model.decision_function(scaled_features)
-        
+        scaled = self.scaler.transform(features)
         df = df.copy()
-        df['anomaly'] = predictions
-        df['anomaly_score'] = scores
-        
+        df["anomaly"] = self.model.predict(scaled)
+        df["anomaly_score"] = self.model.decision_function(scaled)
         return df
-    
-    def get_anomaly_details(self, df: pd.DataFrame, station: str) -> List[Dict]:
-        """Extract detailed anomaly information for alerts"""
-        anomalies = df[df['anomaly'] == -1].copy()
+
+    def get_anomaly_details(self, df, station: str) -> List[Dict]:
+        if not ML_AVAILABLE:
+            return []
+        anomalies = df[df["anomaly"] == -1].copy()
         details = []
-        
-        for idx, row in anomalies.iterrows():
-            anomaly_types = []
-            
-            # Determine which parameters are anomalous
-            if 'temp' in row and pd.notna(row['temp']):
-                temp_zscore = abs((row['temp'] - df['temp'].mean()) / df['temp'].std()) if df['temp'].std() > 0 else 0
-                if temp_zscore > 2:
-                    anomaly_types.append(('temp', row['temp'], temp_zscore))
-                    
-            if 'flow' in row and pd.notna(row['flow']):
-                flow_zscore = abs((row['flow'] - df['flow'].mean()) / df['flow'].std()) if df['flow'].std() > 0 else 0
-                if flow_zscore > 2:
-                    anomaly_types.append(('flow', row['flow'], flow_zscore))
-                    
-            if 'turbidity' in row and pd.notna(row['turbidity']):
-                turb_zscore = abs((row['turbidity'] - df['turbidity'].mean()) / df['turbidity'].std()) if df['turbidity'].std() > 0 else 0
-                if turb_zscore > 2:
-                    anomaly_types.append(('turbidity', row['turbidity'], turb_zscore))
-            
-            for param_type, value, severity_score in anomaly_types:
-                severity = 'low' if severity_score < 2.5 else 'medium' if severity_score < 3.5 else 'high' if severity_score < 4.5 else 'critical'
-                
-                details.append({
-                    'id': f"{station}_{row['timestamp'].isoformat()}_{param_type}",
-                    'station': station,
-                    'timestamp': row['timestamp'],
-                    'anomaly_type': param_type,
-                    'value': float(value),
-                    'severity': severity,
-                    'score': float(severity_score),
-                    'expected_range': self._get_expected_range(df, param_type)
-                })
-        
+        for _, row in anomalies.iterrows():
+            for param in ["temp", "flow", "turbidity"]:
+                if param not in row or pd.isna(row[param]):
+                    continue
+                std = df[param].std()
+                zscore = abs((row[param] - df[param].mean()) / std) if std > 0 else 0
+                if zscore > 2:
+                    severity = ("low" if zscore < 2.5 else
+                                "medium" if zscore < 3.5 else
+                                "high" if zscore < 4.5 else "critical")
+                    details.append({
+                        "id": f"{station}_{row['timestamp'].isoformat()}_{param}",
+                        "station": station,
+                        "timestamp": row["timestamp"],
+                        "anomaly_type": param,
+                        "value": float(row[param]),
+                        "severity": severity,
+                        "score": float(zscore),
+                        "expected_range": self._get_expected_range(df, param),
+                    })
         return details
-    
-    def _get_expected_range(self, df: pd.DataFrame, param: str) -> str:
-        """Calculate expected range for a parameter"""
+
+    def _get_expected_range(self, df, param: str) -> str:
         if param not in df.columns:
             return "unknown"
-        mean = df[param].mean()
-        std = df[param].std()
+        mean, std = df[param].mean(), df[param].std()
         return f"{mean - 2*std:.2f} to {mean + 2*std:.2f}"
 
-# Threshold-based detection for critical alerts
+
+# Threshold-based detection (no ML deps required)
 THRESHOLDS = {
-    'temp': {'min': 32, 'max': 86, 'critical_max': 95},  # Fahrenheit
-    'flow': {'min': 100, 'max': 5000, 'critical_min': 50},
-    'turbidity': {'min': 0, 'max': 100, 'critical_max': 200},
-    'dissolved_oxygen': {'min': 4, 'max': 15, 'critical_min': 2},
-    'ph': {'min': 6.0, 'max': 9.0}
+    "temp":             {"min": 32, "max": 86, "critical_max": 95},   # °F
+    "flow":             {"min": 100, "max": 5000, "critical_min": 50},
+    "turbidity":        {"min": 0, "max": 100, "critical_max": 200},
+    "dissolved_oxygen": {"min": 4, "max": 15, "critical_min": 2},
+    "ph":               {"min": 6.0, "max": 9.0},
 }
 
+
 def check_thresholds(reading: Dict) -> List[Dict]:
-    """Check if readings exceed safety thresholds"""
     alerts = []
-    
     for param, thresholds in THRESHOLDS.items():
-        if param not in reading or reading[param] is None:
+        value = reading.get(param)
+        if value is None:
             continue
-            
-        value = reading[param]
-        
-        # Check critical thresholds
-        if 'critical_min' in thresholds and value < thresholds['critical_min']:
-            alerts.append({
-                'type': param,
-                'severity': 'critical',
-                'message': f"CRITICAL: {param} is {value}, below critical minimum {thresholds['critical_min']}",
-                'value': value
-            })
-        elif 'critical_max' in thresholds and value > thresholds['critical_max']:
-            alerts.append({
-                'type': param,
-                'severity': 'critical',
-                'message': f"CRITICAL: {param} is {value}, above critical maximum {thresholds['critical_max']}",
-                'value': value
-            })
-        # Check warning thresholds
-        elif value < thresholds['min']:
-            alerts.append({
-                'type': param,
-                'severity': 'warning',
-                'message': f"WARNING: {param} is {value}, below normal minimum {thresholds['min']}",
-                'value': value
-            })
-        elif value > thresholds['max']:
-            alerts.append({
-                'type': param,
-                'severity': 'warning',
-                'message': f"WARNING: {param} is {value}, above normal maximum {thresholds['max']}",
-                'value': value
-            })
-    
+        if "critical_min" in thresholds and value < thresholds["critical_min"]:
+            alerts.append({"type": param, "severity": "critical",
+                           "message": f"CRITICAL: {param} {value} below critical min {thresholds['critical_min']}",
+                           "value": value})
+        elif "critical_max" in thresholds and value > thresholds["critical_max"]:
+            alerts.append({"type": param, "severity": "critical",
+                           "message": f"CRITICAL: {param} {value} above critical max {thresholds['critical_max']}",
+                           "value": value})
+        elif value < thresholds["min"]:
+            alerts.append({"type": param, "severity": "warning",
+                           "message": f"WARNING: {param} {value} below normal min {thresholds['min']}",
+                           "value": value})
+        elif value > thresholds["max"]:
+            alerts.append({"type": param, "severity": "warning",
+                           "message": f"WARNING: {param} {value} above normal max {thresholds['max']}",
+                           "value": value})
     return alerts
