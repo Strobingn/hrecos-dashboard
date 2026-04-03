@@ -1,0 +1,112 @@
+version: "3.9"
+
+services:
+  db:
+    image: timescale/timescaledb:latest-pg14
+    container_name: hrecos-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme-strong-password}
+      POSTGRES_DB: hrecos
+    volumes:
+      - /data/postgres:/var/lib/postgresql/data
+    expose:
+      - "5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - hrecos-network
+    # Memory limits for free tier
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  backend:
+    build: ./backend
+    container_name: hrecos-backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    expose:
+      - "8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:${DB_PASSWORD:-changeme-strong-password}@db:5432/hrecos
+      - HRECOS_API_URL=https://hrecos.org/api/data
+      - EMAIL_ENABLED=false
+      - SMS_ENABLED=false
+      - SLACK_ENABLED=false
+      - SECRET_KEY=${SECRET_KEY:-change-me-in-production-min-32-characters}
+    networks:
+      - hrecos-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+    # Remove volume mount for production (use image only)
+    # volumes:
+    #   - ./backend/app:/app/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2
+
+  frontend:
+    image: nginx:alpine
+    container_name: hrecos-frontend
+    restart: unless-stopped
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    expose:
+      - "80"
+    depends_on:
+      - backend
+    networks:
+      - hrecos-network
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 64M
+
+  # Caddy reverse proxy with automatic HTTPS
+  caddy:
+    image: caddy:alpine
+    container_name: hrecos-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - hrecos-network
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 64M
+
+networks:
+  hrecos-network:
+    driver: bridge
+
+volumes:
+  caddy_data:
+    driver: local
+  caddy_config:
+    driver: local

@@ -1,0 +1,50 @@
+# HRECOS Dashboard - Caddy Configuration
+# Replace YOUR_DOMAIN with your actual domain (e.g., hrecos.duckdns.org)
+# Or use your VM's public IP for HTTP-only access
+
+{
+    # Global options
+    auto_https off  # Set to 'off' if using IP only, remove for domain HTTPS
+    admin off
+}
+
+# For IP-based access (HTTP only - good for testing)
+:80 {
+    # Frontend - main dashboard
+    handle /* {
+        reverse_proxy frontend:80
+    }
+}
+
+# API endpoint
+:8000 {
+    reverse_proxy backend:8000
+}
+
+# Uncomment below and comment out :80 block above when you have a domain:
+
+# YOUR_DOMAIN.duckdns.org {
+#     # Enable HTTPS (automatic with domain)
+#     # Frontend
+#     handle /* {
+#         reverse_proxy frontend:80
+#     }
+#     
+#     # API endpoint
+#     handle /api/* {
+#         reverse_proxy backend:8000
+#     }
+#     
+#     # Health check
+#     handle /health {
+#         reverse_proxy backend:8000
+#     }
+#     
+#     # Compression
+#     encode gzip
+#     
+#     # Logging
+#     log {
+#         output file /data/access.log
+#     }
+# }
