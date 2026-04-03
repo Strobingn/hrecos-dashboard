@@ -12,6 +12,6 @@ requests==2.31.0
 python-dotenv==1.0.0
 pydantic==2.5.3
 pydantic-settings==2.1.0
-twilio==8.11.0
+twilio==9.10.4
 httpx==0.26.0
 python-dateutil==2.8.2
