@@ -80,7 +80,7 @@ jobs:
       uses: docker/setup-buildx-action@v3
       
     - name: Build backend image
-      uses: docker/build-push-action@v5
+      uses: docker/build-push-action@v7
       with:
         context: ./backend
         push: false
@@ -97,7 +97,7 @@ jobs:
         docker stop test-backend
         
     - name: Build frontend image
-      uses: docker/build-push-action@v5
+      uses: docker/build-push-action@v7
       with:
         context: .
         file: ./docker-compose.yml
