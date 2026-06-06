@@ -6,9 +6,25 @@
 <meta name="theme-color" content="#0A7EA4" id="tm">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cornwall RiverWatch">
 <meta name="description" content="Cornwall-on-Hudson fishing and river conditions">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="application-name" content="Cornwall RiverWatch">
+<meta name="msapplication-TileColor" content="#0A7EA4">
+<meta name="msapplication-navbutton-color" content="#0A7EA4">
+<meta name="format-detection" content="telephone=no">
+
+<!-- PWA Permissions -->
+<meta name="permissions" content="geolocation=(self), notifications=(self)">
+
 <title>Cornwall RiverWatch</title>
 <link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.json">
+
+<!-- Preconnect to Google Maps for faster load -->
+<link rel="preconnect" href="https://maps.googleapis.com">
+<link rel="dns-prefetch" href="https://maps.googleapis.com">
+
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBMcfVOJXvTPE1CiT4gcnTRPDppNzOr-n4&callback=initMap" async defer></script>
 </head>
 <body>
