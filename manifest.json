@@ -1,0 +1,21 @@
+{
+  "name": "Cornwall RiverWatch",
+  "short_name": "RiverWatch",
+  "description": "Cornwall-on-Hudson fishing, tides, water quality, and GPS mapping",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0A7EA4",
+  "theme_color": "#0A7EA4",
+  "orientation": "portrait",
+  "scope": "/",
+  "categories": ["sports", "navigation", "utilities"],
+  "permissions": ["geolocation", "notifications"],
+  "icons": [
+    {"src": "data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27192%27 height=%27192%27 viewBox=%270 0 192 192%27%3E%3Crect width=%27192%27 height=%27192%27 fill=%27%230A7EA4%27 rx=%2724%27/%3E%3Ccircle cx=%2796%27 cy=%2770%27 r=%2740%27 fill=%27white%27/%3E%3Cpath d=%27M40 140 Q60 120 96 120 Q132 120 152 140%27 fill=%27none%27 stroke=%27white%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M50 155 Q70 135 96 135 Q122 135 142 155%27 fill=%27none%27 stroke=%27white%27 stroke-width=%276%27 stroke-linecap=%27round%27 opacity=%270.7%27/%3E%3C/svg%3E", "sizes": "192x192", "type": "image/svg+xml", "purpose": "any maskable"}
+  ],
+  "shortcuts": [
+    {"name": "Tides", "short_name": "Tides", "description": "Check tide predictions", "url": "/?page=tides"},
+    {"name": "Fishing", "short_name": "Fish", "description": "Check fishing conditions", "url": "/?page=fish"},
+    {"name": "Map", "short_name": "Map", "description": "View station map", "url": "/?page=map"}
+  ]
+}
