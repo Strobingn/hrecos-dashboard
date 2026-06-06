@@ -48,12 +48,26 @@ body{background:#F0F4F8;color:#1A2B3C;min-height:100vh}
 .fti{background:#fff;border-radius:12px;padding:14px;text-align:center}
 .tp{background:rgba(10,126,164,.06);border-left:3px solid #0A7EA4;padding:12px;border-radius:0 12px 12px 0;font-size:13px}
 
-/* GPS Map */
-.map-card{position:relative;height:250px;background:linear-gradient(180deg,#A8D0E6 0%,#7EB8DA 40%,#5A9BC4 70%,#3D7A5D 70%,#4A8F3D 100%);border-radius:16px;overflow:hidden;margin-bottom:12px}
-.map-river{position:absolute;top:40%;left:0;right:0;height:30%;background:linear-gradient(180deg,#1E5F8E 0%,#0A7EA4 30%,#0D8DB0 50%,#0A7EA4 70%,#1E5F8E 100%);opacity:.9}
-.map-station{position:absolute;width:36px;height:36px;background:#fff;border-radius:50%;display:flex;align-items:center;center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.3);z-index:10;cursor:pointer}
-.map-station-dot{width:14px;height:14px;border-radius:50%}
-.map-label{position:absolute;font-size:10px;font-weight:600;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.8);white-space:nowrap;z-index:11}
+/* ===== GOOGLE MAPS ===== */
+#map-container{position:relative;width:100%;height:380px;border-radius:16px;overflow:hidden;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+#google-map{width:100%;height:100%}
+.map-controls{position:absolute;top:10px;right:10px;z-index:10;display:flex;flex-direction:column;gap:6px}
+.map-btn{background:#fff;border:none;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.3);cursor:pointer;font-size:18px;transition:.2s}
+.map-btn:active{transform:scale(.9)}
+.map-overlay{position:absolute;bottom:10px;left:10px;right:10px;background:rgba(255,255,255,.95);border-radius:12px;padding:12px;z-index:10;backdrop-filter:blur(4px)}
+.map-overlay-dark{background:rgba(13,27,42,.95);color:#E0ECF4}
+.gps-status{font-size:12px;display:flex;align-items:center;gap:6px}
+.gps-dot{width:8px;height:8px;border-radius:50%;background:#43A047;animation:pu 1.5s infinite}
+.gps-dot.off{background:#999;animation:none}
+.gps-text{font-family:monospace;font-size:11px;color:#5A6B7C}
+.station-list{display:flex;flex-direction:column;gap:8px}
+.station-list-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#fff;border-radius:12px;cursor:pointer;transition:.2s;border:1px solid transparent}
+.station-list-item:hover{border-color:#0A7EA4}
+.station-list-item.on{border:2px solid #0A7EA4;background:#F0F4F8}
+.st-list-dot{width:10px;height:10px;border-radius:50%;background:#43A047;flex-shrink:0}
+.st-list-info{flex:1}
+.st-list-name{font-size:13px;font-weight:600}
+.st-list-dist{font-size:11px;color:#5A6B7C}
 
 /* Weather */
 .weather-card{background:linear-gradient(135deg,#0A7EA4,#065F7A);color:#fff;border-radius:16px;padding:20px;margin-bottom:12px}
@@ -62,8 +76,7 @@ body{background:#F0F4F8;color:#1A2B3C;min-height:100vh}
 .weather-val{font-size:24px;font-weight:700}
 .weather-label{font-size:11px;opacity:.8}
 
-/* Station detail expanded */
-.station-detail{background:#fff;border-radius:16px;padding:16px;margin-bottom:12px}
+/* Station detail */
 .param-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .param-item{background:#F0F4F8;border-radius:12px;padding:12px;text-align:center}
 .param-val{font-size:20px;font-weight:700;color:#0A7EA4}
@@ -86,8 +99,10 @@ body{background:#F0F4F8;color:#1A2B3C;min-height:100vh}
 
 [data-theme="dark"]{--bg:#0D1B2A;--sf:#1B2838;--tx:#E0ECF4;--ts:#8A9BAE;--bd:#2A3A4A}
 [data-theme="dark"] body{background:#0D1B2A;color:#E0ECF4}
-[data-theme="dark"] .card,[data-theme="dark"] .m,[data-theme="dark"] .sc,[data-theme="dark"] .ac,[data-theme="dark"] .fti,[data-theme="dark"] .param-item{background:#1B2838}
+[data-theme="dark"] .card,[data-theme="dark"] .m,[data-theme="dark"] .sc,[data-theme="dark"] .ac,[data-theme="dark"] .fti,[data-theme="dark"] .param-item,[data-theme="dark"] .station-list-item{background:#1B2838}
 [data-theme="dark"] .nb{background:#1B2838;border-color:#2A3A4A}
 [data-theme="dark"] .bb,[data-theme="dark"] .param-item{background:#2A3A4A}
 [data-theme="dark"] .tl2{border-color:#2A3A4A}
 [data-theme="dark"] .fc,[data-theme="dark"] .tide-loc-btn{background:#1B2838;border-color:#2A3A4A;color:#8A9BAE}
+[data-theme="dark"] .map-overlay{background:rgba(13,27,42,.95);color:#E0ECF4}
+[data-theme="dark"] .station-list-item.on{background:#1B2838}
