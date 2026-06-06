@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-        runs-on: ubuntu-latest
+    runs-on: ubuntu-latest
     env:
       NODE_ENV: production
     steps:
@@ -36,7 +36,7 @@ jobs:
       - name: Prebuild Android
         run: |
           cd mobile
-                    npx expo prebuild --platform android
+          npx expo prebuild --platform android
 
       - name: Build release APK
         run: |
