@@ -1,0 +1,16 @@
+{
+  "expo": {
+    "name": "HRECOS RiverWatch",
+    "slug": "hrecos-riverwatch",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "backgroundColor": "#0A7EA4",
+    "assetBundlePatterns": ["**/*"],
+    "ios": { "supportsTablet": true, "bundleIdentifier": "com.hrecos.riverwatch" },
+    "android": {
+      "package": "com.hrecos.riverwatch",
+      "permissions": ["RECEIVE_BOOT_COMPLETED"]
+    }
+  }
+}
