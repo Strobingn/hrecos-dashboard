@@ -184,23 +184,40 @@ function initMap() {
 
 function centerOnMe() {
   if (!map) return;
-  updateGpsStatus('Getting location...', true);
   
-  if (navigator.geolocation) {
+  if (!navigator.geolocation) {
+    updateGpsStatus('GPS not supported on this device.', false);
+    centerOnCornwall();
+    return;
+  }
+  
+  updateGpsStatus('Requesting GPS permission...', true);
+  
+  navigator.permissions.query({ name: 'geolocation' }).then(function(result) {
+    if (result.state === 'denied') {
+      updateGpsStatus('GPS permission denied. Enable in Settings > Privacy > Location.', false);
+      centerOnCornwall();
+      return;
+    }
+    
+    updateGpsStatus('Getting your location...', true);
+    
     navigator.geolocation.getCurrentPosition(
       function(position) {
         const pos = {
           lat: position.coords.latitude,
           lng: position.coords.longitude
         };
+        const accuracy = position.coords.accuracy || 100;
         
         if (userMarker) {
           userMarker.setPosition(pos);
+          if (window.accuracyCircle) window.accuracyCircle.setCenter(pos);
         } else {
           userMarker = new google.maps.Marker({
             position: pos,
             map: map,
-            title: 'You are here',
+            title: 'You are here (\u00B1' + Math.round(accuracy) + 'm)',
             icon: {
               path: google.maps.SymbolPath.CIRCLE,
               scale: 12,
@@ -212,33 +229,72 @@ function centerOnMe() {
             animation: google.maps.Animation.DROP
           });
           
-          // Accuracy circle
-          new google.maps.Circle({
+          window.accuracyCircle = new google.maps.Circle({
             map: map,
             center: pos,
-            radius: position.coords.accuracy || 100,
+            radius: accuracy,
             fillColor: '#4285F4',
-            fillOpacity: 0.1,
+            fillOpacity: 0.08,
             strokeColor: '#4285F4',
-            strokeOpacity: 0.3,
+            strokeOpacity: 0.2,
             strokeWeight: 1
           });
         }
         
         map.setCenter(pos);
-        map.setZoom(13);
-        updateGpsStatus('Location found: ' + pos.lat.toFixed(4) + ', ' + pos.lng.toFixed(4), false);
+        map.setZoom(14);
+        
+        const distToCornwall = getDistanceMiles(pos.lat, pos.lng, 41.4442, -74.0238);
+        updateGpsStatus('You: ' + pos.lat.toFixed(4) + ', ' + pos.lng.toFixed(4) + ' \u00B7 ' + distToCornwall.toFixed(1) + ' mi from Cornwall', false);
       },
-      function() {
-        updateGpsStatus('GPS denied. Using Cornwall as center.', false);
+      function(error) {
+        let msg = 'Location error.';
+        switch(error.code) {
+          case error.PERMISSION_DENIED:
+            msg = 'Permission denied. Enable GPS in Settings > Privacy > Location Services.';
+            break;
+          case error.POSITION_UNAVAILABLE:
+            msg = 'GPS signal unavailable. Try outdoors.';
+            break;
+          case error.TIMEOUT:
+            msg = 'GPS timed out. Try again.';
+            break;
+        }
+        updateGpsStatus(msg, false);
         centerOnCornwall();
       },
-      { enableHighAccuracy: true, timeout: 10000 }
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
     );
-  } else {
-    updateGpsStatus('GPS not supported. Using Cornwall.', false);
-    centerOnCornwall();
-  }
+  }).catch(function() {
+    // permissions API not supported, try geolocation directly
+    updateGpsStatus('Getting location...', true);
+    navigator.geolocation.getCurrentPosition(
+      function(position) {
+        const pos = { lat: position.coords.latitude, lng: position.coords.longitude };
+        if (userMarker) {
+          userMarker.setPosition(pos);
+        } else {
+          userMarker = new google.maps.Marker({
+            position: pos, map: map, title: 'You are here',
+            icon: { path: google.maps.SymbolPath.CIRCLE, scale: 12, fillColor: '#4285F4', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3 },
+            animation: google.maps.Animation.DROP
+          });
+        }
+        map.setCenter(pos); map.setZoom(14);
+        updateGpsStatus('Location found!', false);
+      },
+      function() { updateGpsStatus('GPS unavailable.', false); centerOnCornwall(); },
+      { enableHighAccuracy: true, timeout: 15000 }
+    );
+  });
+}
+
+function getDistanceMiles(lat1, lon1, lat2, lon2) {
+  const R = 3959;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
 function centerOnCornwall() {
