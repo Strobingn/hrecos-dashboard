@@ -4,13 +4,56 @@
     "slug": "hrecos-riverwatch",
     "version": "1.0.0",
     "orientation": "portrait",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "backgroundColor": "#0A7EA4",
-    "assetBundlePatterns": ["**/*"],
-    "ios": { "supportsTablet": true, "bundleIdentifier": "com.hrecos.riverwatch" },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.hrecos.riverwatch"
+    },
     "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0A7EA4"
+      },
       "package": "com.hrecos.riverwatch",
-      "permissions": ["RECEIVE_BOOT_COMPLETED"]
+      "usesCleartextTraffic": true,
+      "permissions": [
+        "RECEIVE_BOOT_COMPLETED",
+        "INTERNET",
+        "ACCESS_NETWORK_STATE"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#0A7EA4",
+          "defaultChannel": "default"
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#0A7EA4"
+        }
+      ],
+      "expo-system-ui"
+    ],
+    "extra": {
+      "apiUrl": "http://192.168.1.100:8000",
+      "eas": {
+        "projectId": "hrecos-riverwatch"
+      }
     }
   }
 }
