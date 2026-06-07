@@ -6,7 +6,6 @@
 import React, { useEffect, useState } from 'react';
 import { StatusBar, View, ActivityIndicator, StyleSheet, LogBox, Platform } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { registerRootComponent } from 'expo';
 import * as Notifications from 'expo-notifications';
 
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
@@ -41,7 +40,7 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 1000 * 60 * 2,
-      cacheTime: 1000 * 60 * 10,
+      gcTime: 1000 * 60 * 10,
       retry: 2,
       retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
       refetchOnWindowFocus: false,
@@ -187,9 +186,6 @@ export default function App() {
     </QueryClientProvider>
   );
 }
-
-// Register for Expo
-registerRootComponent(App);
 
 // =============================================================================
 // STYLES

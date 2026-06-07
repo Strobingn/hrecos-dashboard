@@ -6,24 +6,20 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { useColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { lightColors, darkColors, typography, spacing } from '../theme';
+import { getTheme } from '../theme';
 
 const THEME_STORAGE_KEY = '@hrecos_theme_preference';
 
-const ThemeContext = createContext(null);
+export const ThemeContext = createContext(null);
 
 /**
  * ThemeProvider - Wraps the app and provides theme state to all children.
- *
- * @param {Object} props
- * @param {React.ReactNode} props.children
  */
 export function ThemeProvider({ children }) {
   const systemColorScheme = useColorScheme();
   const [isDark, setIsDark] = useState(systemColorScheme === 'dark');
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Load saved theme preference on mount
   useEffect(() => {
     let cancelled = false;
 
@@ -54,7 +50,6 @@ export function ThemeProvider({ children }) {
     };
   }, [systemColorScheme]);
 
-  // Persist theme preference whenever it changes
   useEffect(() => {
     if (isLoaded) {
       AsyncStorage.setItem(THEME_STORAGE_KEY, isDark ? 'dark' : 'light').catch((error) => {
@@ -71,22 +66,24 @@ export function ThemeProvider({ children }) {
     setIsDark(!!value);
   }, []);
 
-  const colors = useMemo(() => (isDark ? darkColors : lightColors), [isDark]);
+  const theme = useMemo(() => getTheme(isDark), [isDark]);
 
   const value = useMemo(
     () => ({
-      colors,
-      typography,
-      spacing,
-      isDark,
+      theme,
+      colors: theme.colors,
+      spacing: theme.spacing,
+      shadows: theme.shadows,
+      fonts: theme.fonts,
+      radius: theme.radius,
+      isDark: theme.isDark,
       toggleTheme,
       setDarkMode,
     }),
-    [colors, isDark, toggleTheme, setDarkMode]
+    [theme, toggleTheme, setDarkMode]
   );
 
   if (!isLoaded) {
-    // Return a placeholder during initial load to prevent flash
     return null;
   }
 
@@ -95,8 +92,6 @@ export function ThemeProvider({ children }) {
 
 /**
  * useTheme hook - Access the current theme within any component.
- *
- * @returns {{ colors: Object, typography: Object, spacing: Object, isDark: boolean, toggleTheme: Function, setDarkMode: Function }}
  */
 export function useTheme() {
   const context = useContext(ThemeContext);

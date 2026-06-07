@@ -37,9 +37,16 @@ export const COLORS = {
 
   // Text
   text: '#1A2332',
+  textPrimary: '#1A2332',
   textSecondary: '#5A6A7A',
   textTertiary: '#8A96A5',
   textInverse: '#FFFFFF',
+
+  // Misc UI
+  transparent: 'transparent',
+  disabled: '#B0B8C4',
+  accent: '#FF8F00',
+  chartGrid: '#E2E8F0',
 
   // Border & dividers
   border: '#D5DDE5',
@@ -134,10 +141,12 @@ export const DARK_THEME = {
   surface: '#1A2332',
   surfaceVariant: '#253042',
   text: '#E8EDF2',
+  textPrimary: '#E8EDF2',
   textSecondary: '#9AA8B8',
   textTertiary: '#6A7A8A',
   border: '#354050',
   divider: '#2A3A4A',
+  chartGrid: '#2A3A4A',
 };
 
 export const getTheme = (isDark = false) => ({
