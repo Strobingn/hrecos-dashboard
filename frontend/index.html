@@ -469,11 +469,22 @@
         <section class="kpi-grid" id="kpis"></section>
 
         <section class="chart-grid">
+          <article class="card" style="grid-column: 1 / -1;">
+            <div class="card-header">
+              <div>
+                <h3 id="tideChartTitle">Tide Chart — Newburgh</h3>
+                <p class="subtle" id="tideChartSubtitle">Source: NOAA CO-OPS 8518935 (Newburgh) via <code>/api/tides</code> — ~3 mi south of Cornwall-on-Hudson at West Point</p>
+              </div>
+              <div id="tideInfo" class="subtle"></div>
+            </div>
+            <canvas id="tideChart" height="160"></canvas>
+          </article>
+
           <article class="card">
             <div class="card-header">
               <div>
                 <h3>Water temperature trend</h3>
-                <p class="subtle">Hourly shape with 1-hour delta context.</p>
+                <p class="subtle" id="tempChartSource">Source: Norrie Point (NDBC met) &amp; Turkey Point (NOAA) via <code>/api/history</code></p>
               </div>
             </div>
             <canvas id="tempChart" height="140"></canvas>
@@ -482,22 +493,11 @@
           <article class="card">
             <div class="card-header">
               <div>
-                <h3>River flow trend</h3>
-                <p class="subtle">Discharge pattern with 30-minute spike detection.</p>
+                <h3>Wind / flow trend</h3>
+                <p class="subtle" id="flowChartSource">Source: Norrie Point wind (NDBC) — no USGS flow near West Point</p>
               </div>
             </div>
             <canvas id="flowChart" height="140"></canvas>
-          </article>
-
-          <article class="card" style="grid-column: 1 / -1;">
-            <div class="card-header">
-              <div>
-                <h3 id="tideChartTitle">Tide Chart — Cornwall, NY</h3>
-                <p class="subtle" id="tideChartSubtitle">Hudson River tide predictions from nearest NOAA station.</p>
-              </div>
-              <div id="tideInfo" class="subtle"></div>
-            </div>
-            <canvas id="tideChart" height="160"></canvas>
           </article>
         </section>
 
@@ -889,10 +889,23 @@
     let tideData = { predictions: [], current: null };
     
     async function fetchTideData() {
+      const url = apiBase
+        ? `${apiBase}/api/tides?hours=48&region=${state.region}`
+        : null;
+      if (!url) {
+        document.getElementById('tideChartSubtitle').textContent =
+          'Set HRECOS_API_BASE to load NOAA 8518935 Newburgh tides from /api/tides';
+        return;
+      }
       try {
-        const res = await fetch(`${apiBase}/api/tides?hours=48&region=${state.region}`);
+        const res = await fetch(url);
         if (!res.ok) return;
         tideData = await res.json();
+        const src = tideData.station_name && tideData.station
+          ? `Source: NOAA CO-OPS ${tideData.station} (${tideData.station_name}) via /api/tides`
+          : 'Source: /api/tides';
+        document.getElementById('tideChartSubtitle').textContent =
+          `${src} — ~3 mi south of Cornwall-on-Hudson at West Point`;
         updateTideChart();
         updateTideInfo();
       } catch (e) {
@@ -1092,6 +1105,15 @@
       });
     }
 
+    function updateChartSourceLabels() {
+      const mode = apiBase ? 'live API' : 'simulated demo data';
+      const hist = apiBase ? '/api/history' : 'local generator';
+      const tempEl = document.getElementById('tempChartSource');
+      const flowEl = document.getElementById('flowChartSource');
+      if (tempEl) tempEl.textContent = `Source (${mode}): Norrie Point & Turkey Point via ${hist}`;
+      if (flowEl) flowEl.textContent = `Source (${mode}): Norrie Point wind (NDBC) — no river flow gauge at West Point`;
+    }
+
     function updateStatus() {
       const badge = document.getElementById('updateStatus');
       const source = apiBase ? 'API connected' : 'Local simulation';
@@ -1115,6 +1137,7 @@
         await resetData();
       }
       updateStatus();
+      updateChartSourceLabels();
       buildKPIs();
       renderTable();
       collectEvents();
