@@ -2,9 +2,9 @@
 
 Real-time environmental monitoring dashboard for the **Hudson River Environmental Conditions Observing System (HRECOS)**.
 
-[![CI](https://github.com/bass/hrecos-dashboard/actions/workflows/ci.yml/badge.svg)](https://github.com/bass/hrecos-dashboard/actions/workflows/ci.yml)
-[![Docker Publish](https://github.com/bass/hrecos-dashboard/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/bass/hrecos-dashboard/actions/workflows/docker-publish.yml)
-[![Security Scan](https://github.com/bass/hrecos-dashboard/actions/workflows/security-scan.yml/badge.svg)](https://github.com/bass/hrecos-dashboard/actions/workflows/security-scan.yml)
+[![CI](https://github.com/Strobingn/hrecos-dashboard/actions/workflows/ci.yml/badge.svg)](https://github.com/Strobingn/hrecos-dashboard/actions/workflows/ci.yml)
+[![Docker Publish](https://github.com/Strobingn/hrecos-dashboard/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/Strobingn/hrecos-dashboard/actions/workflows/docker-publish.yml)
+[![Security Scan](https://github.com/Strobingn/hrecos-dashboard/actions/workflows/security-scan.yml/badge.svg)](https://github.com/Strobingn/hrecos-dashboard/actions/workflows/security-scan.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
@@ -63,7 +63,7 @@ hrecos-dashboard/
 
 ```bash
 # Clone the repository
-git clone https://github.com/bass/hrecos-dashboard.git
+git clone https://github.com/Strobingn/hrecos-dashboard.git
 cd hrecos-dashboard
 
 # Quick setup with helper script

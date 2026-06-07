@@ -100,71 +100,121 @@ def _to_imperial(reading: Dict) -> Dict:
     return reading
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Station registry — Tappan Zee (RM 25) through Albany (RM 143)
-# Sorted by river mile (upstream)
+# Station registry — Cornwall-on-Hudson at West Point (RM ~50–60)
+# No live main-stem water-quality sensors between Piermont (RM 25) and
+# Turkey Point (RM 84). Newburgh tide is closest; Norrie/Turkey nearest live.
 # ─────────────────────────────────────────────────────────────────────────────
 STATIONS = {
-    "yonkers": {
-        "source": "usgs", "id": "01376307", "name": "Yonkers",
-        "lat": 40.936, "lon": -73.899, "river_mile": 20,
-        "params": ["temp", "conductance", "turbidity"], "live": False,
-        "note": "All sensors offline as of Apr 2026",
-    },
-    "piermont": {
-        "source": "usgs", "id": "01376269", "name": "Piermont",
-        "lat": 41.043, "lon": -73.896, "river_mile": 25,
-        "params": ["temp", "conductance", "dissolved_oxygen", "ph", "turbidity"], "live": False,
-        "note": "Station frame active, all sensors returning -999999 as of Apr 2026",
-    },
-    "bear_mountain": {
-        "source": "ndbc", "id": "HBMN6", "name": "Bear Mountain (HRNERR)",
-        "lat": 41.314, "lon": -73.985, "river_mile": 46,
-        "params": ["air_temp", "wind_speed", "pressure"], "live": False,
-        "note": "HRNERR met station — offline Apr 2026",
+    # ── Cornwall-on-Hudson / West Point / Newburgh corridor ─────────────────
+    "newburgh": {
+        "source": "noaa", "id": "8518935", "name": "Newburgh",
+        "lat": 41.500, "lon": -74.007, "river_mile": 60,
+        "region": "cornwall_on_hudson",
+        "params": ["tide"], "live": False,
+        "note": "Primary tide station — ~3 mi south of Cornwall-on-Hudson; see /api/tides",
     },
     "west_point": {
         "source": "usgs", "id": "01374019", "name": "West Point",
         "lat": 41.386, "lon": -73.955, "river_mile": 50,
+        "region": "cornwall_on_hudson",
         "params": ["temp", "dissolved_oxygen", "ph", "conductance", "turbidity"], "live": False,
-        "note": "Last data Sep 2014 — decommissioned",
+        "note": "USMA / Cornwall-on-Hudson area — decommissioned Sep 2014",
     },
-    "poughkeepsie": {
-        "source": "usgs", "id": "01372043", "name": "Poughkeepsie",
-        "lat": 41.721, "lon": -73.939, "river_mile": 75,
-        "params": ["temp", "conductance", "turbidity"], "live": False,
-        "note": "Last data Jan 2021 — decommissioned",
+    "bear_mountain": {
+        "source": "ndbc", "id": "HBMN6", "name": "Bear Mountain (HRNERR)",
+        "lat": 41.314, "lon": -73.985, "river_mile": 46,
+        "region": "cornwall_on_hudson",
+        "params": ["air_temp", "wind_speed", "pressure"], "live": False,
+        "note": "Nearest met station when online — offline Apr 2026",
     },
-    "turkey_point": {
-        "source": "noaa", "id": "8518962", "name": "Turkey Point (NERRS)",
-        "lat": 42.014, "lon": -73.939, "river_mile": 84,
-        "params": ["temp", "conductance"], "live": True,
-        "note": "HRNERR Tivoli Bays — southern edge of Storm King-Kingston corridor",
+    "beacon": {
+        "source": "noaa", "id": "8518934", "name": "Beacon",
+        "lat": 41.504, "lon": -73.985, "river_mile": 61,
+        "region": "cornwall_on_hudson",
+        "params": ["tide"], "live": False,
+        "note": "Backup harmonic tide station (~9 km from Cornwall-on-Hudson)",
     },
     "norrie_point": {
         "source": "ndbc", "id": "NPXN6", "name": "Norrie Point (HRNERR)",
         "lat": 41.831, "lon": -73.942, "river_mile": 88,
+        "region": "cornwall_on_hudson",
         "params": ["air_temp", "wind_speed", "wind_direction", "pressure", "dewpoint"], "live": True,
-        "note": "HRNERR met station — air/wind/pressure only, no water temp sensor",
+        "note": "Nearest live met upstream — air/wind only",
     },
+    "turkey_point": {
+        "source": "noaa", "id": "8518962", "name": "Turkey Point (NERRS)",
+        "lat": 42.014, "lon": -73.939, "river_mile": 84,
+        "region": "cornwall_on_hudson",
+        "params": ["temp", "conductance"], "live": True,
+        "note": "Nearest live water temp upstream of West Point gap",
+    },
+    # ── Extended Hudson corridor (not default for Cornwall-on-Hudson) ───────
     "coxsackie": {
         "source": "noaa", "id": "8518979", "name": "Coxsackie",
         "lat": 42.353, "lon": -73.795, "river_mile": 108,
+        "region": "upstream",
         "params": ["temp"], "live": True,
     },
     "schodack": {
         "source": "usgs", "id": "0135980207", "name": "Schodack Landing",
         "lat": 42.500, "lon": -73.777, "river_mile": 120,
+        "region": "upstream",
         "params": ["temp", "conductance", "dissolved_oxygen", "turbidity"], "live": True,
-        "note": "Some sensors intermittently offline",
+    },
+    # ── Extended corridor (not in default dashboard) ────────────────────────
+    "piermont": {
+        "source": "usgs", "id": "01376269", "name": "Piermont",
+        "lat": 41.043, "lon": -73.896, "river_mile": 25,
+        "region": "south",
+        "params": ["temp", "conductance", "dissolved_oxygen", "ph", "turbidity"], "live": False,
+        "note": "All sensors returning -999999 as of Apr 2026",
+    },
+    "poughkeepsie": {
+        "source": "usgs", "id": "01372043", "name": "Poughkeepsie",
+        "lat": 41.721, "lon": -73.939, "river_mile": 75,
+        "region": "south",
+        "params": ["temp", "conductance", "turbidity"], "live": False,
+        "note": "Decommissioned Jan 2021",
     },
     "albany": {
         "source": "usgs", "id": "01359139", "name": "Albany",
         "lat": 42.648, "lon": -73.748, "river_mile": 143,
+        "region": "north",
         "params": ["temp"], "live": True,
     },
 }
 
+REGIONS = {
+    "cornwall_on_hudson": {
+        "name": "Cornwall-on-Hudson, NY",
+        "center": {"lat": 41.435, "lon": -74.036},
+        "stations": [
+            "newburgh", "west_point", "bear_mountain", "beacon",
+            "norrie_point", "turkey_point",
+        ],
+        "tide_station": "newburgh",
+        "description": "Hudson River at West Point — Newburgh tide, striped bass corridor",
+    },
+}
+# Backward-compatible alias
+REGIONS["cornwall"] = REGIONS["cornwall_on_hudson"]
+
+FOCUS_STATIONS = [
+    "norrie_point", "turkey_point",   # nearest live sensors upstream of West Point gap
+]
+
 LIVE_STATIONS = {k: v for k, v in STATIONS.items() if v.get("live", False)}
+FOCUS_LIVE_STATIONS = {k: STATIONS[k] for k in FOCUS_STATIONS if k in STATIONS}
+
+
+def stations_for_region(region: Optional[str] = None) -> Dict:
+    """Return station configs, optionally filtered to a focus region."""
+    if not region:
+        return FOCUS_LIVE_STATIONS
+    info = REGIONS.get(region)
+    if not info:
+        return FOCUS_LIVE_STATIONS
+    return {k: STATIONS[k] for k in info["stations"] if k in STATIONS and STATIONS[k].get("live")}
 
 # ─────────────────────────────────────────────────────────────────────────────
 # USGS fetch
@@ -407,9 +457,9 @@ def fetch_station_sync(station_key: str, station_config: Dict) -> Optional[Dict]
     return mock
 
 
-async def fetch_all_stations() -> Dict[str, Dict]:
+async def fetch_all_stations(region: Optional[str] = None) -> Dict[str, Dict]:
     results = {}
-    for key, config in LIVE_STATIONS.items():
+    for key, config in stations_for_region(region).items():
         data = await fetch_station_async(key, config)
         if data:
             results[key] = data

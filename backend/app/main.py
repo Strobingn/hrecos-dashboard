@@ -9,7 +9,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import get_db, engine
 from app.models import Base, HRECOSReading, AnomalyLog
-from app.hr_data import STATIONS, fetch_all_stations, fetch_historical_data
+from app.hr_data import (
+    STATIONS, REGIONS, FOCUS_STATIONS,
+    fetch_all_stations, fetch_historical_data, stations_for_region,
+)
+from app.tides import TIDE_STATIONS, get_tide_station_key
 from app.tasks import start_scheduler, stop_scheduler
 from app.anomalies import AnomalyDetector
 from app.alerts import alert_manager
@@ -81,38 +85,63 @@ async def health_check():
 # ============================================================================
 
 @app.get("/api/stations")
-async def get_stations():
-    """Get list of all configured monitoring stations"""
+async def get_stations(region: Optional[str] = Query(None, description="Filter: cornwall_on_hudson (alias: cornwall)")):
+    """Get list of configured monitoring stations"""
+    if region and region not in REGIONS:
+        raise HTTPException(status_code=404, detail=f"Region '{region}' not found")
+    pool = stations_for_region(region) if region else {k: STATIONS[k] for k in FOCUS_STATIONS if k in STATIONS}
     return {
+        "region": region,
+        "regions": REGIONS,
         "stations": [
             {
                 "key": key,
                 "name": config["name"],
                 "id": config["id"],
+                "region": config.get("region"),
+                "live": config.get("live", False),
                 "location": {"lat": config["lat"], "lon": config["lon"]},
-                "parameters": config["params"]
+                "parameters": config["params"],
+                "note": config.get("note"),
             }
-            for key, config in STATIONS.items()
-        ]
+            for key, config in pool.items()
+        ],
     }
 
 @app.get("/api/latest")
 async def get_latest_readings(
-    station: Optional[str] = Query(None, description="Filter by station key")
+    station: Optional[str] = Query(None, description="Filter by station key"),
+    region: Optional[str] = Query(None, description="Filter: cornwall_on_hudson (alias: cornwall)"),
 ):
-    """Get latest readings from all stations or a specific station"""
+    """Get latest readings from focus stations or a specific station"""
+    if region and region not in REGIONS:
+        raise HTTPException(status_code=404, detail=f"Region '{region}' not found")
     if station and station not in STATIONS:
         raise HTTPException(status_code=404, detail=f"Station '{station}' not found")
     
     try:
-        readings = await fetch_all_stations()
+        readings = await fetch_all_stations(region=region)
         
         if station:
             return {"station": station, "data": readings.get(station)}
         
-        return {"timestamp": datetime.utcnow().isoformat(), "readings": readings}
+        return {
+            "timestamp": datetime.utcnow().isoformat(),
+            "region": region,
+            "readings": readings,
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching data: {str(e)}")
+
+
+@app.get("/api/data")
+async def get_data(
+    station: Optional[str] = Query(None, description="Filter by station key"),
+    region: Optional[str] = Query(None, description="Filter: cornwall_on_hudson (alias: cornwall)"),
+):
+    """Alias for /api/latest — used by HRECOS RiverWatch Android app"""
+    return await get_latest_readings(station=station, region=region)
+
 
 @app.get("/api/historical/{station}")
 async def get_historical_data(
@@ -374,36 +403,73 @@ async def get_alert_config():
 # ============================================================================
 
 @app.get("/api/tides")
-async def get_tides(hours: int = Query(48, ge=1, le=168)):
-    """Get tide predictions for Cornwall, NY area"""
+async def get_tides(
+    hours: int = Query(48, ge=1, le=168),
+    region: str = Query("cornwall_on_hudson", description="cornwall_on_hudson (alias: cornwall)"),
+):
+    """Get tide predictions for Cornwall-on-Hudson (Newburgh station)"""
+    if region not in REGIONS:
+        raise HTTPException(status_code=404, detail=f"Region '{region}' not found")
     try:
-        tides = get_tide_predictions(hours=hours)
-        current = get_current_tide()
+        tide_key = get_tide_station_key(region)
+        tide_cfg = TIDE_STATIONS[tide_key]
+        tides = get_tide_predictions(hours=hours, region=region)
+        current = get_current_tide(region=region)
         return {
-            "station": "8518490",  # Newburgh - closest to Cornwall
-            "location": "Cornwall, NY Area",
+            "region": region,
+            "location": REGIONS[region]["name"],
+            "station": tide_cfg["id"],
+            "station_name": tide_cfg["name"],
+            "station_key": tide_key,
             "hours": hours,
-            "current": current,
+            "current": {
+                **current,
+                "next_time": current["next_time"].isoformat() if current.get("next_time") else None,
+            },
             "predictions": [
                 {
                     "time": t["time"].isoformat(),
                     "height": t["height"],
-                    "type": t["type"]
+                    "type": t["type"],
                 }
-                for t in tides[:24]  # Limit to 24 points
-            ]
+                for t in tides[:48]
+            ],
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching tides: {str(e)}")
 
 
 @app.get("/api/tides/current")
-async def get_current_tide_info():
-    """Get current tide status for Cornwall, NY"""
+async def get_current_tide_info(region: str = Query("cornwall_on_hudson", description="cornwall_on_hudson")):
+    """Get current tide status for Cornwall-on-Hudson (Newburgh)"""
+    if region not in REGIONS:
+        raise HTTPException(status_code=404, detail=f"Region '{region}' not found")
     try:
-        return get_current_tide()
+        current = get_current_tide(region=region)
+        if current.get("next_time"):
+            current = {**current, "next_time": current["next_time"].isoformat()}
+        return current
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching current tide: {str(e)}")
+
+
+@app.get("/api/history")
+async def get_history(
+    hours: int = Query(24, ge=1, le=720),
+    region: Optional[str] = Query(None, description="cornwall_on_hudson (alias: cornwall)"),
+):
+    """Aggregated historical data for Cornwall-on-Hudson corridor"""
+    if region and region not in REGIONS:
+        raise HTTPException(status_code=404, detail=f"Region '{region}' not found")
+    try:
+        pool = stations_for_region(region) if region else {k: STATIONS[k] for k in FOCUS_STATIONS if k in STATIONS}
+        out = {}
+        for key in pool:
+            rows = fetch_historical_data(key, hours)
+            out[key] = rows
+        return out
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching history: {str(e)}")
 
 
 @app.get("/api/dashboard")
@@ -430,7 +496,8 @@ async def get_dashboard_data(db: AsyncSession = Depends(get_db)):
         
         return {
             "timestamp": datetime.utcnow().isoformat(),
-            "stations_online": len(STATIONS),
+            "regions": REGIONS,
+            "stations_online": len(FOCUS_STATIONS),
             "latest_readings": latest,
             "alerts": {
                 "recent_24h": recent_anomalies,

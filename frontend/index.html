@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>HRECOS Cornwall, NY - Striped Bass Dashboard</title>
+  <title>HRECOS — Cornwall-on-Hudson, NY</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
@@ -380,17 +380,13 @@
         </div>
         <div>
           <h1>HRECOS</h1>
-          <p>Cornwall, NY - Hudson River Striped Bass Monitoring</p>
+          <p>Cornwall-on-Hudson — Hudson River at West Point</p>
         </div>
       </div>
 
       <section class="sidebar-section sidebar-card">
         <p style="margin-bottom: var(--space-3);">Station set</p>
-        <div class="legend">
-          <div class="legend-item"><span class="legend-label"><span class="dot" style="background:#01696f"></span>Newburgh</span><span>River mile 60</span></div>
-          <div class="legend-item"><span class="legend-label"><span class="dot" style="background:#a12c7b"></span>Beacon</span><span>River mile 61</span></div>
-          <div class="legend-item"><span class="legend-label"><span class="dot" style="background:#437a22"></span>West Point</span><span>River mile 52</span></div>
-        </div>
+        <div class="legend" id="stationLegend"></div>
       </section>
 
       <section class="sidebar-section sidebar-card">
@@ -418,8 +414,8 @@
         <div class="controls">
           <button class="btn mobile-toggle" id="menuBtn" aria-label="Toggle navigation">☰</button>
           <div class="topbar-title">
-            <h2>Cornwall, NY - Striped Bass Monitor</h2>
-            <p class="subtle">Hudson River data for Newburgh, Beacon, and West Point stations</p>
+            <h2 id="regionTitle">Cornwall-on-Hudson, NY</h2>
+            <p class="subtle" id="regionSubtitle">Newburgh tide · West Point · nearest live: Norrie Point &amp; Turkey Point</p>
           </div>
         </div>
         <div class="controls">
@@ -496,8 +492,8 @@
           <article class="card" style="grid-column: 1 / -1;">
             <div class="card-header">
               <div>
-                <h3>Tide Chart - Cornwall, NY</h3>
-                <p class="subtle">Hudson River tide predictions from Newburgh station. Data polls automatically at tide changes.</p>
+                <h3 id="tideChartTitle">Tide Chart — Cornwall, NY</h3>
+                <p class="subtle" id="tideChartSubtitle">Hudson River tide predictions from nearest NOAA station.</p>
               </div>
               <div id="tideInfo" class="subtle"></div>
             </div>
@@ -527,27 +523,39 @@
           </article>
         </section>
 
-        <p class="footer-note">Prototype note: this standalone build uses simulated HRECOS-style time series so you can validate layout, analytics, and later swap in a real fetch layer without changing the interface contract.</p>
+        <p class="footer-note">Set <code>window.HRECOS_API_BASE</code> to your backend URL for live NOAA/USGS/NDBC data. Without it, simulated series are shown for layout testing.</p>
       </section>
     </main>
   </div>
 
   <script>
+    const regionMeta = {
+      title: 'Cornwall-on-Hudson, NY',
+      subtitle: 'Newburgh tide (8518935) · West Point RM 50 · live sensors upstream at Norrie & Turkey Point',
+      tideTitle: 'Tide Chart — Newburgh',
+      tideSubtitle: 'NOAA 8518935 Newburgh — ~3 mi south of Cornwall-on-Hudson at West Point',
+      mapCenter: [41.435, -74.036],
+      mapZoom: 10,
+    };
+
     const stationConfig = {
-      newburgh: { name: 'Newburgh', lat: 41.5032, lon: -73.9715, color: '#01696f', tempBase: 53.2, doBase: 8.5, phBase: 7.4, salinityBase: 0.18, conductivityBase: 285, flowBase: 7350, turbBase: 7.5 },
-      beacon: { name: 'Beacon', lat: 41.5055, lon: -73.9690, color: '#a12c7b', tempBase: 52.5, doBase: 8.6, phBase: 7.5, salinityBase: 0.12, conductivityBase: 278, flowBase: 7125, turbBase: 7.9 },
-      westpoint: { name: 'West Point', lat: 41.3805, lon: -73.9631, color: '#437a22', tempBase: 51.6, doBase: 8.8, phBase: 7.6, salinityBase: 0.08, conductivityBase: 265, flowBase: 6890, turbBase: 8.6 }
+      newburgh: { name: 'Newburgh', lat: 41.500, lon: -74.007, riverMile: 60, color: '#01696f', tempBase: 53.5, doBase: null, phBase: null, salinityBase: null, conductivityBase: null, flowBase: null, turbBase: null, tide: true },
+      west_point: { name: 'West Point', lat: 41.386, lon: -73.955, riverMile: 50, color: '#437a22', tempBase: 52.0, doBase: 8.5, phBase: 7.4, salinityBase: 0.08, conductivityBase: 265, flowBase: null, turbBase: 8.0 },
+      norrie_point: { name: 'Norrie Point', lat: 41.831, lon: -73.942, riverMile: 88, color: '#a12c7b', tempBase: 62.0, doBase: null, phBase: null, salinityBase: null, conductivityBase: null, flowBase: null, turbBase: null, met: true },
+      turkey_point: { name: 'Turkey Point', lat: 42.014, lon: -73.939, riverMile: 84, color: '#006494', tempBase: 54.5, doBase: null, phBase: null, salinityBase: 0.05, conductivityBase: 220, flowBase: null, turbBase: null },
     };
 
     const apiBase = window.HRECOS_API_BASE || '';
     const sampleMs = 10 * 60 * 1000;
 
     const state = {
+      region: 'cornwall_on_hudson',
       hours: 24,
       points: 144,
       records: {},
       events: [],
       markers: {},
+      map: null,
       charts: { temp: null, flow: null, tide: null },
       anomalyBoost: false,
       pollingEnabled: false,
@@ -589,14 +597,15 @@
       const flows = [];
       for (let i = 0; i < records.length; i++) {
         const row = records[i];
-        temps.push(row.temp);
-        flows.push(row.flow);
+        if (row.temp != null) temps.push(row.temp);
+        const flowMetric = row.flow ?? row.wind_speed;
+        if (flowMetric != null) flows.push(flowMetric);
         const temp1h = i >= 6 ? records[i - 6].temp : null;
-        const flow30m = i >= 3 ? records[i - 3].flow : null;
-        row.tempDelta = temp1h == null ? 0 : row.temp - temp1h;
-        row.flowDelta = flow30m == null ? 0 : row.flow - flow30m;
-        row.tempSpike = i >= 24 && row.tempDelta > stddev(temps.slice(Math.max(0, temps.length - 24))) * 2;
-        row.flowSpike = i >= 12 && row.flowDelta > stddev(flows.slice(Math.max(0, flows.length - 12))) * 2;
+        const flow30m = i >= 3 ? (records[i - 3].flow ?? records[i - 3].wind_speed) : null;
+        row.tempDelta = (temp1h == null || row.temp == null) ? 0 : row.temp - temp1h;
+        row.flowDelta = (flow30m == null || flowMetric == null) ? 0 : flowMetric - flow30m;
+        row.tempSpike = i >= 24 && row.temp != null && row.tempDelta > stddev(temps.slice(Math.max(0, temps.length - 24))) * 2;
+        row.flowSpike = i >= 12 && flowMetric != null && row.flowDelta > stddev(flows.slice(Math.max(0, flows.length - 12))) * 2;
       }
       return records;
     }
@@ -610,20 +619,29 @@
       const rows = [];
         for (let i = totalPoints - 1; i >= 0; i--) {
           const step = totalPoints - i;
+          const temp = cfg.tempBase + Math.sin(step / 9 + idx) * 0.45 + seededNoise(step + idx, 0.12);
           rows.push({
             timestamp: new Date(now.getTime() - i * sampleMs),
-            temp: cfg.tempBase + Math.sin(step / 9 + idx) * 0.45 + seededNoise(step + idx, 0.12),
-            flow: cfg.flowBase + Math.sin(step / 7 + idx * 0.7) * 180 + seededNoise(step + idx * 4, 40),
-            turbidity: Math.max(1.2, cfg.turbBase + Math.cos(step / 8 + idx) * 0.65 + seededNoise(step + idx * 3, 0.18)),
-            dissolvedOxygen: cfg.doBase + seededNoise(step + idx, 0.25),
-            ph: cfg.phBase + seededNoise(step + idx * 2, 0.08),
-            salinity: cfg.salinityBase + seededNoise(step + idx * 3, 0.02),
-            conductivity: cfg.conductivityBase + seededNoise(step + idx * 4, 12)
+            temp,
+            air_temp: cfg.met ? temp : null,
+            flow: cfg.flowBase == null ? null : cfg.flowBase + Math.sin(step / 7 + idx * 0.7) * 180 + seededNoise(step + idx * 4, 40),
+            turbidity: cfg.turbBase == null ? null : Math.max(1.2, cfg.turbBase + Math.cos(step / 8 + idx) * 0.65 + seededNoise(step + idx * 3, 0.18)),
+            dissolvedOxygen: synthValue(cfg.doBase, step, idx, 0.25),
+            ph: synthValue(cfg.phBase, step, idx, 0.08),
+            salinity: synthValue(cfg.salinityBase, step, idx, 0.02),
+            conductivity: synthValue(cfg.conductivityBase, step, idx, 12),
+            wind_speed: cfg.met ? 8 + seededNoise(step, 2) : null,
+            met: !!cfg.met,
           });
         }
         out[key] = recomputeStation(rows);
       });
       return out;
+    }
+
+    function synthValue(base, step, idx, scale, fallback = null) {
+      if (base == null) return fallback;
+      return base + seededNoise(step + idx, scale);
     }
 
     function nextSyntheticRow(key) {
@@ -632,38 +650,77 @@
       const rows = state.records[key];
       const last = rows[rows.length - 1];
       const step = rows.length + 1;
+      const temp = cfg.tempBase + Math.sin(step / 9 + idx) * 0.45 + seededNoise(step + idx, 0.12) + (state.anomalyBoost ? 1.1 : 0);
+      const flow = cfg.flowBase == null ? null : cfg.flowBase + Math.sin(step / 7 + idx * 0.7) * 180 + seededNoise(step + idx * 4, 40);
       return {
         timestamp: new Date(normalizeTimestamp(last.timestamp).getTime() + sampleMs),
-        temp: cfg.tempBase + Math.sin(step / 9 + idx) * 0.45 + seededNoise(step + idx, 0.12) + (state.anomalyBoost && key !== 'westpoint' ? 1.35 : 0),
-        flow: cfg.flowBase + Math.sin(step / 7 + idx * 0.7) * 180 + seededNoise(step + idx * 4, 40) + (state.anomalyBoost && key === 'westpoint' ? 820 : 0),
-        turbidity: Math.max(1.2, cfg.turbBase + Math.cos(step / 8 + idx) * 0.65 + seededNoise(step + idx * 3, 0.18) + (state.anomalyBoost ? 0.9 : 0)),
-        dissolvedOxygen: cfg.doBase + seededNoise(step + idx, 0.25) + (state.anomalyBoost ? -1.2 : 0),
-        ph: cfg.phBase + seededNoise(step + idx * 2, 0.08),
-        salinity: cfg.salinityBase + seededNoise(step + idx * 3, 0.02),
-        conductivity: cfg.conductivityBase + seededNoise(step + idx * 4, 12)
+        temp: cfg.met ? temp : temp,
+        air_temp: cfg.met ? temp : null,
+        flow,
+        turbidity: cfg.turbBase == null ? null : Math.max(1.2, cfg.turbBase + Math.cos(step / 8 + idx) * 0.65 + seededNoise(step + idx * 3, 0.18)),
+        dissolvedOxygen: synthValue(cfg.doBase, step, idx, 0.25),
+        ph: synthValue(cfg.phBase, step, idx, 0.08),
+        salinity: synthValue(cfg.salinityBase, step, idx, 0.02),
+        conductivity: synthValue(cfg.conductivityBase, step, idx, 12),
+        wind_speed: cfg.met ? 8 + seededNoise(step, 2) : null,
       };
+    }
+
+    function normalizeApiRow(row, cfg) {
+      const temp = row.temp ?? row.air_temp ?? null;
+      return {
+        timestamp: normalizeTimestamp(row.timestamp),
+        temp,
+        air_temp: row.air_temp ?? null,
+        flow: row.flow ?? null,
+        turbidity: row.turbidity ?? null,
+        dissolvedOxygen: row.dissolved_oxygen ?? row.dissolvedOxygen ?? null,
+        ph: row.ph ?? null,
+        salinity: row.salinity ?? null,
+        conductivity: row.conductance ?? row.conductivity ?? null,
+        wind_speed: row.wind_speed ?? null,
+        tempDelta: row.tempDelta ?? 0,
+        flowDelta: row.flowDelta ?? 0,
+        tempSpike: !!row.tempSpike,
+        flowSpike: !!row.flowSpike,
+        met: !!cfg?.met,
+      };
+    }
+
+    async function fetchBackendLatest() {
+      if (!apiBase) return null;
+      try {
+        const res = await fetch(`${apiBase}/api/latest?region=${state.region}`);
+        if (!res.ok) return null;
+        const raw = await res.json();
+        const readings = raw.readings || {};
+        const out = {};
+        Object.entries(readings).forEach(([key, row]) => {
+          if (!stationConfig[key]) return;
+          out[key] = [normalizeApiRow({ ...row, timestamp: raw.timestamp || new Date().toISOString() }, stationConfig[key])];
+        });
+        return Object.keys(out).length ? out : null;
+      } catch {
+        return null;
+      }
     }
 
     async function fetchBackendHistory() {
       if (!apiBase) return null;
       try {
-        const res = await fetch(`${apiBase}/api/history?hours=${state.hours}&anomaly=${state.anomalyBoost}`);
+        const res = await fetch(`${apiBase}/api/history?hours=${state.hours}&region=${state.region}`);
         if (!res.ok) return null;
         const raw = await res.json();
         const out = {};
         Object.keys(raw).forEach(key => {
-          out[key] = raw[key].slice(-maxPoints()).map(row => ({
-            timestamp: normalizeTimestamp(row.timestamp),
-            temp: row.temp,
-            flow: row.flow,
-            turbidity: row.turbidity,
-            tempDelta: row.tempDelta ?? 0,
-            flowDelta: row.flowDelta ?? 0,
-            tempSpike: !!row.tempSpike,
-            flowSpike: !!row.flowSpike
-          }));
+          if (!stationConfig[key]) return;
+          out[key] = raw[key].slice(-maxPoints()).map(row => normalizeApiRow(row, stationConfig[key]));
         });
-        return out;
+        if (Object.keys(out).length) {
+          Object.keys(out).forEach(key => { out[key] = recomputeStation(out[key]); });
+          return out;
+        }
+        return await fetchBackendLatest();
       } catch {
         return null;
       }
@@ -704,17 +761,29 @@
       return vals.reduce((a, b) => a + b, 0) / vals.length;
     }
 
+    function avgField(field) {
+      const vals = Object.keys(stationConfig).map(k => latestOf(k)[field]).filter(v => v != null);
+      return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+    }
+
+    function displayVal(value, unit, digits = 1) {
+      return value == null ? '—' : `${formatNumber(value, digits)} ${unit}`;
+    }
+
     function buildKPIs() {
       const kpiRoot = document.getElementById('kpis');
       const latestStations = Object.keys(stationConfig).map(k => latestOf(k));
-      const avgTemp = latestStations.reduce((a,b) => a + b.temp, 0) / latestStations.length;
-      const avgFlow = latestStations.reduce((a,b) => a + b.flow, 0) / latestStations.length;
-      const avgTurb = latestStations.reduce((a,b) => a + b.turbidity, 0) / latestStations.length;
+      const avgTemp = avgField('temp');
+      const avgFlow = avgField('flow');
+      const avgTurb = avgField('turbidity');
+      const avgWind = avgField('wind_speed');
       const spikes = latestStations.filter(r => r.tempSpike || r.flowSpike).length;
       const cards = [
-        { label: 'Avg water temp', value: `${formatNumber(avgTemp)} °F`, delta: stationDeltaMean('tempDelta'), positive: stationDeltaMean('tempDelta') >= 0 },
-        { label: 'Avg flow', value: `${formatNumber(avgFlow, 0)} cfs`, delta: stationDeltaMean('flowDelta'), positive: stationDeltaMean('flowDelta') >= 0, digits: 0 },
-        { label: 'Avg turbidity', value: `${formatNumber(avgTurb)} NTU`, delta: avgTurb - averageAtOffset('turbidity', 6), positive: (avgTurb - averageAtOffset('turbidity', 6)) <= 0 },
+        { label: 'Avg temp', value: displayVal(avgTemp, '°F'), delta: stationDeltaMean('tempDelta'), positive: stationDeltaMean('tempDelta') >= 0 },
+        avgFlow != null
+          ? { label: 'Avg flow', value: displayVal(avgFlow, 'cfs', 0), delta: stationDeltaMean('flowDelta'), positive: stationDeltaMean('flowDelta') >= 0, digits: 0 }
+          : { label: 'Avg wind', value: displayVal(avgWind, 'mph'), delta: 0, positive: true },
+        { label: 'Avg turbidity', value: displayVal(avgTurb, 'NTU'), delta: (avgTurb ?? 0) - averageAtOffset('turbidity', 6), positive: ((avgTurb ?? 0) - averageAtOffset('turbidity', 6)) <= 0 },
         { label: 'Active alerts', value: `${spikes}`, delta: spikes, positive: spikes === 0, suffix: spikes === 1 ? ' station flagged' : ' stations flagged' }
       ];
       kpiRoot.innerHTML = cards.map(card => {
@@ -731,22 +800,45 @@
       }).join('');
     }
 
+    function cell(value, unit = '', digits = 1) {
+      return value == null ? '—' : `${formatNumber(value, digits)}${unit ? ' ' + unit : ''}`;
+    }
+
     function renderTable() {
       const tbody = document.getElementById('stationTableBody');
       tbody.innerHTML = Object.entries(stationConfig).map(([key, cfg]) => {
         const r = latestOf(key);
         const statusClass = (r.tempSpike || r.flowSpike) ? 'alert' : 'ok';
         const statusText = r.tempSpike ? 'Temp spike' : r.flowSpike ? 'Flow spike' : 'Stable';
+        const tempLabel = cfg.met ? 'Air' : 'Water';
         return `
           <tr>
             <td><span class="legend-label"><span class="dot" style="background:${cfg.color}"></span>${cfg.name}</span></td>
-            <td>${formatNumber(r.temp)} °F</td>
-            <td>${formatNumber(r.flow, 0)} cfs</td>
-            <td>${formatNumber(r.turbidity)}</td><td>${formatNumber(r.dissolvedOxygen || cfg.doBase, 1)}</td><td>${formatNumber(r.ph || cfg.phBase, 1)}</td><td>${formatNumber(r.salinity || cfg.salinityBase, 2)}</td>
+            <td>${cell(r.temp, '°F')} <span class="subtle">${tempLabel}</span></td>
+            <td>${cfg.met ? cell(r.wind_speed, 'mph', 0) : cell(r.flow, 'cfs', 0)}</td>
+            <td>${cell(r.turbidity)}</td><td>${cell(r.dissolvedOxygen)}</td><td>${cell(r.ph)}</td><td>${cell(r.salinity, '', 2)}</td>
             <td><span class="badge ${statusClass}">${statusText}</span></td>
           </tr>
         `;
       }).join('');
+    }
+
+    function renderStationLegend() {
+      const root = document.getElementById('stationLegend');
+      root.innerHTML = Object.entries(stationConfig).map(([key, cfg]) => `
+        <div class="legend-item">
+          <span class="legend-label"><span class="dot" style="background:${cfg.color}"></span>${cfg.name}</span>
+          <span>RM ${cfg.riverMile ?? '—'}</span>
+        </div>
+      `).join('');
+    }
+
+    function updateRegionChrome() {
+      document.getElementById('regionTitle').textContent = regionMeta.title;
+      document.getElementById('regionSubtitle').textContent = regionMeta.subtitle;
+      document.getElementById('tideChartTitle').textContent = regionMeta.tideTitle;
+      document.getElementById('tideChartSubtitle').textContent = regionMeta.tideSubtitle;
+      renderStationLegend();
     }
 
     function collectEvents() {
@@ -775,12 +867,18 @@
     function renderSummary() {
       const root = document.getElementById('summaryPanel');
       const correlationSignal = state.events.filter(e => /spike/i.test(e.type)).length >= 2 ? 'Multi-station trigger pattern observed.' : 'No cross-station cascade currently detected.';
-      const warmest = Object.entries(stationConfig).map(([key, cfg]) => ({ name: cfg.name, temp: latestOf(key).temp })).sort((a,b) => b.temp - a.temp)[0];
-      const strongestFlow = Object.entries(stationConfig).map(([key, cfg]) => ({ name: cfg.name, flow: latestOf(key).flow })).sort((a,b) => b.flow - a.flow)[0];
+      const warmest = Object.entries(stationConfig)
+        .map(([key, cfg]) => ({ name: cfg.name, temp: latestOf(key).temp }))
+        .filter(s => s.temp != null)
+        .sort((a,b) => b.temp - a.temp)[0] || { name: '—', temp: null };
+      const strongestFlow = Object.entries(stationConfig)
+        .map(([key, cfg]) => ({ name: cfg.name, flow: latestOf(key).flow ?? latestOf(key).wind_speed }))
+        .filter(s => s.flow != null)
+        .sort((a,b) => b.flow - a.flow)[0] || { name: '—', flow: null };
       const latestTime = Object.keys(stationConfig).map(k => normalizeTimestamp(latestOf(k).timestamp)).sort((a,b) => b-a)[0];
       root.innerHTML = `
-        <div class="legend-item"><span class="subtle">Warmest station</span><strong>${warmest.name} · ${formatNumber(warmest.temp)} °F</strong></div>
-        <div class="legend-item"><span class="subtle">Highest flow</span><strong>${strongestFlow.name} · ${formatNumber(strongestFlow.flow, 0)} cfs</strong></div>
+        <div class="legend-item"><span class="subtle">Warmest station</span><strong>${warmest.name} · ${warmest.temp == null ? '—' : formatNumber(warmest.temp) + ' °F'}</strong></div>
+        <div class="legend-item"><span class="subtle">Strongest signal</span><strong>${strongestFlow.name} · ${strongestFlow.flow == null ? '—' : formatNumber(strongestFlow.flow, 0)}</strong></div>
         <div class="legend-item"><span class="subtle">Trigger summary</span><strong>${correlationSignal}</strong></div>
         <div class="legend-item"><span class="subtle">Latest timestamp</span><strong>${latestTime.toLocaleString()}</strong></div>
         <div class="legend-item"><span class="subtle">Export payload</span><strong>station, timestamp, temp, flow, turbidity, temp_delta_1h, flow_delta_30m</strong></div>
@@ -792,7 +890,7 @@
     
     async function fetchTideData() {
       try {
-        const res = await fetch(`${apiBase}/api/tides?hours=48`);
+        const res = await fetch(`${apiBase}/api/tides?hours=48&region=${state.region}`);
         if (!res.ok) return;
         tideData = await res.json();
         updateTideChart();
@@ -879,8 +977,22 @@
       return state.records[key].map(row => row[metric]);
     }
 
+    function primaryStationKey() {
+      return Object.keys(stationConfig)[0];
+    }
+
+    function chartLabels() {
+      const key = primaryStationKey();
+      return (state.records[key] || []).map(row => formatTime(row.timestamp));
+    }
+
+    function destroyCharts() {
+      Object.values(state.charts).forEach(chart => { if (chart) chart.destroy(); });
+      state.charts = { temp: null, flow: null, tide: null };
+    }
+
     function initCharts() {
-      const labels = state.records.newburgh.map(row => formatTime(row.timestamp));
+      const labels = chartLabels();
       state.charts.temp = new Chart(document.getElementById('tempChart'), {
         type: 'line',
         data: {
@@ -919,7 +1031,7 @@
     }
 
     function syncCharts() {
-      const labels = state.records.newburgh.map(row => formatTime(row.timestamp));
+      const labels = chartLabels();
       state.charts.temp.data.labels.length = 0;
       state.charts.flow.data.labels.length = 0;
       labels.forEach(label => {
@@ -932,8 +1044,9 @@
         tempData.length = 0;
         flowData.length = 0;
         state.records[key].forEach(row => {
-          tempData.push(Number(row.temp.toFixed(2)));
-          flowData.push(Math.round(row.flow));
+          tempData.push(row.temp == null ? null : Number(row.temp.toFixed(2)));
+          const flowMetric = row.flow ?? row.wind_speed;
+          flowData.push(flowMetric == null ? null : Math.round(flowMetric));
         });
       });
       state.charts.temp.options = chartOptions();
@@ -943,8 +1056,14 @@
     }
 
     function initMap() {
-      const map = L.map('map', { zoomControl: true }).setView([41.45, -73.97], 11);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
+      if (!state.map) {
+        state.map = L.map('map', { zoomControl: true }).setView(regionMeta.mapCenter, regionMeta.mapZoom);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors' }).addTo(state.map);
+      } else {
+        state.map.setView(regionMeta.mapCenter, regionMeta.mapZoom);
+      }
+      Object.values(state.markers).forEach(marker => state.map.removeLayer(marker));
+      state.markers = {};
       Object.entries(stationConfig).forEach(([key, cfg]) => {
         const marker = L.circleMarker([cfg.lat, cfg.lon], {
           radius: 9,
@@ -952,7 +1071,7 @@
           weight: 3,
           fillColor: cfg.color,
           fillOpacity: .65
-        }).addTo(map);
+        }).addTo(state.map);
         state.markers[key] = marker;
       });
     }
@@ -965,9 +1084,9 @@
         marker.setStyle({ radius: (r.tempSpike || r.flowSpike) ? 11 : 9 });
         marker.bindPopup(`
           <strong>${cfg.name}</strong><br>
-          Temp: ${formatNumber(r.temp)} °F<br>
-          Flow: ${formatNumber(r.flow, 0)} cfs<br>
-          Turbidity: ${formatNumber(r.turbidity)} NTU<br>
+          ${cfg.met ? 'Air temp' : 'Water temp'}: ${cell(r.temp, '°F')}<br>
+          ${cfg.met ? 'Wind' : 'Flow'}: ${cfg.met ? cell(r.wind_speed, 'mph', 0) : cell(r.flow, 'cfs', 0)}<br>
+          Turbidity: ${cell(r.turbidity, 'NTU')}<br>
           Status: ${(r.tempSpike || r.flowSpike) ? 'Trigger detected' : 'Stable'}
         `);
       });
@@ -1043,6 +1162,7 @@
       if (window.innerWidth > 1100) document.getElementById('sidebar').classList.remove('open');
     });
 
+    updateRegionChrome();
     initMap();
     fullRender({ reset: true });
     applyPolling();

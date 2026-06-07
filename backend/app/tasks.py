@@ -8,7 +8,7 @@ import logging
 
 from app.db import async_session
 from app.models import HRECOSReading, AnomalyLog
-from app.hr_data import STATIONS, fetch_station_sync
+from app.hr_data import FOCUS_STATIONS, STATIONS, fetch_station_sync
 from app.anomalies import AnomalyDetector, check_thresholds
 from app.alerts import send_bulk_alerts
 
@@ -21,7 +21,7 @@ class HRECOSScheduler:
     def __init__(self):
         self.scheduler = None
         self.detector = AnomalyDetector(contamination=0.05)
-        self._data_buffer: Dict[str, list] = {name: [] for name in STATIONS.keys()}
+        self._data_buffer: Dict[str, list] = {name: [] for name in FOCUS_STATIONS}
         self._last_fetch_time = None
         self._last_tide_type = None
         
@@ -108,7 +108,8 @@ class HRECOSScheduler:
         """Fetch data from all stations and save to database"""
         logger.info(f"[{datetime.utcnow()}] Fetching data from all stations...")
         
-        for station_key, station_config in STATIONS.items():
+        for station_key in FOCUS_STATIONS:
+            station_config = STATIONS[station_key]
             try:
                 # Fetch data
                 record = fetch_station_sync(station_key, station_config)

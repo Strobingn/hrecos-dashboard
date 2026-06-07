@@ -99,8 +99,9 @@ jobs:
     - name: Build frontend image
       uses: docker/build-push-action@v5
       with:
-        context: .
-        file: ./docker-compose.yml
+        context: ./frontend
+        file: ./frontend/Dockerfile
         push: false
+        tags: hrecos-frontend:test
         cache-from: type=gha
         cache-to: type=gha,mode=max
