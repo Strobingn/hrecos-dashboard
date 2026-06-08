@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from typing import Optional
+import os
 
 from fastapi import FastAPI, Depends, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -49,11 +50,13 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS middleware
+# CORS middleware - restrict to known origins in production
+# Set HRECOS_CORS_ORIGINS env var to a comma-separated list of allowed origins
+_cors_origins = os.getenv("HRECOS_CORS_ORIGINS", "*").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure for production
-    allow_credentials=True,
+    allow_origins=_cors_origins,
+    allow_credentials=False if "*" in _cors_origins else True,
     allow_methods=["*"],
     allow_headers=["*"],
 )

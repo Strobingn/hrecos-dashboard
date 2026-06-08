@@ -1,4 +1,4 @@
-﻿version: "3.9"
+version: "3.9"
 services:
   db:
     image: postgres:15-alpine
@@ -21,11 +21,12 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://postgres:localpassword@db:5432/hrecos
       SECRET_KEY: local-development-secret-key
+      HRECOS_CORS_ORIGINS: "*"
       EMAIL_ENABLED: "false"
       SMS_ENABLED: "false"
       SLACK_ENABLED: "false"
     ports:
-      - "18080:8000"
+      - "8000:8000"
     depends_on:
       db:
         condition: service_healthy
@@ -33,9 +34,10 @@ services:
   frontend:
     image: nginx:alpine
     volumes:
-      - ./frontend/index.html:/usr/share/nginx/html/index.html:ro
+      - ./frontend:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
     ports:
-      - "18081:80"
+      - "8080:80"
     depends_on:
       - backend
 

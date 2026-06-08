@@ -7,9 +7,13 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Use SQLite for local dev when no PostgreSQL available
+# Store in project directory for persistence across reboots
+PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DEFAULT_SQLITE_PATH = os.path.join(PROJECT_DIR, "hrecos.db")
+
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "sqlite+aiosqlite:////tmp/hrecos.db"
+    f"sqlite+aiosqlite:///{DEFAULT_SQLITE_PATH}"
 )
 
 # SQLite needs StaticPool + connect_args for async use

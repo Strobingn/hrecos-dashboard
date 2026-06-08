@@ -111,8 +111,9 @@ class HRECOSScheduler:
         for station_key in FOCUS_STATIONS:
             station_config = STATIONS[station_key]
             try:
-                # Fetch data
-                record = fetch_station_sync(station_key, station_config)
+                # Fetch data (async to avoid blocking the event loop)
+                from app.hr_data import fetch_station_async
+                record = await fetch_station_async(station_key, station_config)
                 
                 if not record:
                     logger.warning(f"No data received for station {station_key}")

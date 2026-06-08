@@ -40,6 +40,7 @@ services:
     environment:
       - DATABASE_URL=postgresql+asyncpg://postgres:${DB_PASSWORD:-changeme-strong-password}@db:5432/hrecos
       - HRECOS_API_URL=https://hrecos.org/api/data
+      - HRECOS_CORS_ORIGINS=${HRECOS_CORS_ORIGINS:-*}
       - EMAIL_ENABLED=false
       - SMS_ENABLED=false
       - SLACK_ENABLED=false

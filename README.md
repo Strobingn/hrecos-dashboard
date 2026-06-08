@@ -352,8 +352,8 @@ MIT License - See [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-- **Issues**: [GitHub Issues](https://github.com/bass/hrecos-dashboard/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/bass/hrecos-dashboard/discussions)
+- **Issues**: [GitHub Issues](https://github.com/Strobingn/hrecos-dashboard/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/Strobingn/hrecos-dashboard/discussions)
 - **Email**: support@hrecos-dashboard.local
 
 ## 🙏 Acknowledgments
@@ -366,4 +366,4 @@ MIT License - See [LICENSE](LICENSE) file
 
 Built with ❤️ for the Hudson River community.
 
-[![Deploy to Production](https://img.shields.io/badge/Deploy-Production-success?style=for-the-badge&logo=github-actions)](https://github.com/bass/hrecos-dashboard/actions/workflows/deploy.yml)
+[![Deploy to Production](https://img.shields.io/badge/Deploy-Production-success?style=for-the-badge&logo=github-actions)](https://github.com/Strobingn/hrecos-dashboard/actions/workflows/deploy.yml)

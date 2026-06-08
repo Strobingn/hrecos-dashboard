@@ -25,7 +25,8 @@
 <link rel="preconnect" href="https://maps.googleapis.com">
 <link rel="dns-prefetch" href="https://maps.googleapis.com">
 
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB98gCMl2be0ujls1xHrQ-6ndg-ufrQi0g&callback=initMap" async defer></script>
+<!-- IMPORTANT: Replace YOUR_GOOGLE_MAPS_API_KEY with your actual API key from Google Cloud Console -->
+<script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&callback=initMap" async defer onerror="console.warn('Google Maps failed to load. Please add your API key to index.html')" onload="console.log('Google Maps loaded successfully')"></script>
 </head>
 <body>
 <div class="app" id="app"></div>

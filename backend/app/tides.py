@@ -237,11 +237,11 @@ def generate_synthetic_tides(hours: int = 48) -> List[Dict]:
     for i in range(hours * 2):
         t = now + timedelta(minutes=i * 30)
         height = 2.5 + 2.0 * math.sin(i * 0.52) + 0.5 * math.sin(i * 1.04)
-        prev_height = tides[-1]["height"] if tides else height
+        prev_height = tides[-1]["height"] if tides else height - 0.01  # Slightly lower to ensure first is "high"
         tides.append({
             "time": t,
             "height": round(height, 2),
-            "type": "high" if height > prev_height else "low",
+            "type": "high" if height >= prev_height else "low",
         })
     return tides
 

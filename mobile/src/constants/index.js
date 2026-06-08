@@ -1,5 +1,9 @@
 // HRECOS RiverWatch - Constants & Parameter Metadata
 
+// Fishing ideal ranges (used by calculations.js)
+export const FISHING_IDEAL_TEMPS = { min: 55, max: 75 };
+export const FISHING_IDEAL_FLOW = { min: 100, max: 5000 };
+
 // Parameter metadata for display
 export const PARAM_INFO = {
   temp: {
