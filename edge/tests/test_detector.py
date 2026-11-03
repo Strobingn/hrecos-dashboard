@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 
 from hydrophone_node.audio.synthesize import (
+    BASS_BOUT_DURATION_S,
     BOAT_PASS_DURATION_S,
     DRUM_DURATION_S,
     STURGEON_DURATION_S,
@@ -17,7 +18,12 @@ from hydrophone_node.detect.band_energy import BandEnergyDetector
 from hydrophone_node.detect.registry import build_detector, load_entrypoint
 
 SAMPLE_RATE = 8000
-FISH = {"sturgeon_thunder", "drum_knock", "toadfish_boatwhistle"}
+FISH = {
+    "sturgeon_thunder",
+    "drum_knock",
+    "toadfish_boatwhistle",
+    "bass_spawning_splash",
+}
 
 
 def _detect(events, duration=12.0, seed=1):
@@ -42,9 +48,7 @@ def test_detects_sturgeon_thunder_and_not_the_other_fish():
     assert hits[0].freq_low_hz == 10
     assert hits[0].freq_high_hz == 100
     assert 0.0 <= hits[0].confidence <= 1.0
-    assert not any(
-        event.label in {"drum_knock", "toadfish_boatwhistle"} for event in events
-    )
+    assert not any(event.label in FISH - {"sturgeon_thunder"} for event in events)
 
 
 def test_detects_drum_knock_train():
@@ -58,7 +62,7 @@ def test_detects_drum_knock_train():
     assert len(hits) == 1
     assert hits[0].species_id == LABEL_SPECIES["drum_knock"]
     assert hits[0].freq_low_hz == 350
-    assert not any(event.label == "sturgeon_thunder" for event in events)
+    assert not any(event.label in FISH - {"drum_knock"} for event in events)
 
 
 def test_detects_toadfish_boatwhistle():
@@ -74,9 +78,7 @@ def test_detects_toadfish_boatwhistle():
     ]
     assert len(hits) == 1
     assert hits[0].species_id == "oyster_toadfish"
-    assert not any(
-        event.label in {"sturgeon_thunder", "drum_knock"} for event in events
-    )
+    assert not any(event.label in FISH - {"toadfish_boatwhistle"} for event in events)
 
 
 def test_detects_a_close_boat_pass():
@@ -95,6 +97,66 @@ def test_detects_a_close_boat_pass():
     assert not any(event.label in FISH for event in events)
 
 
+def test_detects_bass_spawning_splash():
+    start = 4.0
+    events, _ = _detect(
+        [SynthEvent("bass_spawning_splash", start, BASS_BOUT_DURATION_S)],
+        duration=12.0,
+    )
+    hits = [
+        event
+        for event in events
+        if event.label == "bass_spawning_splash"
+        and _overlaps(event, start, start + BASS_BOUT_DURATION_S)
+    ]
+    assert len(hits) == 1
+    assert hits[0].species_id == "striped_bass"
+    assert hits[0].freq_low_hz == 200
+    assert hits[0].freq_high_hz == 2000
+    assert 0.0 <= hits[0].confidence <= 1.0
+    assert not any(event.label in FISH - {"bass_spawning_splash"} for event in events)
+
+
+def test_stop_start_wake_is_not_a_spawning_splash():
+    """A long stop-start wake, with engine rumble before each slap, is not bass.
+
+    The on-periods last many seconds. That is the field distinction from a
+    rock fight, which is a short cluster of sharp splashes.
+    """
+    events, _ = _detect(
+        [SynthEvent("stop_start_wake", 0.0, 48.0)],
+        duration=48.0,
+        seed=3,
+    )
+    assert not any(event.label == "bass_spawning_splash" for event in events)
+
+
+def test_rain_is_not_a_spawning_splash():
+    events, _ = _detect([], duration=30.0, seed=5)
+    rainy, _ = _detect(
+        [SynthEvent("rain", 0.0, 30.0)],
+        duration=30.0,
+        seed=5,
+    )
+    assert not any(event.label == "bass_spawning_splash" for event in events)
+    assert not any(event.label == "bass_spawning_splash" for event in rainy)
+
+
+def test_bass_bout_still_detected_after_a_wake():
+    events, _ = _detect(
+        [
+            SynthEvent("stop_start_wake", 0.0, 36.0),
+            SynthEvent("bass_spawning_splash", 42.0, BASS_BOUT_DURATION_S),
+        ],
+        duration=50.0,
+        seed=4,
+    )
+    bass = [event for event in events if event.label == "bass_spawning_splash"]
+    assert len(bass) == 1
+    assert _overlaps(bass[0], 42.0, 42.0 + BASS_BOUT_DURATION_S)
+    assert bass[0].species_id == "striped_bass"
+
+
 def test_hum_and_distant_boats_are_not_fish():
     events, _ = _detect([], duration=15.0, seed=9)
     assert not any(event.label in FISH for event in events)
@@ -105,7 +167,13 @@ def test_one_minute_scene_finds_every_template(sample_rate):
     audio = render_interval(0.0, 60.0, sample_rate, 60.0, seed=2)
     events = BandEnergyDetector().detect(audio, sample_rate)
     labels = {event.label for event in events}
-    assert {"sturgeon_thunder", "drum_knock", "toadfish_boatwhistle", "boat"} <= labels
+    assert {
+        "sturgeon_thunder",
+        "drum_knock",
+        "toadfish_boatwhistle",
+        "bass_spawning_splash",
+        "boat",
+    } <= labels
     for event in events:
         assert event.model_name == "band_energy"
         assert event.model_version == "1.0.0"

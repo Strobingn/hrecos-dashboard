@@ -1,12 +1,16 @@
 """Rule-based detector on band energy, pulse rate, and tonal peaks.
 
-This is the stand-in for an ML model. It looks for the same three call
-templates the synthesizer produces, plus a close boat pass:
+This is the stand-in for an ML model. It looks for the call templates the
+synthesizer produces, plus a close boat pass:
 
 - sturgeon thunder: several impulsive peaks in 15-90 Hz whose spectrum
   peaks near 44 Hz and lasts on the order of 1.9 s
 - drum knocks: ~25 impulses near 400 Hz inside ~0.8 s
 - toadfish boatwhistle: a harmonic tone with fundamental near 200 Hz
+- striped bass rock fight: a short bout of sharp broadband splashes.
+  Burst duration, onset, inter-burst gap, and duty cycle separate it from
+  rain and from boat wake (sustained, or stop-start over tens of seconds,
+  usually with an engine tonal before the slap)
 - boat: several seconds of loud, spectrally flat energy below ~250 Hz
 """
 
@@ -96,6 +100,7 @@ class BandEnergyDetector:
         events.extend(self._sturgeon(x, sample_rate))
         events.extend(self._drum(x, sample_rate))
         events.extend(self._toadfish(x, sample_rate))
+        events.extend(self._bass(x, sample_rate))
         events.extend(self._boat(x, sample_rate, events))
         events.sort(key=lambda event: event.start_offset_s)
         return events
@@ -275,6 +280,115 @@ class BandEnergyDetector:
             )
         return events
 
+    def _bass(self, samples: np.ndarray, sample_rate: float) -> list[DetectionEvent]:
+        """Broadband impulsive bursts clustered into a short bout.
+
+        A spawning splash is a sharp onset, a few tens of milliseconds long,
+        and the next splash follows within a few tenths of a second. The
+        envelope then drops. Over a 30–120 s window the duty cycle stays low.
+
+        Boat wake fails that shape. It is constant, or it stops and starts
+        over tens of seconds, and an engine tonal / low-frequency rumble is
+        usually already present when the slap arrives. Rain fails it by
+        staying spread out, with drops too short and too evenly spaced to
+        form one isolated bout.
+        """
+        high_hz = min(2000.0, sample_rate * 0.45)
+        if high_hz <= 400.0:
+            return []
+        band = _bandpass(samples, sample_rate, 350.0, high_hz)
+        envelope = _moving_mean(band, max(1, int(0.002 * sample_rate)))
+        floor = float(np.median(envelope)) + 1e-12
+        threshold = floor * 10.0
+        peaks, _ = find_peaks(
+            envelope,
+            height=threshold,
+            distance=int(0.08 * sample_rate),
+            prominence=threshold * 0.5,
+        )
+        qualified: list[tuple[float, float, float]] = []
+        for peak in peaks:
+            shape = _burst_shape(envelope, int(peak), sample_rate)
+            if shape is None:
+                continue
+            duration_s, onset_s = shape
+            # Longer than a rain drop, shorter than a wake slap.
+            if not 0.008 <= duration_s <= 0.09:
+                continue
+            if onset_s > 0.015:
+                continue
+            local = _local_median(envelope, int(peak), int(0.25 * sample_rate))
+            if envelope[int(peak)] < local * 6.0:
+                continue
+            qualified.append((float(peak) / sample_rate, duration_s, onset_s))
+        if len(qualified) < 4:
+            return []
+
+        bouts: list[list[tuple[float, float, float]]] = [[qualified[0]]]
+        for burst in qualified[1:]:
+            gap = burst[0] - bouts[-1][-1][0]
+            if 0.08 <= gap <= 0.9:
+                bouts[-1].append(burst)
+            else:
+                bouts.append([burst])
+
+        duration = samples.size / sample_rate
+        low_frames, low_times = _low_band_frames(samples, sample_rate)
+        events: list[DetectionEvent] = []
+        for bout in bouts:
+            if not 4 <= len(bout) <= 14:
+                continue
+            start = bout[0][0]
+            end = bout[-1][0] + bout[-1][1]
+            span = end - start
+            if not 0.7 <= span <= 5.5:
+                continue
+            intervals = np.diff([item[0] for item in bout])
+            median_interval = float(np.median(intervals))
+            if not 0.12 <= median_interval <= 0.7:
+                continue
+            outside = sum(
+                1 for item in qualified if item[0] < start - 0.5 or item[0] > end + 0.5
+            )
+            # A few stray impulses (a drum knock, one short splash) can sit
+            # outside the bout. Rain puts impulses across the whole window.
+            if outside > 4:
+                continue
+            # Inside the bout the envelope has to fall between splashes.
+            # A wake wash stays up, so its duty cycle inside the "bout" is high.
+            if (
+                _between_burst_quiet(
+                    envelope, sample_rate, [item[0] for item in bout], threshold
+                )
+                < 0.45
+            ):
+                continue
+            window_start, window_end = _duty_window(start, end, duration)
+            # Over 30–120 s (or the whole clip when it is shorter) splashes
+            # occupy little of the window. Sustained wake does not.
+            if (
+                _envelope_duty(
+                    envelope, sample_rate, window_start, window_end, threshold
+                )
+                > 0.4
+            ):
+                continue
+            if _sustained_low(low_frames, low_times, start - 8.0, end, min_run_s=3.0):
+                continue
+            if _engine_tonal(samples, sample_rate, max(0.0, start - 8.0), start):
+                continue
+            events.append(
+                self._event(
+                    max(0.0, start - 0.05),
+                    end + 0.05,
+                    "bass_spawning_splash",
+                    _confidence(float(len(bout))),
+                    200.0,
+                    2000.0,
+                )
+            )
+        return events
+
     def _boat(
         self,
         samples: np.ndarray,
@@ -339,6 +453,178 @@ class BandEnergyDetector:
                 self._event(start, end, "boat", _confidence(ratio), 10.0, 500.0)
             )
         return events
+
+
+def _burst_shape(
+    envelope: np.ndarray, peak: int, sample_rate: float
+) -> tuple[float, float] | None:
+    """Return (duration_s, onset_s) for one impulsive peak.
+
+    Duration is the time the envelope stays above a quarter of the peak.
+    Onset is the rise from 20% to 80% of the peak. A spawning splash is short
+    and steep. A wake slap is longer and takes longer to arrive.
+    """
+    peak_val = float(envelope[peak])
+    if peak_val <= 0:
+        return None
+    left_limit = max(0, peak - int(0.1 * sample_rate))
+    left = peak
+    while left > left_limit and envelope[left] > 0.25 * peak_val:
+        left -= 1
+    right_limit = min(envelope.size - 1, peak + int(0.15 * sample_rate))
+    right = peak
+    while right < right_limit and envelope[right] > 0.25 * peak_val:
+        right += 1
+    duration_s = (right - left) / sample_rate
+    climb = envelope[left : peak + 1]
+    if climb.size < 2:
+        return None
+    above_20 = np.flatnonzero(climb >= 0.2 * peak_val)
+    above_80 = np.flatnonzero(climb >= 0.8 * peak_val)
+    if above_20.size == 0 or above_80.size == 0:
+        return None
+    onset_s = (int(above_80[0]) - int(above_20[0])) / sample_rate
+    return duration_s, max(0.0, onset_s)
+
+
+def _local_median(envelope: np.ndarray, peak: int, radius: int) -> float:
+    start = max(0, peak - radius)
+    stop = min(envelope.size, peak + radius)
+    return float(np.median(envelope[start:stop])) + 1e-12
+
+
+def _duty_window(
+    bout_start: float, bout_end: float, duration: float
+) -> tuple[float, float]:
+    """Window of 30–120 s around a bout, or the whole clip when it is shorter."""
+    if duration <= 120.0:
+        return 0.0, duration
+    span = 60.0
+    start = max(0.0, bout_start - 20.0)
+    end = min(duration, start + span)
+    start = max(0.0, end - span)
+    return start, end
+
+
+def _between_burst_quiet(
+    envelope: np.ndarray,
+    sample_rate: float,
+    burst_times: list[float],
+    threshold: float,
+) -> float:
+    """Fraction of the gaps between bursts that have already fallen quiet."""
+    quiet = []
+    for left, right in zip(burst_times, burst_times[1:]):
+        start = int(left * sample_rate)
+        stop = int(right * sample_rate)
+        if stop <= start:
+            continue
+        quiet.append(float(np.mean(envelope[start:stop] < threshold)))
+    if not quiet:
+        return 0.0
+    return float(np.median(quiet))
+
+
+def _envelope_duty(
+    envelope: np.ndarray,
+    sample_rate: float,
+    start_s: float,
+    end_s: float,
+    threshold: float,
+) -> float:
+    start = max(0, int(start_s * sample_rate))
+    stop = min(envelope.size, int(end_s * sample_rate))
+    if stop <= start:
+        return 0.0
+    return float(np.mean(envelope[start:stop] > threshold))
+
+
+def _low_band_frames(
+    samples: np.ndarray, sample_rate: float
+) -> tuple[np.ndarray, np.ndarray]:
+    window = int(0.5 * sample_rate)
+    hop = int(0.25 * sample_rate)
+    if samples.size < window:
+        return np.zeros(0), np.zeros(0)
+    low = _bandpass(samples, sample_rate, 20.0, 180.0)
+    levels = []
+    times = []
+    for start in range(0, low.size - window + 1, hop):
+        frame = low[start : start + window]
+        levels.append(float(np.sqrt(np.mean(np.square(frame)))))
+        times.append(start / sample_rate)
+    return np.asarray(levels), np.asarray(times)
+
+
+def _sustained_low(
+    levels: np.ndarray,
+    times: np.ndarray,
+    start_s: float,
+    end_s: float,
+    min_run_s: float,
+) -> bool:
+    """True when low-frequency energy stays up for several seconds.
+
+    That is engine rumble or a wake wash, not the gaps inside a splash bout.
+    """
+    if levels.size == 0:
+        return False
+    floor = float(np.percentile(levels, 25)) + 1e-12
+    loud = levels > max(floor * 4.0, 0.03)
+    run_start = None
+    for index, flag in enumerate(loud):
+        if flag and run_start is None:
+            run_start = index
+        elif not flag and run_start is not None:
+            run_end = times[index - 1] + 0.5
+            run_begin = times[run_start]
+            if (
+                run_end - run_begin >= min_run_s
+                and run_end > start_s
+                and run_begin < end_s
+            ):
+                return True
+            run_start = None
+    if run_start is not None:
+        run_begin = times[run_start]
+        run_end = times[-1] + 0.5
+        if run_end - run_begin >= min_run_s and run_end > start_s and run_begin < end_s:
+            return True
+    return False
+
+
+def _engine_tonal(
+    samples: np.ndarray, sample_rate: float, start_s: float, end_s: float
+) -> bool:
+    """Loud low-frequency tonal, the kind an engine leaves before a wake slap.
+
+    Quiet 60 Hz hum does not count: the band has to be loud in absolute level
+    and the peak has to stand well above the rest of 25–160 Hz.
+    """
+    start = max(0, int(start_s * sample_rate))
+    stop = min(samples.size, int(end_s * sample_rate))
+    if stop - start < int(0.5 * sample_rate):
+        return False
+    clip = samples[start:stop]
+    low = _bandpass(clip, sample_rate, 20.0, 180.0)
+    low_rms = float(np.sqrt(np.mean(np.square(low))))
+    if low_rms < 0.035:
+        return False
+    freqs, spec = _spectrum(clip, sample_rate)
+    band = (freqs >= 25.0) & (freqs <= 160.0)
+    if not np.any(band):
+        return False
+    band_spec = spec[band]
+    band_freqs = freqs[band]
+    peak_index = int(np.argmax(band_spec))
+    prominence = float(band_spec[peak_index]) / (float(np.median(band_spec)) + 1e-12)
+    if prominence < 8.0:
+        return False
+    peak_hz = float(band_freqs[peak_index])
+    # Mains hum alone is not an engine. An engine here is louder and harmonic.
+    if abs(peak_hz - 60.0) < 4.0 and low_rms < 0.06:
+        return False
+    return True
 
 
 def _fill_short_gaps(mask: np.ndarray, gap_frames: int) -> np.ndarray:

@@ -20,7 +20,7 @@ Supabase tables (the migrations are owned separately; these names match them):
 
 - `hydrophone_nodes` — one row per node, upserted on every heartbeat
 - `audio_segments` — one row per 60 s segment. `band_levels` is jsonb with keys `10-100`, `100-500`, `500-2000`. `storage_path` is an object in the Storage bucket `audio`
-- `detections` — `label` is `sturgeon_thunder`, `drum_knock`, `toadfish_boatwhistle`, `boat`, or `unknown`. `species_id` is `atlantic_sturgeon`, `freshwater_drum`, `oyster_toadfish`, or null. `review_status` is `unreviewed`
+- `detections` — `label` is `sturgeon_thunder`, `drum_knock`, `toadfish_boatwhistle`, `bass_spawning_splash`, `boat`, or `unknown`. `species_id` is `atlantic_sturgeon`, `freshwater_drum`, `oyster_toadfish`, `striped_bass`, or null. `review_status` is `unreviewed`
 
 `rms_db` and the band levels are `20*log10(RMS)` of the float samples, plus `calibration_offset_db`. Offset `0` means dBFS (full scale is 0 dB). Add the H2a sensitivity and preamp gain on the Pi when you want dB re 1 µPa.
 
@@ -55,9 +55,10 @@ Other nodes: `config/westpoint-cornwall.yaml`, `config/tappan-zee.yaml`. `config
 - Atlantic sturgeon spawning thunder: about 1.9 s of percussive beats, energy in 10–100 Hz, peak near 44 Hz
 - Freshwater drum: about 25 knocks near 400 Hz across about 0.8 s
 - Oyster toadfish boatwhistle: a short harmonic tone near 200 Hz
+- Striped bass spawning splash (`bass_spawning_splash`): one short bout of sharp broadband surface splashes, the acoustic side of a rock fight
 - a closer boat pass later in the segment
 
-`source.calls: false` leaves the noise bed with no injected calls. `source.duration_s` stops the synthesizer; leave it empty to run until the process is stopped. `source.seed` fixes the noise.
+`source.calls: false` leaves the noise bed with no injected calls. `source.rain: true` adds rain (small drops spread across the segment). Rain is off by default. `source.duration_s` stops the synthesizer; leave it empty to run until the process is stopped. `source.seed` fixes the noise.
 
 **folder.** Every `.wav` and `.flac` under `source.path` (or `HYDROPHONE_SOURCE_PATH`), sorted by path, as one stream. Files are resampled to `sample_rate_hz`. WAV is read with the standard library; FLAC needs `libsndfile` (installed in the Docker image).
 
@@ -85,6 +86,8 @@ source:
 ## Detector
 
 `detector.name: band_energy` is the baseline (`model_name=band_energy`, `model_version=1.0.0`). It is a small rule set on band energy, pulse rate, and tonal peaks, written so it fires on the synthetic templates above.
+
+Striped bass uses the temporal shape of the bout, not just "broadband energy". A splash burst is short (tens of milliseconds) with a sharp onset, and the gaps inside a bout are a few tenths of a second, so the envelope duty cycle over a 30–120 s window stays low. Boat wake is rejected when the energy is sustained, or stop-start, over tens of seconds, and when an engine tonal or low-frequency rumble is already present. Rain is rejected because the drops are shorter and stay spread out instead of forming one isolated bout.
 
 Replace it with a model without touching the pipeline:
 

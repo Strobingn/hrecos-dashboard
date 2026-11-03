@@ -66,6 +66,7 @@ class SourceConfig:
     calls: bool = True
     hum: bool = True
     ambient_boat: bool = True
+    rain: bool = False
     device: str | None = None
 
 
@@ -193,6 +194,7 @@ def load_config(path: str | Path) -> AppConfig:
         calls=_as_bool(source_raw.get("calls"), True),
         hum=_as_bool(source_raw.get("hum"), True),
         ambient_boat=_as_bool(source_raw.get("ambient_boat"), True),
+        rain=_as_bool(source_raw.get("rain"), False),
         device=source_raw.get("device"),
     )
 

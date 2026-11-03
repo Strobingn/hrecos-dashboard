@@ -98,7 +98,13 @@ def test_dry_run_writes_contract_rows_and_does_not_use_the_network(
         labels.add(row["label"])
         if row["label"] == "boat":
             assert row["species_id"] is None
-    assert {"sturgeon_thunder", "drum_knock", "toadfish_boatwhistle", "boat"} <= labels
+    assert {
+        "sturgeon_thunder",
+        "drum_knock",
+        "toadfish_boatwhistle",
+        "bass_spawning_splash",
+        "boat",
+    } <= labels
 
 
 def test_folder_replay_publishes_one_segment(tmp_path):

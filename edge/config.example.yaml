@@ -28,9 +28,10 @@ source:
   # synth:
   seed: 1
   duration_s:                # empty = run until stopped
-  calls: true                # sturgeon thunder, drum knocks, toadfish boatwhistle
+  calls: true                # sturgeon, drum, toadfish, striped bass splash, boat pass
   hum: true                  # 60 Hz mains hum
   ambient_boat: true
+  rain: false                # optional rain; small drops, not a spawning bout
   # device (Raspberry Pi + USB audio interface for the H2a):
   device: null               # sounddevice name, e.g. "hw:1,0"
 

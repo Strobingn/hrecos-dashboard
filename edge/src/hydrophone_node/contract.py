@@ -17,6 +17,7 @@ DETECTION_LABELS = (
     "sturgeon_thunder",
     "drum_knock",
     "toadfish_boatwhistle",
+    "bass_spawning_splash",
     "boat",
     "unknown",
 )
@@ -25,12 +26,14 @@ SPECIES_IDS = (
     "atlantic_sturgeon",
     "freshwater_drum",
     "oyster_toadfish",
+    "striped_bass",
 )
 
 LABEL_SPECIES = {
     "sturgeon_thunder": "atlantic_sturgeon",
     "drum_knock": "freshwater_drum",
     "toadfish_boatwhistle": "oyster_toadfish",
+    "bass_spawning_splash": "striped_bass",
     "boat": None,
     "unknown": None,
 }

@@ -239,6 +239,7 @@ class SynthSource(AudioSource):
         calls: bool = True,
         hum: bool = True,
         ambient_boat: bool = True,
+        rain: bool = False,
     ):
         self.sample_rate = int(sample_rate)
         self.segment_seconds = float(segment_seconds)
@@ -247,6 +248,7 @@ class SynthSource(AudioSource):
         self.calls = calls
         self.hum = hum
         self.ambient_boat = ambient_boat
+        self.rain = rain
 
     def __iter__(self) -> Iterator[np.ndarray]:
         t = 0.0
@@ -265,6 +267,7 @@ class SynthSource(AudioSource):
                 hum=self.hum,
                 ambient_boat=self.ambient_boat,
                 calls=self.calls,
+                rain=self.rain,
             )
             t += remaining
 
@@ -335,6 +338,7 @@ def open_source(config) -> AudioSource:
             calls=config.source.calls,
             hum=config.source.hum,
             ambient_boat=config.source.ambient_boat,
+            rain=config.source.rain,
         )
     if kind == "device":
         return DeviceSource(sample_rate, device=config.source.device)
