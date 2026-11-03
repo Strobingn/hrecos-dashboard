@@ -20,8 +20,39 @@ var fsState = {
   channel: null,
   client: null,
   drawToken: 0,
-  playing: null
+  playing: null,
+  playToken: 0,
+  hourlyTimer: null,
+  hourlyReq: 0
 };
+
+var FS_PRIORITY = [
+  { rank: 0, id: "striped-bass", name: "striped bass", sci: "morone saxatilis" },
+  { rank: 1, id: "atlantic-sturgeon", name: "atlantic sturgeon", sci: "acipenser oxyrinchus" },
+  { rank: 2, id: "river-herring", name: "river herring", sci: "alosa pseudoharengus" },
+  { rank: 2, id: "river-herring", name: "alewife", sci: "alosa aestivalis" },
+  { rank: 2, id: "blueback-herring", name: "blueback herring", sci: "alosa aestivalis" }
+];
+
+function fsSpeciesRank(s) {
+  if (!s) return 100;
+  var id = String(s.id || "").toLowerCase();
+  var name = String(s.common_name || "").toLowerCase();
+  var sci = String(s.scientific_name || "").toLowerCase();
+  for (var i = 0; i < FS_PRIORITY.length; i++) {
+    var p = FS_PRIORITY[i];
+    if (id === p.id || name === p.name || (p.sci && sci.indexOf(p.sci) >= 0)) return p.rank;
+  }
+  return 100;
+}
+
+function fsSortSpecies() {
+  fsState.species.sort(function (a, b) {
+    var d = fsSpeciesRank(a) - fsSpeciesRank(b);
+    if (d) return d;
+    return String(a.common_name || "").localeCompare(String(b.common_name || ""));
+  });
+}
 
 function fsEsc(s) {
   return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
@@ -121,6 +152,7 @@ async function fsLoadMock() {
   fsState.detections = data.detections;
   fsState.hourly = data.hourly;
   fsState.source = "mock";
+  fsSortSpecies();
   fsSortDetections();
 }
 
@@ -141,28 +173,121 @@ async function fsLoadLive() {
   fsState.detections = detections.data || [];
   fsState.hourly = hourly.data || [];
   fsState.source = "live";
+  fsSortSpecies();
   fsSortDetections();
   fsSubscribe(sb);
+}
+
+function fsHasId(row) {
+  return !!(row && row.id != null && row.id !== "");
+}
+
+function fsFindDetection(id) {
+  for (var i = 0; i < fsState.detections.length; i++) if (fsState.detections[i].id === id) return i;
+  return -1;
+}
+
+function fsApplyHourlyDelta(row, delta) {
+  if (!row || !row.start_time || !delta) return;
+  var hourMs = fsFloorHour(row.start_time);
+  var found = null;
+  for (var i = 0; i < fsState.hourly.length; i++) {
+    var r = fsState.hourly[i];
+    if (r.node_id === row.node_id && r.species_id === row.species_id && String(r.label || "") === String(row.label || "") && fsFloorHour(r.hour) === hourMs) {
+      found = r;
+      break;
+    }
+  }
+  if (!found) {
+    if (delta <= 0) return;
+    fsState.hourly.push({
+      node_id: row.node_id,
+      species_id: row.species_id,
+      label: row.label || "",
+      hour: new Date(hourMs).toISOString(),
+      detections: delta,
+      avg_confidence: row.confidence == null ? null : Number(row.confidence)
+    });
+    return;
+  }
+  var next = Math.max(0, (Number(found.detections) || 0) + delta);
+  if (delta > 0 && row.confidence != null && next > 0) {
+    var prevN = next - delta;
+    var prevAvg = Number(found.avg_confidence) || 0;
+    found.avg_confidence = prevN > 0 ? ((prevAvg * prevN) + Number(row.confidence)) / next : Number(row.confidence);
+  }
+  found.detections = next;
+}
+
+function fsScheduleHourlyRefresh() {
+  if (fsState.source !== "live" || !fsState.client) return;
+  if (fsState.hourlyTimer) clearTimeout(fsState.hourlyTimer);
+  fsState.hourlyTimer = setTimeout(function () {
+    fsState.hourlyTimer = null;
+    fsRefreshHourly();
+  }, 400);
+}
+
+async function fsRefreshHourly() {
+  if (fsState.source !== "live" || !fsState.client) return;
+  var req = ++fsState.hourlyReq;
+  try {
+    var since = new Date(Date.now() - 36 * 3600000).toISOString();
+    var res = await fsState.client.from("detection_counts_hourly").select("*").gte("hour", since);
+    if (req !== fsState.hourlyReq || fsState.source !== "live") return;
+    if (!res || res.error) return;
+    fsState.hourly = res.data || [];
+    fsPaintActivity();
+  } catch (e) {
+    return;
+  }
+}
+
+function fsOnDetectionPayload(payload) {
+  payload = payload || {};
+  var eventType = payload.eventType || payload.event || "";
+  var detailId = fsState.selectedId;
+  var detailDirty = false;
+  if (eventType === "DELETE") {
+    var oldRow = fsHasId(payload.old) ? payload.old : null;
+    if (!oldRow) return;
+    var existingIdx = fsFindDetection(oldRow.id);
+    var existing = existingIdx >= 0 ? fsState.detections[existingIdx] : null;
+    fsState.detections = fsState.detections.filter(function (d) { return d.id !== oldRow.id; });
+    delete fsState.clipCache[oldRow.id];
+    fsApplyHourlyDelta(existing || oldRow, -1);
+    if (detailId === oldRow.id) {
+      fsState.playToken += 1;
+      fsStopPlayback();
+      fsState.selectedId = fsState.detections.length ? fsState.detections[0].id : null;
+      detailDirty = true;
+      detailId = fsState.selectedId;
+    }
+  } else {
+    var row = fsHasId(payload.new) ? payload.new : null;
+    if (!row) return;
+    var idx = fsFindDetection(row.id);
+    if (idx >= 0) {
+      var prev = fsState.detections[idx];
+      fsApplyHourlyDelta(prev, -1);
+      fsState.detections[idx] = Object.assign({}, prev, row);
+      if (prev.clip_path !== row.clip_path) delete fsState.clipCache[row.id];
+    } else {
+      fsState.detections.unshift(row);
+      delete fsState.clipCache[row.id];
+    }
+    fsApplyHourlyDelta(row, 1);
+    if (row.id === fsState.selectedId) detailDirty = true;
+  }
+  fsSortDetections();
+  fsScheduleHourlyRefresh();
+  fsPaintLiveFeed({ detail: detailDirty, detailId: detailId });
 }
 
 function fsSubscribe(sb) {
   if (fsState.channel) return;
   fsState.channel = sb.channel("fish-detections")
-    .on("postgres_changes", { event: "*", schema: "public", table: "detections" }, function (payload) {
-      var row = payload.new || payload.old;
-      if (!row) return;
-      if (payload.eventType === "DELETE") {
-        fsState.detections = fsState.detections.filter(function (d) { return d.id !== row.id; });
-      } else {
-        var idx = -1;
-        for (var i = 0; i < fsState.detections.length; i++) if (fsState.detections[i].id === row.id) idx = i;
-        if (idx >= 0) fsState.detections[idx] = Object.assign({}, fsState.detections[idx], row);
-        else fsState.detections.unshift(row);
-        delete fsState.clipCache[row.id];
-      }
-      fsSortDetections();
-      if (typeof cur !== "undefined" && cur === "sounds" && typeof render === "function") render();
-    })
+    .on("postgres_changes", { event: "*", schema: "public", table: "detections" }, fsOnDetectionPayload)
     .subscribe();
 }
 
@@ -528,45 +653,8 @@ function fsBody() {
   }
   h += "</div>";
 
-  var buckets = fsHourBuckets();
-  var total = 0;
-  buckets.forEach(function (b) { total += b.count; });
-  h += '<div class="card"><div class="tl">Calls detected per hour</div>';
-  h += '<label class="sl" for="fs-species-filter">Species filter</label>';
-  h += '<select id="fs-species-filter" class="fs-select">';
-  h += '<option value="">All species</option>';
-  fsState.species.forEach(function (s) {
-    var sel = fsState.speciesFilter === s.id ? " selected" : "";
-    h += '<option value="' + fsEsc(s.id) + '"' + sel + ">" + fsEsc(s.common_name) + "</option>";
-  });
-  h += "</select>";
-  h += fsChartSvg(buckets);
-  h += '<div class="fs-total">' + total + " calls detected · last 24 hours · " + fsEsc(node ? node.name : "") + "</div>";
-  var totals = fsSpeciesTotals();
-  var bits = Object.keys(totals).map(function (id) {
-    var s = fsSpecies(id);
-    return (s ? s.common_name : id) + " " + totals[id];
-  });
-  if (bits.length) h += '<div class="sl" style="margin-top:6px">' + fsEsc(bits.join(" · ")) + "</div>";
-  h += '<div class="tp" style="margin-top:10px">Calls detected per hour is an activity index: how many calls the model marked in that hour. It is not a count of individual fish. One fish can call many times, and a chorus can be many fish in one detection.</div>';
-  h += "</div>";
-
-  h += '<div class="card"><div class="tl">Detections</div>';
-  if (!fsState.detections.length) {
-    h += '<div class="sl">No detections yet.</div>';
-  } else {
-    fsState.detections.slice(0, 40).forEach(function (d) {
-      var sp = fsSpecies(d.species_id);
-      var nd = fsNode(d.node_id);
-      var on = d.id === fsState.selectedId ? " on" : "";
-      var pct = Math.round((Number(d.confidence) || 0) * 100);
-      h += '<button type="button" class="fs-det' + on + '" data-fs-det="' + fsEsc(d.id) + '">';
-      h += '<div class="fs-det-top"><strong>' + fsEsc(sp ? sp.common_name : (d.label || "Unidentified")) + "</strong><span>" + pct + "%</span></div>";
-      h += '<div class="sl">' + fsEsc(nd ? nd.name : d.node_id) + " · " + fsEsc(fsRelTime(d.start_time)) + " · " + fsEsc(d.label || "") + " · " + fsEsc(d.review_status || "unreviewed") + "</div>";
-      h += "</button>";
-    });
-  }
-  h += "</div>";
+  h += fsActivityCard();
+  h += fsDetectionsCard();
 
   h += fsDetailHtml();
 
@@ -586,6 +674,107 @@ function fsBody() {
   h += '<div class="card"><div class="tl">About this feed</div><div class="tp">Nodes on this stretch: Tappan Zee (RM 27), West Point / Cornwall (RM 53), and Poughkeepsie (RM 75). Clips live in the public Supabase Storage bucket named audio. The spectrogram is computed in your browser with Web Audio and is not uploaded. Configure the project in config.js.</div></div>';
   h += "</div>";
   return h;
+}
+
+function fsActivityCard() {
+  var node = fsNode(fsState.selectedNodeId);
+  var buckets = fsHourBuckets();
+  var total = 0;
+  buckets.forEach(function (b) { total += b.count; });
+  var h = '<div class="card" id="fs-activity"><div class="tl">Calls detected per hour</div>';
+  h += '<label class="sl" for="fs-species-filter">Species filter</label>';
+  h += '<select id="fs-species-filter" class="fs-select">';
+  h += '<option value="">All species</option>';
+  fsState.species.forEach(function (s) {
+    var sel = fsState.speciesFilter === s.id ? " selected" : "";
+    h += '<option value="' + fsEsc(s.id) + '"' + sel + ">" + fsEsc(s.common_name) + "</option>";
+  });
+  h += "</select>";
+  h += fsChartSvg(buckets);
+  h += '<div class="fs-total">' + total + " calls detected · last 24 hours · " + fsEsc(node ? node.name : "") + "</div>";
+  var totals = fsSpeciesTotals();
+  var bits = Object.keys(totals).sort(function (a, b) {
+    var d = fsSpeciesRank(fsSpecies(a) || { id: a, common_name: a }) - fsSpeciesRank(fsSpecies(b) || { id: b, common_name: b });
+    if (d) return d;
+    var na = (fsSpecies(a) && fsSpecies(a).common_name) || a;
+    var nb = (fsSpecies(b) && fsSpecies(b).common_name) || b;
+    return String(na).localeCompare(String(nb));
+  }).map(function (id) {
+    var s = fsSpecies(id);
+    return (s ? s.common_name : id) + " " + totals[id];
+  });
+  if (bits.length) h += '<div class="sl" id="fs-species-bits" style="margin-top:6px">' + fsEsc(bits.join(" · ")) + "</div>";
+  h += '<div class="tp" style="margin-top:10px">Calls detected per hour is an activity index: how many calls the model marked in that hour. It is not a count of individual fish. One fish can call many times, and a chorus can be many fish in one detection.</div>';
+  h += "</div>";
+  return h;
+}
+
+function fsDetectionsCard() {
+  var h = '<div class="card" id="fs-detections"><div class="tl">Detections</div>';
+  if (!fsState.detections.length) {
+    h += '<div class="sl">No detections yet.</div>';
+  } else {
+    fsState.detections.slice(0, 40).forEach(function (d) {
+      var sp = fsSpecies(d.species_id);
+      var nd = fsNode(d.node_id);
+      var on = d.id === fsState.selectedId ? " on" : "";
+      var pct = Math.round((Number(d.confidence) || 0) * 100);
+      h += '<button type="button" class="fs-det' + on + '" data-fs-det="' + fsEsc(d.id) + '">';
+      h += '<div class="fs-det-top"><strong>' + fsEsc(sp ? sp.common_name : (d.label || "Unidentified")) + "</strong><span>" + pct + "%</span></div>";
+      h += '<div class="sl">' + fsEsc(nd ? nd.name : d.node_id) + " · " + fsEsc(fsRelTime(d.start_time)) + " · " + fsEsc(d.label || "") + " · " + fsEsc(d.review_status || "unreviewed") + "</div>";
+      h += "</button>";
+    });
+  }
+  h += "</div>";
+  return h;
+}
+
+function fsBindDetections(root) {
+  (root || document).querySelectorAll("[data-fs-det]").forEach(function (el) {
+    el.addEventListener("click", function () { selectFishDetection(el.getAttribute("data-fs-det"), true); });
+  });
+}
+
+function fsReplaceKeepScroll(id, html) {
+  var el = document.getElementById(id);
+  if (!el) return null;
+  var y = window.scrollY;
+  el.outerHTML = html;
+  if (window.scrollY !== y) window.scrollTo(0, y);
+  return document.getElementById(id);
+}
+
+function onFishSpeciesFilter(e) {
+  fsState.speciesFilter = e.target.value;
+  fsPaintActivity();
+}
+
+function fsPaintActivity() {
+  if (typeof cur !== "undefined" && cur !== "sounds") return;
+  if (!document.getElementById("fs-activity")) return;
+  fsReplaceKeepScroll("fs-activity", fsActivityCard());
+  var filter = document.getElementById("fs-species-filter");
+  if (filter) filter.addEventListener("change", onFishSpeciesFilter);
+}
+
+function fsPaintLiveFeed(opts) {
+  opts = opts || {};
+  if (typeof cur !== "undefined" && cur !== "sounds") return;
+  if (!document.getElementById("fs-page")) return;
+  fsPaintActivity();
+  var list = fsReplaceKeepScroll("fs-detections", fsDetectionsCard());
+  if (list) fsBindDetections(list);
+  if (!opts.detail) return;
+  var playingId = fsState.playingId;
+  fsReplaceKeepScroll("fs-detail", fsDetailHtml());
+  var play = document.getElementById("fs-play");
+  if (play) {
+    play.addEventListener("click", playFishClip);
+    if (fsState.playing && playingId && playingId === fsState.selectedId) {
+      play.textContent = fsState.source !== "live" ? "Playing sample clip…" : "Playing clip…";
+    }
+  }
+  drawSelectedFishSpectrogram();
 }
 
 function fsDetailHtml() {
@@ -625,14 +814,9 @@ function mountFishSounds() {
   document.querySelectorAll("[data-fs-node]").forEach(function (el) {
     el.addEventListener("click", function () { setFishNode(el.getAttribute("data-fs-node")); });
   });
-  document.querySelectorAll("[data-fs-det]").forEach(function (el) {
-    el.addEventListener("click", function () { selectFishDetection(el.getAttribute("data-fs-det"), true); });
-  });
+  fsBindDetections(document.getElementById("fs-page"));
   var filter = document.getElementById("fs-species-filter");
-  if (filter) filter.addEventListener("change", function () {
-    fsState.speciesFilter = filter.value;
-    render();
-  });
+  if (filter) filter.addEventListener("change", onFishSpeciesFilter);
   var play = document.getElementById("fs-play");
   if (play) play.addEventListener("click", playFishClip);
   drawSelectedFishSpectrogram();
@@ -658,15 +842,22 @@ function selectFishDetection(id, scroll) {
   render();
 }
 
+function fsStopPlayback() {
+  var src = fsState.playing;
+  fsState.playing = null;
+  fsState.playingId = null;
+  if (!src) return;
+  src.onended = null;
+  try { src.stop(); } catch (e) {}
+}
+
 function teardownFishSounds() {
   if (fsState.fsMap) {
     try { fsState.fsMap.remove(); } catch (e) {}
     fsState.fsMap = null;
   }
-  if (fsState.playing) {
-    try { fsState.playing.stop(); } catch (e) {}
-    fsState.playing = null;
-  }
+  fsState.playToken += 1;
+  fsStopPlayback();
 }
 
 function fsTiles() {
@@ -749,32 +940,56 @@ async function drawSelectedFishSpectrogram() {
   }
 }
 
+function fsPlaybackStillCurrent(token, detId) {
+  if (token !== fsState.playToken) return false;
+  if (typeof cur !== "undefined" && cur !== "sounds") return false;
+  if (fsState.selectedId !== detId) return false;
+  return true;
+}
+
 async function playFishClip() {
   var det = null;
   for (var i = 0; i < fsState.detections.length; i++) if (fsState.detections[i].id === fsState.selectedId) det = fsState.detections[i];
-  var btn = document.getElementById("fs-play");
   if (!det) return;
+  var detId = det.id;
+  var token = ++fsState.playToken;
   try {
     var pack = await fsLoadClip(det);
+    if (!fsPlaybackStillCurrent(token, detId)) return;
     var ctx = fsAudioCtx();
     if (ctx.state === "suspended") await ctx.resume();
+    if (!fsPlaybackStillCurrent(token, detId)) return;
+    var btn = document.getElementById("fs-play");
+    if (!btn) return;
     if (!pack.audio) {
       var buffer = ctx.createBuffer(1, pack.samples.length, pack.sampleRate);
       buffer.copyToChannel ? buffer.copyToChannel(pack.samples, 0) : buffer.getChannelData(0).set(pack.samples);
       pack.audio = buffer;
     }
-    if (fsState.playing) {
-      try { fsState.playing.stop(); } catch (e) {}
-    }
+    fsStopPlayback();
+    if (!fsPlaybackStillCurrent(token, detId)) return;
+    btn = document.getElementById("fs-play");
+    if (!btn) return;
     var src = ctx.createBufferSource();
     src.buffer = pack.audio;
     src.connect(ctx.destination);
-    src.start();
+    src.onended = function () {
+      if (fsState.playing !== src) return;
+      fsState.playing = null;
+      fsState.playingId = null;
+      if (token !== fsState.playToken) return;
+      if (fsState.selectedId !== detId) return;
+      var liveBtn = document.getElementById("fs-play");
+      if (liveBtn) liveBtn.textContent = "Play clip";
+    };
     fsState.playing = src;
-    if (btn) btn.textContent = pack.synthetic ? "Playing sample clip…" : "Playing clip…";
-    src.onended = function () { if (btn) btn.textContent = "Play clip"; };
+    fsState.playingId = detId;
+    src.start();
+    btn.textContent = pack.synthetic ? "Playing sample clip…" : "Playing clip…";
   } catch (err) {
-    if (btn) btn.textContent = "Playback failed";
+    if (!fsPlaybackStillCurrent(token, detId)) return;
+    var failBtn = document.getElementById("fs-play");
+    if (failBtn) failBtn.textContent = "Playback failed";
     var status = document.getElementById("fs-spec-status");
     if (status) status.textContent = "Playback failed (" + err.message + ").";
   }

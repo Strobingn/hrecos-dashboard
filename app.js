@@ -31,7 +31,7 @@ function windDir(deg){const dirs=["N","NNE","NE","ENE","E","ESE","SE","SSE","S",
 function genAlerts(){return[{s:"West Point",t:"Water Temp Rising",sev:"low",time:"30m ago",act:"67.8\u00B0F",exp:"65-66\u00B0F"},{s:"Poughkeepsie",t:"Turbidity Spike",sev:"medium",time:"1h ago",act:"22 NTU",exp:"<15 NTU"},{s:"Newburgh",t:"Low Tide Anomaly",sev:"low",time:"2h ago",act:"0.3 ft",exp:">0.8 ft"}];}
 
 // ===== STATE =====
-let cur="home",tideLoc="cornwall",dark=localStorage.getItem("dark")==="true",map=null,userMarker=null,stationMarkers=[];
+let cur="home",tideLoc="cornwall",dark=localStorage.getItem("dark")==="true",map=null,userMarker=null,stationMarkers=[],gpsEpoch=0;
 if(dark)document.documentElement.setAttribute("data-theme","dark");
 
 // ===== HELPERS =====
@@ -89,6 +89,7 @@ function pageMap() {
 }
 
 function destroyStationMap() {
+  gpsEpoch += 1;
   if (window.accuracyCircle && map) {
     try { map.removeLayer(window.accuracyCircle); } catch (e) {}
   }
@@ -190,42 +191,50 @@ function initMap() {
 }
 
 function placeUserMarker(lat, lng, accuracy) {
+  if (!map || typeof L === 'undefined') return false;
   const latlng = [lat, lng];
-  if (userMarker) userMarker.setLatLng(latlng);
-  else {
-    userMarker = L.circleMarker(latlng, {
-      radius: 8,
-      color: '#fff',
-      weight: 3,
-      fillColor: '#4285F4',
-      fillOpacity: 1
-    }).addTo(map).bindTooltip('You are here');
+  try {
+    if (userMarker) userMarker.setLatLng(latlng);
+    else {
+      userMarker = L.circleMarker(latlng, {
+        radius: 8,
+        color: '#fff',
+        weight: 3,
+        fillColor: '#4285F4',
+        fillOpacity: 1
+      }).addTo(map).bindTooltip('You are here');
+    }
+    if (window.accuracyCircle) {
+      window.accuracyCircle.setLatLng(latlng);
+      window.accuracyCircle.setRadius(accuracy);
+    } else {
+      window.accuracyCircle = L.circle(latlng, {
+        radius: accuracy,
+        color: '#4285F4',
+        weight: 1,
+        fillColor: '#4285F4',
+        fillOpacity: 0.08
+      }).addTo(map);
+    }
+    map.setView(latlng, 14);
+    return true;
+  } catch (e) {
+    return false;
   }
-  if (window.accuracyCircle) {
-    window.accuracyCircle.setLatLng(latlng);
-    window.accuracyCircle.setRadius(accuracy);
-  } else {
-    window.accuracyCircle = L.circle(latlng, {
-      radius: accuracy,
-      color: '#4285F4',
-      weight: 1,
-      fillColor: '#4285F4',
-      fillOpacity: 0.08
-    }).addTo(map);
-  }
-  map.setView(latlng, 14);
 }
 
 function onUserLocation(position) {
+  if (!map) return;
   const lat = position.coords.latitude;
   const lng = position.coords.longitude;
   const accuracy = position.coords.accuracy || 100;
-  placeUserMarker(lat, lng, accuracy);
+  if (!placeUserMarker(lat, lng, accuracy)) return;
   const distToCornwall = getDistanceMiles(lat, lng, 41.4442, -74.0238);
   updateGpsStatus('You: ' + lat.toFixed(4) + ', ' + lng.toFixed(4) + ' \u00B7 ' + distToCornwall.toFixed(1) + ' mi from Cornwall', false);
 }
 
 function onUserLocationError(error) {
+  if (!map) return;
   let msg = 'Location error.';
   if (error && error.code === 1) msg = 'Permission denied. Enable location access and try again.';
   else if (error && error.code === 2) msg = 'GPS signal unavailable. Try outdoors.';
@@ -235,8 +244,15 @@ function onUserLocationError(error) {
 }
 
 function requestUserLocation() {
+  const epoch = gpsEpoch;
   updateGpsStatus('Getting your location...', true);
-  navigator.geolocation.getCurrentPosition(onUserLocation, onUserLocationError, {
+  navigator.geolocation.getCurrentPosition(function(position) {
+    if (epoch !== gpsEpoch || !map) return;
+    onUserLocation(position);
+  }, function(error) {
+    if (epoch !== gpsEpoch || !map) return;
+    onUserLocationError(error);
+  }, {
     enableHighAccuracy: true,
     timeout: 15000,
     maximumAge: 60000
