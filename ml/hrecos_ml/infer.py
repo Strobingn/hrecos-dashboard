@@ -30,7 +30,8 @@ from pathlib import Path
 import numpy as np
 
 from hrecos_ml.audio import iter_windows, resample
-from hrecos_ml.temporal import gate_splash_labels
+from hrecos_ml.hum import impulsive_sturgeon_band, steady_mains_hum
+from hrecos_ml.temporal import drop_boat_outside_wash, gate_splash_labels
 from hrecos_ml.embeddings import ConcatEmbedder, LowBandEmbedder, PerchOnnxEmbedder
 from hrecos_ml.frequency import energy_percentiles
 from hrecos_ml.labels import (
@@ -94,6 +95,23 @@ class FishDetector:
         probs = self.probe.predict_proba(features)
         raw_events = []
         for (start_s, end_s, chunk), row in zip(windows, probs):
+            freq_low, freq_high = energy_percentiles(chunk, TARGET_SR)
+            is_hum, line_share = steady_mains_hum(chunk, TARGET_SR)
+            if is_hum and line_share >= threshold:
+                raw_events.append(
+                    _event(
+                        start_s,
+                        end_s,
+                        "unknown",
+                        None,
+                        float(line_share),
+                        freq_low,
+                        freq_high,
+                        self.model_name,
+                        self.model_version,
+                    )
+                )
+                continue
             winner = int(np.argmax(row))
             train_label = self.probe.classes[winner]
             confidence = float(row[winner])
@@ -102,24 +120,50 @@ class FishDetector:
             if confidence < threshold:
                 continue
             label = INFERENCE_LABEL[train_label]
-            freq_low, freq_high = energy_percentiles(chunk, TARGET_SR)
+            if label == "sturgeon_thunder" and not impulsive_sturgeon_band(chunk, TARGET_SR):
+                continue
             species = SPECIES.get(label, SPECIES["unknown"])
             raw_events.append(
-                {
-                    "start_time": float(start_s),
-                    "end_time": float(end_s),
-                    "label": label,
-                    "species_id": species.get("species_id"),
-                    "confidence": confidence,
-                    "freq_low_hz": freq_low,
-                    "freq_high_hz": freq_high,
-                    "model_name": self.model_name,
-                    "model_version": self.model_version,
-                }
+                _event(
+                    start_s,
+                    end_s,
+                    label,
+                    species.get("species_id"),
+                    confidence,
+                    freq_low,
+                    freq_high,
+                    self.model_name,
+                    self.model_version,
+                )
             )
         if temporal_gate:
             raw_events = gate_splash_labels(raw_events, y, TARGET_SR)
+            raw_events = drop_boat_outside_wash(raw_events, y, TARGET_SR)
         return _merge(raw_events, hop_s)
+
+
+def _event(
+    start_s: float,
+    end_s: float,
+    label: str,
+    species_id: str | None,
+    confidence: float,
+    freq_low: float,
+    freq_high: float,
+    model_name: str,
+    model_version: str,
+) -> dict:
+    return {
+        "start_time": float(start_s),
+        "end_time": float(end_s),
+        "label": label,
+        "species_id": species_id,
+        "confidence": confidence,
+        "freq_low_hz": freq_low,
+        "freq_high_hz": freq_high,
+        "model_name": model_name,
+        "model_version": model_version,
+    }
 
 
 def _merge(events: list[dict], hop_s: float) -> list[dict]:

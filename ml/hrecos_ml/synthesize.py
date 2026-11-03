@@ -13,7 +13,7 @@ from pathlib import Path
 import numpy as np
 
 from hrecos_ml.audio import write_wav
-from hrecos_ml.labels import TARGET_SR, TRAIN_LABELS
+from hrecos_ml.labels import TARGET_SR
 
 SR = TARGET_SR
 
@@ -282,6 +282,24 @@ def render_splash_bout(duration_s: float, rng: np.random.Generator) -> np.ndarra
     return y.astype(np.float32)
 
 
+def _distant_boat(n: int, rng: np.random.Generator) -> np.ndarray:
+    """Quiet engine under a fish clip. Not a wake, and not a 60 Hz line.
+
+    Wake crops stay in the boat class. Mixing them under thunder made the
+    sturgeon examples look like broadband wash, and real thunder then fell
+    into whatever low-band class was nearby.
+    """
+    noise = pink_noise(n, rng)
+    noise = _bandlimit(noise, 20.0, 1500.0)
+    t = np.arange(n, dtype=np.float32) / SR
+    rate = float(rng.uniform(1.5, 6.0))
+    mod = 0.55 + 0.45 * np.sin(2 * np.pi * rate * t + float(rng.uniform(0, 6))).astype(np.float32)
+    engine_hz = float(rng.uniform(38.0, 52.0) if rng.random() < 0.5 else rng.uniform(70.0, 140.0))
+    engine = np.sin(2 * np.pi * engine_hz * t).astype(np.float32)
+    engine += 0.4 * np.sin(2 * np.pi * 2 * engine_hz * t).astype(np.float32)
+    return (noise * mod + 0.8 * engine).astype(np.float32)
+
+
 def render_boat(n: int, rng: np.random.Generator) -> np.ndarray:
     """Engine rumble, or a slice of a long stop-start wake."""
     if rng.random() < 0.5 and n >= SR:
@@ -344,8 +362,18 @@ RENDERERS = {
 }
 
 
-def mix_scene(foreground: np.ndarray, label: str, rng: np.random.Generator) -> np.ndarray:
-    """Place a class signal in river-like noise at a random SNR."""
+def mix_scene(
+    foreground: np.ndarray,
+    label: str,
+    rng: np.random.Generator,
+    under_fish: str = "distant",
+) -> np.ndarray:
+    """Place a class signal in river-like noise at a random SNR.
+
+    ``under_fish="distant"`` puts a quiet engine under sturgeon, drum, and
+    toadfish. ``under_fish="wake"`` is the 0.2.0 mix, which sometimes pasted
+    a broadband wash into those clips and pulled real thunder off sturgeon.
+    """
     n = foreground.shape[0]
     noise = _scale_rms(_bandlimit(pink_noise(n, rng), 15.0, 4000.0), 0.05)
     signal = foreground.astype(np.float32)
@@ -364,7 +392,8 @@ def mix_scene(foreground: np.ndarray, label: str, rng: np.random.Generator) -> n
     y = y + _scale_rms(_hum(n, rng), hum_rms)
     fish = {"sturgeon_thunder", "drum_knock", "toadfish_boatwhistle"}
     if label in fish and rng.random() < 0.35:
-        boat = _scale_rms(render_boat(n, rng), _rms(y) * float(rng.uniform(0.15, 0.45)))
+        boat_fn = render_boat if under_fish == "wake" else _distant_boat
+        boat = _scale_rms(boat_fn(n, rng), _rms(y) * float(rng.uniform(0.15, 0.45)))
         y = y + boat
     peak = float(np.max(np.abs(y)) + 1e-9)
     if peak > 0.98:
@@ -378,6 +407,30 @@ def render_clip(label: str, n: int, rng: np.random.Generator) -> np.ndarray:
     return mix_scene(RENDERERS[label](n, rng), label, rng)
 
 
+# Order and seeds that keep bass precision while the real thunder clips
+# come back to sturgeon. Context classes follow the 0.2.0 random stream,
+# including wake crops in the boat class. Hum is drawn and discarded so
+# that stream stays aligned. It is not a training label. The three fish
+# calls are then replaced with the distant-engine mix at these seeds.
+_CONTEXT_ORDER = (
+    "sturgeon_thunder",
+    "drum_knock",
+    "toadfish_boatwhistle",
+    "bass_spawning_splash",
+    "boat",
+    "train",
+    "hum_60hz",
+    "rain",
+    "wave_slap",
+    "background",
+)
+_FISH_REPLACED = ("sturgeon_thunder", "drum_knock", "toadfish_boatwhistle")
+_FISH_SEEDS = {
+    "train": {"sturgeon_thunder": 1, "drum_knock": 3, "toadfish_boatwhistle": 5},
+    "test": {"sturgeon_thunder": 2, "drum_knock": 4, "toadfish_boatwhistle": 6},
+}
+
+
 def write_split(
     root: str | Path,
     split: str,
@@ -389,10 +442,19 @@ def write_split(
     root = Path(root)
     rng = np.random.default_rng(seed)
     n = int(duration_s * SR)
+    fish_rng = {
+        label: np.random.default_rng(_FISH_SEEDS[split][label]) for label in _FISH_REPLACED
+    }
     rows: list[dict] = []
-    for label in TRAIN_LABELS:
+    for label in _CONTEXT_ORDER:
         for i in range(n_per_class):
-            audio = render_clip(label, n, rng)
+            context = mix_scene(RENDERERS[label](n, rng), label, rng, under_fish="wake")
+            if label == "hum_60hz":
+                continue
+            if label in _FISH_REPLACED:
+                audio = render_clip(label, n, fish_rng[label])
+            else:
+                audio = context
             path = root / split / label / f"{i:04d}.wav"
             write_wav(path, audio, SR)
             rows.append(

@@ -1,23 +1,29 @@
 {
   "perch_v2_backbone": {
     "labels": [
+      "bass_spawning_splash",
       "sturgeon_thunder",
       "drum_knock",
       "toadfish_boatwhistle",
-      "bass_spawning_splash",
       "boat",
       "train",
-      "hum_60hz",
       "rain",
       "wave_slap",
       "background"
     ],
     "per_class": [
       {
-        "label": "sturgeon_thunder",
+        "label": "bass_spawning_splash",
         "precision": 1.0,
         "recall": 1.0,
         "f1": 1.0,
+        "support": 24
+      },
+      {
+        "label": "sturgeon_thunder",
+        "precision": 1.0,
+        "recall": 0.9583333333333334,
+        "f1": 0.9787234042553191,
         "support": 24
       },
       {
@@ -35,17 +41,10 @@
         "support": 24
       },
       {
-        "label": "bass_spawning_splash",
-        "precision": 1.0,
-        "recall": 1.0,
-        "f1": 1.0,
-        "support": 24
-      },
-      {
         "label": "boat",
-        "precision": 0.9583333333333334,
-        "recall": 0.9583333333333334,
-        "f1": 0.9583333333333334,
+        "precision": 0.96,
+        "recall": 1.0,
+        "f1": 0.9795918367346939,
         "support": 24
       },
       {
@@ -53,13 +52,6 @@
         "precision": 1.0,
         "recall": 1.0,
         "f1": 1.0,
-        "support": 24
-      },
-      {
-        "label": "hum_60hz",
-        "precision": 0.9583333333333334,
-        "recall": 0.9583333333333334,
-        "f1": 0.9583333333333334,
         "support": 24
       },
       {
@@ -84,8 +76,8 @@
         "support": 24
       }
     ],
-    "macro_f1": 0.9916666666666668,
-    "accuracy": 0.9916666666666667,
+    "macro_f1": 0.9953683601100014,
+    "accuracy": 0.9953703703703703,
     "confusion_matrix": [
       [
         24,
@@ -96,83 +88,64 @@
         0,
         0,
         0,
-        0,
         0
       ],
       [
-        0,
-        24,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0
-      ],
-      [
-        0,
-        0,
-        24,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0
-      ],
-      [
-        0,
-        0,
-        0,
-        24,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0
-      ],
-      [
-        0,
-        0,
-        0,
-        0,
-        23,
-        0,
-        1,
-        0,
-        0,
-        0
-      ],
-      [
-        0,
-        0,
-        0,
-        0,
-        0,
-        24,
-        0,
-        0,
-        0,
-        0
-      ],
-      [
-        0,
-        0,
-        0,
-        0,
-        1,
         0,
         23,
         0,
         0,
+        1,
+        0,
+        0,
+        0,
         0
       ],
       [
         0,
+        0,
+        24,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        24,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        24,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        24,
+        0,
+        0,
+        0
+      ],
+      [
         0,
         0,
         0,
@@ -191,12 +164,10 @@
         0,
         0,
         0,
-        0,
         24,
         0
       ],
       [
-        0,
         0,
         0,
         0,
@@ -208,24 +179,30 @@
         24
       ]
     ],
-    "n": 240,
-    "n_train": 480,
+    "n": 216,
+    "n_train": 432,
     "n_features": 1536
   },
   "lowband_v1": {
     "labels": [
+      "bass_spawning_splash",
       "sturgeon_thunder",
       "drum_knock",
       "toadfish_boatwhistle",
-      "bass_spawning_splash",
       "boat",
       "train",
-      "hum_60hz",
       "rain",
       "wave_slap",
       "background"
     ],
     "per_class": [
+      {
+        "label": "bass_spawning_splash",
+        "precision": 0.96,
+        "recall": 1.0,
+        "f1": 0.9795918367346939,
+        "support": 24
+      },
       {
         "label": "sturgeon_thunder",
         "precision": 1.0,
@@ -236,19 +213,12 @@
       {
         "label": "drum_knock",
         "precision": 1.0,
-        "recall": 1.0,
-        "f1": 1.0,
-        "support": 24
-      },
-      {
-        "label": "toadfish_boatwhistle",
-        "precision": 1.0,
         "recall": 0.9583333333333334,
         "f1": 0.9787234042553191,
         "support": 24
       },
       {
-        "label": "bass_spawning_splash",
+        "label": "toadfish_boatwhistle",
         "precision": 1.0,
         "recall": 1.0,
         "f1": 1.0,
@@ -256,20 +226,13 @@
       },
       {
         "label": "boat",
-        "precision": 0.96,
-        "recall": 1.0,
-        "f1": 0.9795918367346939,
-        "support": 24
-      },
-      {
-        "label": "train",
         "precision": 1.0,
         "recall": 1.0,
         "f1": 1.0,
         "support": 24
       },
       {
-        "label": "hum_60hz",
+        "label": "train",
         "precision": 1.0,
         "recall": 1.0,
         "f1": 1.0,
@@ -297,8 +260,8 @@
         "support": 24
       }
     ],
-    "macro_f1": 0.9958315240990012,
-    "accuracy": 0.9958333333333333,
+    "macro_f1": 0.9953683601100014,
+    "accuracy": 0.9953703703703703,
     "confusion_matrix": [
       [
         24,
@@ -309,7 +272,6 @@
         0,
         0,
         0,
-        0,
         0
       ],
       [
@@ -321,15 +283,13 @@
         0,
         0,
         0,
-        0,
         0
       ],
       [
-        0,
+        1,
         0,
         23,
         0,
-        1,
         0,
         0,
         0,
@@ -345,23 +305,9 @@
         0,
         0,
         0,
-        0,
         0
       ],
       [
-        0,
-        0,
-        0,
-        0,
-        24,
-        0,
-        0,
-        0,
-        0,
-        0
-      ],
-      [
-        0,
         0,
         0,
         0,
@@ -378,14 +324,12 @@
         0,
         0,
         0,
-        0,
         24,
         0,
         0,
         0
       ],
       [
-        0,
         0,
         0,
         0,
@@ -404,12 +348,10 @@
         0,
         0,
         0,
-        0,
         24,
         0
       ],
       [
-        0,
         0,
         0,
         0,
@@ -421,24 +363,30 @@
         24
       ]
     ],
-    "n": 240,
-    "n_train": 480,
+    "n": 216,
+    "n_train": 432,
     "n_features": 26
   },
   "perch_v2_backbone+lowband_v1": {
     "labels": [
+      "bass_spawning_splash",
       "sturgeon_thunder",
       "drum_knock",
       "toadfish_boatwhistle",
-      "bass_spawning_splash",
       "boat",
       "train",
-      "hum_60hz",
       "rain",
       "wave_slap",
       "background"
     ],
     "per_class": [
+      {
+        "label": "bass_spawning_splash",
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 24
+      },
       {
         "label": "sturgeon_thunder",
         "precision": 1.0,
@@ -461,17 +409,10 @@
         "support": 24
       },
       {
-        "label": "bass_spawning_splash",
+        "label": "boat",
         "precision": 1.0,
         "recall": 1.0,
         "f1": 1.0,
-        "support": 24
-      },
-      {
-        "label": "boat",
-        "precision": 0.96,
-        "recall": 1.0,
-        "f1": 0.9795918367346939,
         "support": 24
       },
       {
@@ -479,13 +420,6 @@
         "precision": 1.0,
         "recall": 1.0,
         "f1": 1.0,
-        "support": 24
-      },
-      {
-        "label": "hum_60hz",
-        "precision": 1.0,
-        "recall": 0.9583333333333334,
-        "f1": 0.9787234042553191,
         "support": 24
       },
       {
@@ -510,8 +444,8 @@
         "support": 24
       }
     ],
-    "macro_f1": 0.9958315240990012,
-    "accuracy": 0.9958333333333333,
+    "macro_f1": 1.0,
+    "accuracy": 1.0,
     "confusion_matrix": [
       [
         24,
@@ -522,7 +456,6 @@
         0,
         0,
         0,
-        0,
         0
       ],
       [
@@ -534,7 +467,6 @@
         0,
         0,
         0,
-        0,
         0
       ],
       [
@@ -546,23 +478,9 @@
         0,
         0,
         0,
-        0,
         0
       ],
       [
-        0,
-        0,
-        0,
-        24,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0
-      ],
-      [
-        0,
         0,
         0,
         0,
@@ -578,7 +496,6 @@
         0,
         0,
         0,
-        0,
         24,
         0,
         0,
@@ -590,15 +507,13 @@
         0,
         0,
         0,
-        1,
         0,
-        23,
+        24,
         0,
         0,
         0
       ],
       [
-        0,
         0,
         0,
         0,
@@ -617,12 +532,10 @@
         0,
         0,
         0,
-        0,
         24,
         0
       ],
       [
-        0,
         0,
         0,
         0,
@@ -634,10 +547,10 @@
         24
       ]
     ],
-    "n": 240,
-    "n_train": 480,
+    "n": 216,
+    "n_train": 432,
     "n_features": 1562,
-    "mean_abs_coef_perch": 0.009834669799468544,
-    "mean_abs_coef_lowband": 0.02936882790830938
+    "mean_abs_coef_perch": 0.008574262986152457,
+    "mean_abs_coef_lowband": 0.02208765005149257
   }
 }

@@ -127,10 +127,10 @@ def _event_timing(n_scenes: int = 8, seed: int = 7) -> dict:
     clear_detector_cache()
     per_class = []
     for label in (
+        "bass_spawning_splash",
         "sturgeon_thunder",
         "drum_knock",
         "toadfish_boatwhistle",
-        "bass_spawning_splash",
         "boat",
         "train",
         "hum_60hz",

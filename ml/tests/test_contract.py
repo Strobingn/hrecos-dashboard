@@ -22,7 +22,8 @@ from hrecos_ml.labels import (
 )
 from hrecos_ml.probe import fit_probe
 from hrecos_ml.synthesize import render_clip, render_splash_bout, render_stop_start_wake
-from hrecos_ml.temporal import gate_splash_labels
+from hrecos_ml.hum import impulsive_sturgeon_band, steady_mains_hum
+from hrecos_ml.temporal import drop_boat_outside_wash, gate_splash_labels
 
 REPO = Path(__file__).resolve().parents[2]
 SPECIES_SLUGS = {
@@ -37,10 +38,10 @@ SPECIES_SLUGS = {
 
 def test_detection_labels_match_the_table_contract():
     assert DETECTION_LABELS == (
+        "bass_spawning_splash",
         "sturgeon_thunder",
         "drum_knock",
         "toadfish_boatwhistle",
-        "bass_spawning_splash",
         "boat",
         "unknown",
     )
@@ -170,10 +171,10 @@ def test_detection_rows_match_schema():
         )
     rows = to_detection_rows(events, node_id="westpoint-cornwall", origin=origin)
     assert [row["species_id"] for row in rows] == [
+        "striped_bass",
         "atlantic_sturgeon",
         "freshwater_drum",
         "oyster_toadfish",
-        "striped_bass",
         None,
         None,
     ]
@@ -223,6 +224,59 @@ def test_splash_bout_keeps_the_splash_label():
     gated = gate_splash_labels([_splash_event(4.0, 8.0)], bout, 32000)
     assert gated[0]["label"] == "bass_spawning_splash"
     assert gated[0]["species_id"] == "striped_bass"
+
+
+def test_splash_bout_drops_a_spurious_boat_label():
+    rng = np.random.default_rng(4)
+    bout = render_splash_bout(70.0, rng)
+    events = [
+        _splash_event(4.0, 8.0),
+        {
+            "start_time": 20.0,
+            "end_time": 25.0,
+            "label": "boat",
+            "species_id": None,
+            "confidence": 0.7,
+            "freq_low_hz": 40.0,
+            "freq_high_hz": 2000.0,
+            "model_name": "hrecos-fish-probe",
+            "model_version": "test",
+        },
+    ]
+    gated = drop_boat_outside_wash(events, bout, 32000)
+    assert [row["label"] for row in gated] == ["bass_spawning_splash"]
+
+
+def test_wake_keeps_a_boat_label_on_the_wash():
+    rng = np.random.default_rng(5)
+    wake = render_stop_start_wake(90.0, rng)
+    boat = {
+        "start_time": 12.0,
+        "end_time": 17.0,
+        "label": "boat",
+        "species_id": None,
+        "confidence": 0.8,
+        "freq_low_hz": 40.0,
+        "freq_high_hz": 2000.0,
+        "model_name": "hrecos-fish-probe",
+        "model_version": "test",
+    }
+    gated = drop_boat_outside_wash([boat], wake, 32000)
+    assert gated[0]["label"] == "boat"
+
+
+def test_mains_hum_is_narrow_and_thunder_is_not():
+    rng = np.random.default_rng(6)
+    hum = render_clip("hum_60hz", 160_000, rng)
+    thunder = render_clip("sturgeon_thunder", 160_000, rng)
+    splash = render_clip("bass_spawning_splash", 160_000, rng)
+    hum_hit, share = steady_mains_hum(hum, 32000)
+    assert hum_hit and share >= 0.45
+    assert steady_mains_hum(thunder, 32000)[0] is False
+    assert steady_mains_hum(splash, 32000)[0] is False
+    assert impulsive_sturgeon_band(thunder, 32000)
+    assert impulsive_sturgeon_band(splash, 32000) is False
+    assert impulsive_sturgeon_band(hum, 32000) is False
 
 
 def test_short_buffer_is_not_gated():

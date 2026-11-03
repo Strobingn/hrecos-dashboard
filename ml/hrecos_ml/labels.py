@@ -1,31 +1,35 @@
 """Class names, species identifiers, and literature frequency bounds.
 
-Detection labels are the values stored on a detections row. Training also uses
-``train``, ``hum_60hz``, ``rain``, ``wave_slap``, and ``background``. Those
-collapse to ``unknown`` at inference time, except plain background, which is
-not emitted. ``bass_spawning_splash`` is kept and stored as species
-``striped_bass``.
+Priority for this detector is striped bass, then Atlantic sturgeon, then
+river herring. Herring has no call label here (``soniferous`` stays false).
+``bass_spawning_splash`` is stored as species ``striped_bass``.
+
+Training also uses ``train``, ``rain``, ``wave_slap``, and ``background``.
+Those collapse to ``unknown`` at inference time, except plain background,
+which is not emitted. Mains hum is not a learned class. A steady 60 Hz line
+is decided by ``hrecos_ml.hum`` and written as ``unknown``.
 """
 
 from __future__ import annotations
 
 DETECTION_LABELS = (
+    "bass_spawning_splash",
     "sturgeon_thunder",
     "drum_knock",
     "toadfish_boatwhistle",
-    "bass_spawning_splash",
     "boat",
     "unknown",
 )
 
+# Bass is first. Sturgeon stays ahead of the noise classes so a report reads
+# in the same order as the detector priority.
 TRAIN_LABELS = (
+    "bass_spawning_splash",
     "sturgeon_thunder",
     "drum_knock",
     "toadfish_boatwhistle",
-    "bass_spawning_splash",
     "boat",
     "train",
-    "hum_60hz",
     "rain",
     "wave_slap",
     "background",
@@ -155,7 +159,7 @@ SPECIES = {
 }
 
 MODEL_NAME = "hrecos-fish-probe"
-MODEL_VERSION = "0.2.0"
+MODEL_VERSION = "0.2.1"
 
 TARGET_SR = 32_000
 WINDOW_S = 5.0

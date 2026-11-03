@@ -90,6 +90,33 @@ def gate_splash_labels(
     return gated
 
 
+def drop_boat_outside_wash(
+    events: list[dict],
+    audio: np.ndarray,
+    sample_rate: int = TARGET_SR,
+) -> list[dict]:
+    """Drop boat labels that are not inside a sustained or stop-start wash.
+
+    Splash bouts are short bursts. The 5 s probe still calls some of those
+    windows ``boat``. A real wake keeps its boat labels, because they sit on
+    an elevated block of at least 8 s or between two such blocks. Buffers
+    shorter than 30 s are left alone.
+    """
+    duration = float(len(audio)) / float(sample_rate) if len(audio) else 0.0
+    if duration < MIN_CONTEXT_S or not events:
+        return [dict(event) for event in events]
+    bursts = _bursts(audio, sample_rate)
+    kept = []
+    for event in events:
+        row = dict(event)
+        if row.get("label") == "boat" and not _in_boat_context(
+            bursts, float(row["start_time"]), float(row["end_time"]), duration
+        ):
+            continue
+        kept.append(row)
+    return kept
+
+
 def _in_boat_context(
     bursts: list[tuple[float, float]],
     start_s: float,
