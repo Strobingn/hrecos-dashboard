@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hrecos.local/contracts/audio_segments.schema.json",
+  "title": "audio_segments",
+  "description": "Metadata for one clip in public.audio_segments. storage_path is an object key in the public Supabase Storage bucket audio, not a full URL. id and created_at are filled by the database when omitted. This schema validates the metadata row; the audio bytes live in the bucket.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["node_id", "start_time", "end_time", "storage_path"],
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "node_id": { "type": "string", "minLength": 1 },
+    "start_time": { "type": "string", "format": "date-time" },
+    "end_time": { "type": "string", "format": "date-time" },
+    "storage_path": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Object key inside bucket audio. Example: westpoint-cornwall/2026/06/10/143000.wav"
+    },
+    "rms_db": { "type": ["number", "null"] },
+    "band_levels": {
+      "type": ["object", "null"],
+      "description": "Band energy in dB keyed by Hz span, for example {\"10-100\": 42.1, \"100-500\": 38.0, \"500-2000\": 31.4}.",
+      "additionalProperties": { "type": "number" }
+    },
+    "created_at": { "type": "string", "format": "date-time" }
+  }
+}
