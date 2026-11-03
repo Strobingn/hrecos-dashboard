@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hrecos.local/contracts/hydrophone_nodes.schema.json",
+  "title": "hydrophone_nodes",
+  "description": "One row of public.hydrophone_nodes. Seeded simulated ids are west_point_cornwall, poughkeepsie, and tappan_zee_piermont. status defaults to offline when omitted on insert. Realtime is enabled on this table.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "lat", "lon"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[a-z0-9_]+$",
+      "description": "Text primary key."
+    },
+    "name": { "type": "string", "minLength": 1 },
+    "lat": { "type": "number", "minimum": -90, "maximum": 90 },
+    "lon": { "type": "number", "minimum": -180, "maximum": 180 },
+    "river_mile": { "type": ["number", "null"], "minimum": 0 },
+    "hardware": { "type": ["string", "null"] },
+    "sample_rate_hz": { "type": ["integer", "null"], "exclusiveMinimum": 0 },
+    "status": {
+      "type": "string",
+      "enum": ["online", "offline", "simulated"],
+      "default": "offline"
+    },
+    "last_heartbeat": { "type": ["string", "null"], "format": "date-time" },
+    "created_at": { "type": "string", "format": "date-time" }
+  }
+}

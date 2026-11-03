@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hrecos.local/contracts/species.schema.json",
+  "title": "species",
+  "description": "One row of public.species. id is a stable slug such as atlantic_sturgeon. soniferous is false for reference species that are not confirmed sound producers, including shortnose sturgeon (sound production unconfirmed). Required fields are what a writer sends; other properties are optional and may be null.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "common_name", "scientific_name", "soniferous"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[a-z0-9_]+$",
+      "description": "Text slug primary key, for example atlantic_sturgeon."
+    },
+    "common_name": { "type": "string", "minLength": 1 },
+    "scientific_name": { "type": "string", "minLength": 1 },
+    "soniferous": { "type": "boolean" },
+    "freq_low_hz": { "type": ["number", "null"], "minimum": 0 },
+    "freq_high_hz": { "type": ["number", "null"], "minimum": 0 },
+    "call_description": { "type": ["string", "null"] },
+    "season": { "type": ["string", "null"] },
+    "fishsounds_url": { "type": ["string", "null"], "format": "uri" },
+    "image_url": { "type": ["string", "null"], "format": "uri" }
+  }
+}

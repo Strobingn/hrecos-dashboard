@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hrecos.local/contracts/detection_counts_hourly.schema.json",
+  "title": "detection_counts_hourly",
+  "description": "One row of the view public.detection_counts_hourly. detections is calling activity: the number of non-rejected detection events in that UTC hour for a node, species, and label. It is not a count of individual fish. species_id is null when the detector did not assign a species. Rejected detections are omitted. hour is the UTC hour start.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["node_id", "species_id", "label", "hour", "detections", "avg_confidence"],
+  "properties": {
+    "node_id": { "type": "string", "minLength": 1 },
+    "species_id": { "type": ["string", "null"] },
+    "label": { "type": "string", "minLength": 1 },
+    "hour": {
+      "type": "string",
+      "format": "date-time",
+      "description": "UTC hour start from date_trunc on detections.start_time."
+    },
+    "detections": { "type": "integer", "minimum": 0 },
+    "avg_confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 }
+  }
+}
