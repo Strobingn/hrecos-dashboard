@@ -54,3 +54,10 @@ node_modules/
 *.tmp
 *.temp
 .cache/
+
+# ML baseline: audio, embedding caches, and pretrained backbones stay local.
+ml/.venv/
+ml/data/**
+!ml/data/.gitkeep
+ml/artifacts/cache/
+

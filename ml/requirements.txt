@@ -1,0 +1,6 @@
+numpy>=1.26
+scipy>=1.11
+scikit-learn>=1.4
+soundfile>=0.12
+onnxruntime>=1.18
+onnx>=1.16
