@@ -11,7 +11,7 @@
     "species_id": { "type": "string", "minLength": 1 },
     "direction": {
       "type": "string",
-      "enum": ["upstream", "downstream", "milling"]
+      "enum": ["upstream", "downstream", "milling", "unknown"]
     },
     "hour": {
       "type": "string",

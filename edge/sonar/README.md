@@ -10,7 +10,19 @@ Seeded site: `westpoint-cornwall`. `poughkeepsie` and `tappan-zee` are later sit
 - `sonar_tracks` — one row per track. `direction` is `upstream`, `downstream`, or `milling`. `species_id` is the classifier guess or null. `review_status` is `unreviewed`. `clip_path` is an object key in the Storage bucket `sonar`
 - The clip is a JSON sidecar with `"synthetic": true`. It is not an ARIS frame. The hidden truth species is not in the clip and is not uploaded. A dry run writes it to `truth.jsonl` so an evaluation can score the guess.
 
-`fish_passage_hourly.fish_count` counts these tracks. It is not `detection_counts_hourly`.
+`fish_passage_hourly.fish_count` counts these tracks. It is not `detection_counts_hourly`. Synthetic rows set `source` to `synthetic`.
+
+## Lowrance `.sl2` / `.sl3` import
+
+Dirk's unit is Primary and Secondary CHIRP, DownScan, and SideScan. It has no ActiveTarget. A log from an anchored boat is an index of fish that passed under the boat, not a river count. Species is left null. A 30–120 cm mark is `features.bass_candidate`, not `species_id = striped_bass`. How to record the file is in `docs/sonar-track.md`.
+
+```bash
+cd edge/sonar
+pip install -e .
+python -m sonar.import_lowrance file.sl2 --node westpoint-cornwall --dry-run
+```
+
+`PYTHONPATH=src` works instead of the editable install. `--dry-run` writes `out/sonar_tracks.jsonl` and does not use the network. Omit `--node` only when the GPS fix is on the Hudson: the nearest row in `data/stations.json` is mapped to a sonar site (`west_point` → `westpoint-cornwall`). `direction` is `unknown`. `source` is `lowrance_log`. Unclassified rows do not appear in `fish_passage_hourly`.
 
 During the striped bass spawn the generator builds surface clusters: several fish, depth under about 1.5 m, mostly `milling`. That is the rock-fight behavior. The hydrophone label for the splash is `bass_spawning_splash`. This process does not write that detection. The view `striped_bass_passage_and_calls_hourly` joins the two after both exist. Do not sum `splash_detections` across directions.
 

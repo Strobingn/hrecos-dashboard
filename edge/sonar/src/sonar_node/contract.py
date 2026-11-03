@@ -10,7 +10,7 @@ SEEDED_NODE_IDS = ("westpoint-cornwall",)
 
 LATER_NODE_IDS = ("poughkeepsie", "tappan-zee")
 
-DIRECTIONS = ("upstream", "downstream", "milling")
+DIRECTIONS = ("upstream", "downstream", "milling", "unknown")
 
 BEHAVIORS = ("surface_cluster", "school", "solitary", "unknown")
 
@@ -87,7 +87,10 @@ TRACK_COLUMNS = (
     "review_status",
     "clip_path",
     "features",
+    "source",
 )
+
+TRACK_SOURCES = ("synthetic", "lowrance_log", "aris", "split_beam")
 
 SPLASH_LABEL = "bass_spawning_splash"
 STRIPED_BASS_ID = "striped_bass"

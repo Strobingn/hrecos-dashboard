@@ -53,6 +53,7 @@ supabase:
     assert len(tracks) == 12
     assert len(truth) == 12
     assert tuple(tracks[0]) == TRACK_COLUMNS
+    assert tracks[0]["source"] == "synthetic"
     assert tracks[0]["features"]["synthetic"] is True
     clip_name = tracks[0]["clip_path"].replace("/", "__")
     clip = json.loads((output / "clips" / clip_name).read_text())

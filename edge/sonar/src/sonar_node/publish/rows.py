@@ -56,6 +56,7 @@ def track_row(track: SimulatedTrack, classification: Classification) -> dict:
         "review_status": REVIEW_STATUS_DEFAULT,
         "clip_path": clip_path_for(track),
         "features": track.features,
+        "source": "synthetic",
     }
     if tuple(row) != TRACK_COLUMNS:
         raise RuntimeError("track row drifted from TRACK_COLUMNS")
