@@ -5,7 +5,8 @@
     {
         "start_time": float,       # seconds from the start of ``audio``
         "end_time": float,
-        "label": str,              # sturgeon_thunder | drum_knock | toadfish_boatwhistle | boat | unknown
+        "label": str,              # sturgeon_thunder | drum_knock | toadfish_boatwhistle
+                                   # | bass_spawning_splash | boat | unknown
         "species_id": str | None,  # public.species.id, or None for boat / unknown
         "confidence": float,
         "freq_low_hz": float,
@@ -28,7 +29,8 @@ from pathlib import Path
 
 import numpy as np
 
-from hrecos_ml.audio import iter_windows
+from hrecos_ml.audio import iter_windows, resample
+from hrecos_ml.temporal import gate_splash_labels
 from hrecos_ml.embeddings import ConcatEmbedder, LowBandEmbedder, PerchOnnxEmbedder
 from hrecos_ml.frequency import energy_percentiles
 from hrecos_ml.labels import (
@@ -66,14 +68,18 @@ class FishDetector:
         sample_rate: int,
         threshold: float | None = None,
         hop_s: float = DEFAULT_HOP_S,
+        temporal_gate: bool = True,
     ) -> list[dict]:
         threshold = self.threshold if threshold is None else float(threshold)
+        # One resampled buffer feeds both the windows and the splash gate,
+        # so envelope times and event times share the same clock.
+        y = resample(audio, sample_rate, TARGET_SR)
         # Drop windows that contain less than 0.5 s of real audio. Those are
         # the zero-padded tail of a file, not a separate event. A short buffer
         # still keeps its first window.
         windows = [
             item
-            for item in iter_windows(audio, sample_rate, hop_s=hop_s)
+            for item in iter_windows(y, TARGET_SR, hop_s=hop_s)
             if (item[1] - item[0]) >= 0.5 or item[0] == 0.0
         ]
         if not windows:
@@ -111,6 +117,8 @@ class FishDetector:
                     "model_version": self.model_version,
                 }
             )
+        if temporal_gate:
+            raw_events = gate_splash_labels(raw_events, y, TARGET_SR)
         return _merge(raw_events, hop_s)
 
 
@@ -187,6 +195,7 @@ def detect(
     threshold: float | None = None,
     hop_s: float = DEFAULT_HOP_S,
     perch_path: str | Path | None = None,
+    temporal_gate: bool = True,
 ) -> list[dict]:
     """Classify a hydrophone buffer.
 
@@ -198,7 +207,13 @@ def detect(
         Sample rate of ``audio`` in hertz. Audio is resampled to 32 kHz.
     """
     detector = load_detector(model_dir, perch_path=perch_path)
-    return detector.detect(audio, sample_rate, threshold=threshold, hop_s=hop_s)
+    return detector.detect(
+        audio,
+        sample_rate,
+        threshold=threshold,
+        hop_s=hop_s,
+        temporal_gate=temporal_gate,
+    )
 
 
 def to_detection_rows(events: list[dict], *, node_id: str, origin: datetime) -> list[dict]:

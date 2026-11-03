@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://hrecos.local/contracts/detections.schema.json",
   "title": "detections",
-  "description": "One detected sound event in public.detections. A row is a call, a boat, or an unknown sound, not an individual fish. label is free text; common values are sturgeon_thunder, drum_knock, toadfish_boatwhistle, boat, and unknown. review_status defaults to unreviewed. clip_path, when set, is an object key in the Storage bucket audio. Realtime is enabled on this table. Inserts use the service role.",
+  "description": "One detected sound event in public.detections. A row is a call, a surface splash, a boat, or an unknown sound, not an individual fish. label is free text; common values are sturgeon_thunder, drum_knock, toadfish_boatwhistle, bass_spawning_splash, boat, and unknown. bass_spawning_splash is surface commotion mapped to species_id striped_bass, not a vocalization. review_status defaults to unreviewed. clip_path, when set, is an object key in the Storage bucket audio. Realtime is enabled on this table. Inserts use the service role.",
   "type": "object",
   "additionalProperties": false,
   "required": ["node_id", "start_time", "end_time", "label"],

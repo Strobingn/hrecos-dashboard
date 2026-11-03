@@ -20,13 +20,19 @@ from hrecos_ml.audio import load_audio  # noqa: E402
 from hrecos_ml.dataset import read_manifest  # noqa: E402
 from hrecos_ml.infer import clear_detector_cache, detect  # noqa: E402
 from hrecos_ml.labels import (  # noqa: E402
+    INFERENCE_LABEL,
     MODEL_NAME,
     MODEL_VERSION,
     TARGET_SR,
     TRAIN_LABELS,
 )
 from hrecos_ml.probe import fit_probe  # noqa: E402
-from hrecos_ml.synthesize import render_background, render_clip  # noqa: E402
+from hrecos_ml.synthesize import (  # noqa: E402
+    render_background,
+    render_clip,
+    render_splash_bout,
+    render_stop_start_wake,
+)
 
 ARTIFACT = ROOT / "artifacts" / MODEL_NAME / MODEL_VERSION
 
@@ -120,7 +126,17 @@ def _event_timing(n_scenes: int = 8, seed: int = 7) -> dict:
     rng = np.random.default_rng(seed)
     clear_detector_cache()
     per_class = []
-    for label in ("sturgeon_thunder", "drum_knock", "toadfish_boatwhistle", "boat", "train", "hum_60hz"):
+    for label in (
+        "sturgeon_thunder",
+        "drum_knock",
+        "toadfish_boatwhistle",
+        "bass_spawning_splash",
+        "boat",
+        "train",
+        "hum_60hz",
+        "rain",
+        "wave_slap",
+    ):
         hits = 0
         start_errors = []
         for _ in range(n_scenes):
@@ -155,28 +171,86 @@ def _event_timing(n_scenes: int = 8, seed: int = 7) -> dict:
             }
         )
     false_positives = 0
+    false_positive_labels: list[str] = []
     empty = 6
     for _ in range(empty):
         n = 15 * TARGET_SR
         buffer = (render_background(n, rng) * 0.2).astype(np.float32)
         found = detect(buffer, TARGET_SR, hop_s=1.0)
-        false_positives += int(len(found) > 0)
+        if found:
+            false_positives += 1
+            false_positive_labels.extend(sorted({event["label"] for event in found}))
     return {
         "note": (
             "A 5 s synthetic clip is added to 15 s of background at a known offset. "
             "A hit is a detection of the mapped label whose interval overlaps that 5 s span. "
-            "Start error is coarse because the model sees 5 s windows on a 1 s hop."
+            "Start error is coarse because the model sees 5 s windows on a 1 s hop. "
+            "These scenes are 15 s, under the 30 s minimum for the splash gate."
         ),
         "per_class": per_class,
         "background_only_scenes": empty,
         "background_only_scenes_with_a_detection": false_positives,
+        "background_only_labels": false_positive_labels,
     }
 
 
 def _expected_detection_label(train_label: str) -> str:
-    if train_label in {"train", "hum_60hz"}:
-        return "unknown"
-    return train_label
+    return INFERENCE_LABEL[train_label]
+
+
+def _labels_present(events: list[dict], label: str) -> bool:
+    return any(event["label"] == label for event in events)
+
+
+def _sequence_gate(n_files: int = 8, seed: int = 11) -> dict:
+    """Long synthetic wakes versus splash bouts, with and without the gate.
+
+    Windows are 5 s. The gate only sees files of 90 s, which is inside the
+    30–120 s context it was written for. These clips are not in the training
+    manifest; ``render_boat`` sometimes crops the same wake family, so the
+    window classifier is not blind to wash, and this check can still be
+    optimistic.
+    """
+    rng = np.random.default_rng(seed)
+    clear_detector_cache()
+    duration_s = 90.0
+
+    def _run(render) -> dict:
+        splash_off = 0
+        splash_on = 0
+        boat_off = 0
+        boat_on = 0
+        for _ in range(n_files):
+            audio = render(duration_s, rng)
+            off = detect(audio, TARGET_SR, hop_s=1.0, temporal_gate=False)
+            on = detect(audio, TARGET_SR, hop_s=1.0, temporal_gate=True)
+            splash_off += int(_labels_present(off, "bass_spawning_splash"))
+            splash_on += int(_labels_present(on, "bass_spawning_splash"))
+            boat_off += int(_labels_present(off, "boat"))
+            boat_on += int(_labels_present(on, "boat"))
+        return {
+            "files": n_files,
+            "duration_s": duration_s,
+            "files_with_bass_spawning_splash_without_gate": splash_off,
+            "files_with_bass_spawning_splash_with_gate": splash_on,
+            "files_with_boat_without_gate": boat_off,
+            "files_with_boat_with_gate": boat_on,
+        }
+
+    wake = _run(render_stop_start_wake)
+    bout = _run(render_splash_bout)
+    return {
+        "note": (
+            "Each file is 90 s. A file counts if detect() emits that label "
+            "anywhere in it. temporal_gate=False is the 5 s probe alone. "
+            "temporal_gate=True relabels bass_spawning_splash to boat when "
+            "the envelope shows a sustained wash or a stop-start pair of "
+            "long washes. There is no real striped-bass splash recording "
+            "in this check."
+        ),
+        "stop_start_wake": wake,
+        "splash_bout": bout,
+    }
 
 
 def _full_file_detections(manifest: Path) -> list[dict]:
@@ -231,6 +305,8 @@ def main() -> int:
     loo = _leave_one_file_out(synthetic, external, columns) if external else []
     print("running synthetic event-timing check...")
     timing = _event_timing()
+    print("running long wake vs splash-bout gate check...")
+    sequences = _sequence_gate()
     print("running full-file detect() on downloaded audio...")
     files = _full_file_detections(manifest)
     synthetic_metrics = json.loads((ARTIFACT / "metrics_synthetic.json").read_text())
@@ -243,6 +319,7 @@ def main() -> int:
         "external_center_window_by_probe": by_probe,
         "external_leave_one_file_out": loo,
         "synthetic_event_timing": timing,
+        "synthetic_sequence_gate": sequences,
         "external_full_file_detections": files,
     }
     out = ARTIFACT / "metrics.json"
@@ -255,6 +332,18 @@ def main() -> int:
     print(
         "background-only scenes with a detection: "
         f"{timing['background_only_scenes_with_a_detection']}/{timing['background_only_scenes']}"
+    )
+    wake = sequences["stop_start_wake"]
+    bout = sequences["splash_bout"]
+    print(
+        "stop-start wake files with bass_spawning_splash: "
+        f"without gate {wake['files_with_bass_spawning_splash_without_gate']}/{wake['files']}, "
+        f"with gate {wake['files_with_bass_spawning_splash_with_gate']}/{wake['files']}"
+    )
+    print(
+        "splash-bout files with bass_spawning_splash: "
+        f"without gate {bout['files_with_bass_spawning_splash_without_gate']}/{bout['files']}, "
+        f"with gate {bout['files_with_bass_spawning_splash_with_gate']}/{bout['files']}"
     )
     print(f"wrote {out}")
     return 0

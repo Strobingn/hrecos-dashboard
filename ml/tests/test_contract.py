@@ -21,13 +21,15 @@ from hrecos_ml.labels import (
     WINDOW_SAMPLES,
 )
 from hrecos_ml.probe import fit_probe
-from hrecos_ml.synthesize import render_clip
+from hrecos_ml.synthesize import render_clip, render_splash_bout, render_stop_start_wake
+from hrecos_ml.temporal import gate_splash_labels
 
 REPO = Path(__file__).resolve().parents[2]
 SPECIES_SLUGS = {
     "sturgeon_thunder": "atlantic_sturgeon",
     "drum_knock": "freshwater_drum",
     "toadfish_boatwhistle": "oyster_toadfish",
+    "bass_spawning_splash": "striped_bass",
     "boat": None,
     "unknown": None,
 }
@@ -38,12 +40,19 @@ def test_detection_labels_match_the_table_contract():
         "sturgeon_thunder",
         "drum_knock",
         "toadfish_boatwhistle",
+        "bass_spawning_splash",
         "boat",
         "unknown",
     )
-    for label in ("train", "hum_60hz", "background"):
+    for label in ("train", "hum_60hz", "rain", "wave_slap", "background"):
         assert INFERENCE_LABEL[label] == "unknown"
-    for label in ("sturgeon_thunder", "drum_knock", "toadfish_boatwhistle", "boat"):
+    for label in (
+        "sturgeon_thunder",
+        "drum_knock",
+        "toadfish_boatwhistle",
+        "bass_spawning_splash",
+        "boat",
+    ):
         assert INFERENCE_LABEL[label] == label
 
 
@@ -121,6 +130,16 @@ def test_detect_schema_and_onnx_head(tmp_path: Path):
     assert errors == [], errors
     assert rows[0]["species_id"] == events[0]["species_id"]
 
+    onnx_path = export_probe_onnx(probe, tmp_path / "probe.onnx")
+    weight, bias = fold_affine(probe)
+    sample = np.stack(features[:4])
+    numpy_probs = probe.predict_proba(sample)
+    onnx_probs = onnx_predict_proba(onnx_path, sample)
+    assert numpy_probs.shape == (4, len(probe.classes))
+    assert np.allclose(numpy_probs, onnx_probs, atol=1e-5)
+    logits = sample @ weight.T + bias
+    assert logits.shape == (4, len(probe.classes))
+
 
 def test_species_ids_are_seed_slugs():
     seed = (REPO / "supabase" / "seed.sql").read_text()
@@ -146,7 +165,7 @@ def test_detection_rows_match_schema():
                 "freq_low_hz": 20.0,
                 "freq_high_hz": 100.0,
                 "model_name": "hrecos-fish-probe",
-                "model_version": "0.1.0",
+                "model_version": "0.2.0",
             }
         )
     rows = to_detection_rows(events, node_id="westpoint-cornwall", origin=origin)
@@ -154,6 +173,7 @@ def test_detection_rows_match_schema():
         "atlantic_sturgeon",
         "freshwater_drum",
         "oyster_toadfish",
+        "striped_bass",
         None,
         None,
     ]
@@ -170,13 +190,43 @@ def _detections_validator() -> Draft202012Validator:
     schema = json.loads((REPO / "contracts" / "detections.schema.json").read_text())
     return Draft202012Validator(schema, format_checker=Draft202012Validator.FORMAT_CHECKER)
 
-    onnx_path = export_probe_onnx(probe, tmp_path / "probe.onnx")
-    weight, bias = fold_affine(probe)
-    sample = np.stack(features[:4])
-    numpy_probs = probe.predict_proba(sample)
-    onnx_probs = onnx_predict_proba(onnx_path, sample)
-    assert numpy_probs.shape == (4, len(probe.classes))
-    assert np.allclose(numpy_probs, onnx_probs, atol=1e-5)
-    # The folded affine is what the ONNX graph multiplies.
-    logits = sample @ weight.T + bias
-    assert logits.shape == (4, len(probe.classes))
+
+def _splash_event(start_s: float, end_s: float) -> dict:
+    return {
+        "start_time": start_s,
+        "end_time": end_s,
+        "label": "bass_spawning_splash",
+        "species_id": "striped_bass",
+        "confidence": 0.8,
+        "freq_low_hz": 200.0,
+        "freq_high_hz": 4000.0,
+        "model_name": "hrecos-fish-probe",
+        "model_version": "test",
+    }
+
+
+def test_stop_start_wake_suppresses_a_splash_label():
+    rng = np.random.default_rng(1)
+    wake = render_stop_start_wake(90.0, rng)
+    on_wash = gate_splash_labels([_splash_event(12.0, 17.0)], wake, 32000)
+    assert on_wash[0]["label"] == "boat"
+    assert on_wash[0]["species_id"] is None
+    # Quiet gap between the two washes (schedule 34–46 s of the 90 s template).
+    in_gap = gate_splash_labels([_splash_event(36.0, 40.0)], wake, 32000)
+    assert in_gap[0]["label"] == "boat"
+    assert in_gap[0]["species_id"] is None
+
+
+def test_splash_bout_keeps_the_splash_label():
+    rng = np.random.default_rng(2)
+    bout = render_splash_bout(70.0, rng)
+    gated = gate_splash_labels([_splash_event(4.0, 8.0)], bout, 32000)
+    assert gated[0]["label"] == "bass_spawning_splash"
+    assert gated[0]["species_id"] == "striped_bass"
+
+
+def test_short_buffer_is_not_gated():
+    rng = np.random.default_rng(3)
+    wake = render_stop_start_wake(20.0, rng)
+    gated = gate_splash_labels([_splash_event(6.0, 10.0)], wake, 32000)
+    assert gated[0]["label"] == "bass_spawning_splash"

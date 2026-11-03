@@ -141,17 +141,161 @@ def render_toadfish(n: int, rng: np.random.Generator) -> np.ndarray:
     return y
 
 
+def _splash_hit(rng: np.random.Generator) -> np.ndarray:
+    """One broadband surface impact plus a short bubble ring.
+
+    Franz (1959, JASA 31:1080) treats a splash as an impact followed by
+    bubble pulses. There is no published spectrum for striped bass splashes;
+    this is that generic shape, not a measured bass call.
+    """
+    dur = int(rng.uniform(0.04, 0.28) * SR)
+    env = np.exp(-np.arange(dur) / (float(rng.uniform(0.012, 0.05)) * SR)).astype(np.float32)
+    hit = rng.normal(size=dur).astype(np.float32) * env
+    hit = _bandlimit(hit, 120.0, 12000.0)
+    t = np.arange(dur, dtype=np.float32) / SR
+    bubble_hz = float(rng.uniform(500.0, 3000.0))
+    bubble = np.sin(2 * np.pi * bubble_hz * t).astype(np.float32) * env
+    return (hit + 0.35 * bubble).astype(np.float32)
+
+
+def _place_splashes(n: int, rng: np.random.Generator, start_s: float, end_s: float) -> np.ndarray:
+    y = np.zeros(n, dtype=np.float32)
+    t = start_s
+    while t < end_s - 0.05:
+        hit = _splash_hit(rng)
+        _place(y, hit, int(t * SR))
+        t += float(rng.uniform(0.25, 1.3))
+    return y
+
+
+def render_bass_splash(n: int, rng: np.random.Generator) -> np.ndarray:
+    """A few short splash bursts inside one 5 s window. Not a continuous wash."""
+    y = np.zeros(n, dtype=np.float32)
+    t = float(rng.uniform(0.1, 0.6))
+    end = n / SR - 0.1
+    n_hits = int(rng.integers(3, 8))
+    for _ in range(n_hits):
+        if t >= end:
+            break
+        _place(y, _splash_hit(rng), int(t * SR))
+        t += float(rng.uniform(0.28, 1.1))
+    return y
+
+
+def render_rain(n: int, rng: np.random.Generator) -> np.ndarray:
+    """Many small drop impacts. Light rain carries a ~15 kHz bubble tone.
+
+    Nystuen (1986, JASA 79:972) and Medwin et al. (1992, JASA 92:1613):
+    small drops radiate a type-I bubble near 15 kHz; the field is much more
+    stationary than a few large-body splashes.
+    """
+    y = np.zeros(n, dtype=np.float32)
+    rate = float(rng.uniform(25.0, 70.0))
+    t = 0.0
+    while t < n / SR:
+        dur = int(rng.uniform(0.001, 0.004) * SR)
+        if dur < 8:
+            dur = 8
+        env = np.exp(-np.arange(dur) / (0.0012 * SR)).astype(np.float32)
+        drop = rng.normal(size=dur).astype(np.float32) * env * 0.25
+        if rng.random() < 0.55:
+            tt = np.arange(dur, dtype=np.float32) / SR
+            freq = float(rng.uniform(13500.0, 16000.0))
+            drop = drop + np.sin(2 * np.pi * freq * tt).astype(np.float32) * env
+        _place(y, drop, int(t * SR))
+        t += float(rng.exponential(1.0 / rate))
+    return y
+
+
+def render_wave_slap(n: int, rng: np.random.Generator) -> np.ndarray:
+    """Quasi-periodic low-frequency slaps, not broadband spray."""
+    y = np.zeros(n, dtype=np.float32)
+    interval = float(rng.uniform(0.55, 1.35))
+    pos = float(rng.uniform(0.0, interval))
+    while pos * SR < n - 16:
+        dur = int(rng.uniform(0.04, 0.12) * SR)
+        tt = np.arange(dur, dtype=np.float32) / SR
+        f0 = float(rng.uniform(50.0, 180.0))
+        env = np.exp(-tt / 0.03).astype(np.float32)
+        slap = np.sin(2 * np.pi * f0 * tt).astype(np.float32) * env
+        slap += 0.3 * rng.normal(size=dur).astype(np.float32) * env
+        slap = _bandlimit(slap, 30.0, 700.0)
+        _place(y, slap, int(pos * SR))
+        pos += interval * float(rng.uniform(0.9, 1.1))
+    return y
+
+
+def _engine(n: int, rng: np.random.Generator, hz: float | None = None) -> np.ndarray:
+    t = np.arange(n, dtype=np.float32) / SR
+    engine_hz = float(hz if hz is not None else rng.uniform(40.0, 90.0))
+    if engine_hz > 55.0 and engine_hz < 65.0:
+        engine_hz = 70.0
+    tone = np.sin(2 * np.pi * engine_hz * t).astype(np.float32)
+    tone += 0.45 * np.sin(2 * np.pi * 2 * engine_hz * t).astype(np.float32)
+    tone += 0.2 * np.sin(2 * np.pi * 3 * engine_hz * t).astype(np.float32)
+    return tone
+
+
+def _wake_wash(n: int, rng: np.random.Generator) -> np.ndarray:
+    """Continuous breaking-wake hiss. Duty cycle stays high; it does not pulse off."""
+    noise = _bandlimit(pink_noise(n, rng), 40.0, 6000.0)
+    t = np.arange(n, dtype=np.float32) / SR
+    mod = 0.8 + 0.2 * np.sin(2 * np.pi * float(rng.uniform(0.15, 0.6)) * t + float(rng.uniform(0, 3)))
+    return (noise * mod.astype(np.float32) + 0.55 * _engine(n, rng)).astype(np.float32)
+
+
+def render_stop_start_wake(duration_s: float, rng: np.random.Generator) -> np.ndarray:
+    """Engine lead-in, a long wash, a gap, then another wash.
+
+    On-periods are tens of seconds. This is the hard negative for splash.
+    """
+    n = int(duration_s * SR)
+    y = _scale_rms(_bandlimit(pink_noise(n, rng), 20.0, 2000.0), 0.008)
+    schedule = (
+        (0.0, 6.0, "engine"),
+        (6.0, 34.0, "wash"),
+        (46.0, 52.0, "engine"),
+        (52.0, 82.0, "wash"),
+    )
+    scale = duration_s / 90.0
+    for start_s, end_s, kind in schedule:
+        a = int(start_s * scale * SR)
+        b = int(min(duration_s, end_s * scale) * SR)
+        if b <= a or a >= n:
+            continue
+        b = min(b, n)
+        piece = _engine(b - a, rng) if kind == "engine" else _wake_wash(b - a, rng)
+        y[a:b] += _scale_rms(piece, 0.12 if kind == "wash" else 0.05)
+    return y.astype(np.float32)
+
+
+def render_splash_bout(duration_s: float, rng: np.random.Generator) -> np.ndarray:
+    """Clusters of short splashes separated by quiet gaps of a few seconds."""
+    n = int(duration_s * SR)
+    y = _scale_rms(_bandlimit(pink_noise(n, rng), 20.0, 2000.0), 0.008)
+    t = float(rng.uniform(1.0, 3.0))
+    while t < duration_s - 2.0:
+        cluster = float(rng.uniform(2.5, 6.0))
+        hits = _place_splashes(n, rng, t, min(duration_s, t + cluster))
+        y += _scale_rms(hits, 0.15)
+        t += cluster + float(rng.uniform(3.0, 8.0))
+    return y.astype(np.float32)
+
+
 def render_boat(n: int, rng: np.random.Generator) -> np.ndarray:
-    """Low-frequency engine modulation plus broadband rumble. Not a 60 Hz line."""
+    """Engine rumble, or a slice of a long stop-start wake."""
+    if rng.random() < 0.5 and n >= SR:
+        long = render_stop_start_wake(70.0, rng)
+        # Land inside a wash (the scaled schedule puts washes near 6-34 and 52-82 of 90 s).
+        anchor = float(rng.choice([12.0, 22.0, 58.0])) * (70.0 / 90.0)
+        start = int(np.clip(anchor * SR, 0, long.size - n))
+        return long[start : start + n].astype(np.float32)
     noise = pink_noise(n, rng)
     noise = _bandlimit(noise, 20.0, 1500.0)
     t = np.arange(n, dtype=np.float32) / SR
     rate = float(rng.uniform(1.5, 6.0))
     mod = 0.55 + 0.45 * np.sin(2 * np.pi * rate * t + float(rng.uniform(0, 6))).astype(np.float32)
-    engine_hz = float(rng.uniform(38.0, 52.0) if rng.random() < 0.5 else rng.uniform(70.0, 140.0))
-    engine = np.sin(2 * np.pi * engine_hz * t).astype(np.float32)
-    engine += 0.4 * np.sin(2 * np.pi * 2 * engine_hz * t).astype(np.float32)
-    y = noise * mod + 0.8 * engine
+    y = noise * mod + 0.8 * _engine(n, rng)
     return y.astype(np.float32)
 
 
@@ -190,7 +334,10 @@ RENDERERS = {
     "sturgeon_thunder": render_sturgeon,
     "drum_knock": render_drum,
     "toadfish_boatwhistle": render_toadfish,
+    "bass_spawning_splash": render_bass_splash,
     "boat": render_boat,
+    "rain": render_rain,
+    "wave_slap": render_wave_slap,
     "train": render_train,
     "hum_60hz": render_hum,
     "background": render_background,

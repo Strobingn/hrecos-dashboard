@@ -1,8 +1,10 @@
 """Class names, species identifiers, and literature frequency bounds.
 
-Detection labels are the values stored on a detections row. Training uses two
-extra noise classes (``train``, ``hum_60hz``) plus ``background``. Those three
-collapse to ``unknown`` at inference time, and plain background is not emitted.
+Detection labels are the values stored on a detections row. Training also uses
+``train``, ``hum_60hz``, ``rain``, ``wave_slap``, and ``background``. Those
+collapse to ``unknown`` at inference time, except plain background, which is
+not emitted. ``bass_spawning_splash`` is kept and stored as species
+``striped_bass``.
 """
 
 from __future__ import annotations
@@ -11,6 +13,7 @@ DETECTION_LABELS = (
     "sturgeon_thunder",
     "drum_knock",
     "toadfish_boatwhistle",
+    "bass_spawning_splash",
     "boat",
     "unknown",
 )
@@ -19,9 +22,12 @@ TRAIN_LABELS = (
     "sturgeon_thunder",
     "drum_knock",
     "toadfish_boatwhistle",
+    "bass_spawning_splash",
     "boat",
     "train",
     "hum_60hz",
+    "rain",
+    "wave_slap",
     "background",
 )
 
@@ -30,9 +36,12 @@ INFERENCE_LABEL = {
     "sturgeon_thunder": "sturgeon_thunder",
     "drum_knock": "drum_knock",
     "toadfish_boatwhistle": "toadfish_boatwhistle",
+    "bass_spawning_splash": "bass_spawning_splash",
     "boat": "boat",
     "train": "unknown",
     "hum_60hz": "unknown",
+    "rain": "unknown",
+    "wave_slap": "unknown",
     "background": "unknown",
 }
 
@@ -68,6 +77,18 @@ SPECIES = {
         "peak_hz": 200.0,
         "citation": "Tonal boatwhistle; fundamental typically well below 300 Hz with harmonics.",
     },
+    "bass_spawning_splash": {
+        "species_id": "striped_bass",
+        "scientific_name": "Morone saxatilis",
+        "common_name": "striped bass",
+        "freq_low_hz": 100.0,
+        "freq_high_hz": 8000.0,
+        "peak_hz": None,
+        "citation": (
+            "Surface spawning behavior: Setzler et al. 1980, NOAA Tech. Rep. NMFS Circ. 433. "
+            "No published spectrum of the Hudson splash itself; shape follows Franz 1959, JASA 31:1080."
+        ),
+    },
     "boat": {
         "species_id": None,
         "scientific_name": None,
@@ -95,6 +116,24 @@ SPECIES = {
         "peak_hz": 60.0,
         "citation": None,
     },
+    "rain": {
+        "species_id": None,
+        "scientific_name": None,
+        "common_name": "rain",
+        "freq_low_hz": 1000.0,
+        "freq_high_hz": 16000.0,
+        "peak_hz": 15000.0,
+        "citation": "Nystuen 1986, JASA 79:972; Medwin et al. 1992, JASA 92:1613.",
+    },
+    "wave_slap": {
+        "species_id": None,
+        "scientific_name": None,
+        "common_name": "wave slap",
+        "freq_low_hz": 40.0,
+        "freq_high_hz": 800.0,
+        "peak_hz": None,
+        "citation": None,
+    },
     "background": {
         "species_id": None,
         "scientific_name": None,
@@ -116,7 +155,7 @@ SPECIES = {
 }
 
 MODEL_NAME = "hrecos-fish-probe"
-MODEL_VERSION = "0.1.0"
+MODEL_VERSION = "0.2.0"
 
 TARGET_SR = 32_000
 WINDOW_S = 5.0
