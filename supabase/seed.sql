@@ -182,7 +182,7 @@ insert into public.hydrophone_nodes (
   last_heartbeat
 ) values
   (
-    'west_point_cornwall',
+    'westpoint-cornwall',
     'West Point / Cornwall',
     41.4150,
     -73.9600,
@@ -204,7 +204,7 @@ insert into public.hydrophone_nodes (
     now()
   ),
   (
-    'tappan_zee_piermont',
+    'tappan-zee',
     'Tappan Zee / Piermont',
     41.0630,
     -73.8900,
@@ -225,11 +225,11 @@ on conflict (id) do update set
   last_heartbeat = excluded.last_heartbeat;
 
 -- Coordinate notes (not stored as columns):
--- west_point_cornwall is an approximate mid-channel point in the West Point
+-- westpoint-cornwall is an approximate mid-channel point in the West Point
 -- to Cornwall reach near river mile 54. The USGS West Point gauge used
 -- elsewhere in this repo is farther south at river mile 50 (41.386, -73.955).
 -- poughkeepsie matches the HRECOS / USGS 01372043 station coordinate at
 -- river mile 75.
--- tappan_zee_piermont sits in the Tappan Zee between the Piermont USGS gauge
+-- tappan-zee sits in the Tappan Zee between the Piermont USGS gauge
 -- (41.043, -73.896, river mile 25) and the Mario M. Cuomo Bridge (about
 -- river mile 27), rather than on Piermont Pier.

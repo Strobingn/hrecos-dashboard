@@ -20,9 +20,9 @@ JSON Schemas for those five shapes live in `contracts/`. Writers may omit databa
 
 Seeded node ids:
 
-- `west_point_cornwall` — West Point / Cornwall, about river mile 54
+- `westpoint-cornwall` — West Point / Cornwall, about river mile 54
 - `poughkeepsie` — Poughkeepsie, river mile 75
-- `tappan_zee_piermont` — Tappan Zee / Piermont, river mile 26
+- `tappan-zee` — Tappan Zee / Piermont, river mile 26
 
 All three are `status = simulated`.
 

@@ -14,7 +14,7 @@
     "storage_path": {
       "type": "string",
       "minLength": 1,
-      "description": "Object key inside bucket audio. Example: west_point_cornwall/2026/06/10/143000.wav"
+      "description": "Object key inside bucket audio. Example: westpoint-cornwall/2026/06/10/143000.wav"
     },
     "rms_db": { "type": ["number", "null"] },
     "band_levels": {
