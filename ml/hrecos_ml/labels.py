@@ -39,13 +39,11 @@ INFERENCE_LABEL = {
 # Background is the negative class. It is not written as a detection.
 EMITTED_TRAIN_LABELS = tuple(label for label in TRAIN_LABELS if label != "background")
 
-# ITIS taxonomic serial numbers, checked against the ITIS JSON service
-# (searchByScientificName) on 2026-11-03. Atlantic sturgeon is the subspecies
-# Acipenser oxyrinchus oxyrinchus (TSN 624004); the species-level TSN is 553269.
+# species_id is public.species.id from supabase/seed.sql, not an ITIS number.
 SPECIES = {
     "sturgeon_thunder": {
-        "species_id": "itis:624004",
-        "scientific_name": "Acipenser oxyrinchus oxyrinchus",
+        "species_id": "atlantic_sturgeon",
+        "scientific_name": "Acipenser oxyrinchus",
         "common_name": "Atlantic sturgeon",
         "freq_low_hz": 10.0,
         "freq_high_hz": 100.0,
@@ -53,7 +51,7 @@ SPECIES = {
         "citation": "Cohen et al. 2025, Endang. Species Res., doi:10.3354/esr01429",
     },
     "drum_knock": {
-        "species_id": "itis:169364",
+        "species_id": "freshwater_drum",
         "scientific_name": "Aplodinotus grunniens",
         "common_name": "freshwater drum",
         "freq_low_hz": 150.0,
@@ -62,7 +60,7 @@ SPECIES = {
         "citation": "Knock trains centered near 400 Hz; Rountree recordings in FishSounds (doi:10.5683/SP2/TACOUX).",
     },
     "toadfish_boatwhistle": {
-        "species_id": "itis:164423",
+        "species_id": "oyster_toadfish",
         "scientific_name": "Opsanus tau",
         "common_name": "oyster toadfish",
         "freq_low_hz": 80.0,

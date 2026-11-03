@@ -22,13 +22,13 @@ Training classes are the three fish sounds plus `boat`, `train`, `hum_60hz`, and
 
 | Detection label | `species_id` | Organism | Literature band used to synthesize it |
 | --- | --- | --- | --- |
-| `sturgeon_thunder` | `itis:624004` | *Acipenser oxyrinchus oxyrinchus* | 10–100 Hz, peak near 44 Hz, bout about 1.9 s (Cohen et al. 2025, [doi:10.3354/esr01429](https://doi.org/10.3354/esr01429)) |
-| `drum_knock` | `itis:169364` | *Aplodinotus grunniens* | knock train centered near 400 Hz |
-| `toadfish_boatwhistle` | `itis:164423` | *Opsanus tau* | tonal boatwhistle, fundamental roughly 110–240 Hz plus harmonics |
+| `sturgeon_thunder` | `atlantic_sturgeon` | *Acipenser oxyrinchus* | 10–100 Hz, peak near 44 Hz, bout about 1.9 s (Cohen et al. 2025, [doi:10.3354/esr01429](https://doi.org/10.3354/esr01429)) |
+| `drum_knock` | `freshwater_drum` | *Aplodinotus grunniens* | knock train centered near 400 Hz |
+| `toadfish_boatwhistle` | `oyster_toadfish` | *Opsanus tau* | tonal boatwhistle, fundamental roughly 110–240 Hz plus harmonics |
 | `boat` | null | vessel | low-frequency engine line that is not 60 Hz, plus rumble |
 | `unknown` | null | train, 60 Hz hum, or other non-target | |
 
-ITIS serial numbers were read from the ITIS `searchByScientificName` service on 2026-11-03. Atlantic sturgeon is stored as the subspecies TSN 624004 (the species-level TSN is 553269).
+`species_id` is the primary key of `public.species` in `supabase/seed.sql`. `boat` and `unknown` store null. The slugs are `atlantic_sturgeon`, `freshwater_drum`, and `oyster_toadfish`.
 
 `freq_low_hz` and `freq_high_hz` on a detection are the 10th and 90th percentiles of spectral energy from 10 to 4000 Hz on the winning window. They are measured from the audio. The literature bands above are not copied into those fields.
 
@@ -123,7 +123,7 @@ Center-window prediction of the deployed probe (one 5 s window per file, not sli
 
 `detect()` on the whole file disagrees with that center window in a few places, because a different 5 s slice wins:
 
-- AS1: `sturgeon_thunder` 0.00–7.00 s, confidence 0.939, band 25.6–91.4 Hz, `species_id` `itis:624004`, plus an overlapping `unknown` at 5.00–7.00 s (confidence 0.802).
+- AS1: `sturgeon_thunder` 0.00–7.00 s, confidence 0.939, band 25.6–91.4 Hz, `species_id` `atlantic_sturgeon`, plus an overlapping `unknown` at 5.00–7.00 s (confidence 0.802).
 - AS2: `boat` 3.00–6.00 s, confidence 0.997. The center-window sturgeon call does not survive the hop.
 - Drum calls 2 and 3 are `drum_knock`. Call 1 is `toadfish_boatwhistle` (0.890). The chorus is mostly `unknown`, with a short `drum_knock` at the end (0.519).
 - Both toadfish proxies come back as `toadfish_boatwhistle`. The Lusitanian toadfish file is a minute long and also produces `unknown` segments.
@@ -139,17 +139,25 @@ The recording set to train on next is the annotated Hudson River passive-acousti
 ## Interface
 
 ```python
-from hrecos_ml.infer import detect
+from datetime import datetime, timezone
+from hrecos_ml.infer import detect, to_detection_rows
 
 events = detect(audio, sample_rate)  # samples, hertz
+rows = to_detection_rows(
+    events,
+    node_id="westpoint-cornwall",
+    origin=datetime(2026, 6, 15, 12, 0, tzinfo=timezone.utc),
+)
 ```
+
+`detect` times are seconds from the start of the buffer. `to_detection_rows` turns them into `public.detections` objects: `start_time` and `end_time` become timezone-aware ISO timestamps, `node_id` is set, and `species_id` stays the seed slug or null. Those objects validate against `contracts/detections.schema.json`.
 
 Each event:
 
 ```text
 start_time, end_time          seconds from the start of audio
 label                         one of the five detection labels
-species_id                    ITIS id, or None for boat and unknown
+species_id                    species-table slug, or None for boat and unknown
 confidence                    probability of the winning training class
 freq_low_hz, freq_high_hz     measured energy percentiles
 model_name, model_version     hrecos-fish-probe, 0.1.0

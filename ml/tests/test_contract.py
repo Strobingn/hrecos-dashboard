@@ -2,17 +2,35 @@
 
 from __future__ import annotations
 
+import json
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import numpy as np
+from jsonschema import Draft202012Validator
 
 from hrecos_ml.audio import iter_windows
 from hrecos_ml.embeddings import LowBandEmbedder
 from hrecos_ml.export_onnx import export_probe_onnx, fold_affine, onnx_predict_proba
-from hrecos_ml.infer import FishDetector
-from hrecos_ml.labels import DETECTION_LABELS, INFERENCE_LABEL, TRAIN_LABELS, WINDOW_SAMPLES
+from hrecos_ml.infer import FishDetector, to_detection_rows
+from hrecos_ml.labels import (
+    DETECTION_LABELS,
+    INFERENCE_LABEL,
+    SPECIES,
+    TRAIN_LABELS,
+    WINDOW_SAMPLES,
+)
 from hrecos_ml.probe import fit_probe
 from hrecos_ml.synthesize import render_clip
+
+REPO = Path(__file__).resolve().parents[2]
+SPECIES_SLUGS = {
+    "sturgeon_thunder": "atlantic_sturgeon",
+    "drum_knock": "freshwater_drum",
+    "toadfish_boatwhistle": "oyster_toadfish",
+    "boat": None,
+    "unknown": None,
+}
 
 
 def test_detection_labels_match_the_table_contract():
@@ -93,7 +111,64 @@ def test_detect_schema_and_onnx_head(tmp_path: Path):
     assert event["start_time"] == 0
     assert event["freq_high_hz"] >= event["freq_low_hz"]
     if event["label"] == "sturgeon_thunder":
-        assert event["species_id"] == "itis:624004"
+        assert event["species_id"] == "atlantic_sturgeon"
+    rows = to_detection_rows(
+        events,
+        node_id="westpoint-cornwall",
+        origin=datetime(2026, 6, 15, 12, 0, tzinfo=timezone.utc),
+    )
+    errors = list(_detections_validator().iter_errors(rows[0]))
+    assert errors == [], errors
+    assert rows[0]["species_id"] == events[0]["species_id"]
+
+
+def test_species_ids_are_seed_slugs():
+    seed = (REPO / "supabase" / "seed.sql").read_text()
+    for label, slug in SPECIES_SLUGS.items():
+        assert SPECIES[label]["species_id"] == slug
+        if slug is not None:
+            assert f"'{slug}'" in seed
+
+
+def test_detection_rows_match_schema():
+    """Every detection label becomes a public.detections object."""
+    validator = _detections_validator()
+    origin = datetime(2026, 6, 15, 12, 0, tzinfo=timezone.utc)
+    events = []
+    for index, label in enumerate(DETECTION_LABELS):
+        events.append(
+            {
+                "start_time": float(index),
+                "end_time": float(index) + 1.5,
+                "label": label,
+                "species_id": SPECIES[label]["species_id"],
+                "confidence": 0.75,
+                "freq_low_hz": 20.0,
+                "freq_high_hz": 100.0,
+                "model_name": "hrecos-fish-probe",
+                "model_version": "0.1.0",
+            }
+        )
+    rows = to_detection_rows(events, node_id="westpoint-cornwall", origin=origin)
+    assert [row["species_id"] for row in rows] == [
+        "atlantic_sturgeon",
+        "freshwater_drum",
+        "oyster_toadfish",
+        None,
+        None,
+    ]
+    for row in rows:
+        errors = list(validator.iter_errors(row))
+        assert errors == [], errors
+        start = datetime.fromisoformat(row["start_time"])
+        end = datetime.fromisoformat(row["end_time"])
+        assert end - start == timedelta(seconds=1.5)
+    assert rows[0]["start_time"].startswith("2026-06-15T12:00:00")
+
+
+def _detections_validator() -> Draft202012Validator:
+    schema = json.loads((REPO / "contracts" / "detections.schema.json").read_text())
+    return Draft202012Validator(schema, format_checker=Draft202012Validator.FORMAT_CHECKER)
 
     onnx_path = export_probe_onnx(probe, tmp_path / "probe.onnx")
     weight, bias = fold_affine(probe)

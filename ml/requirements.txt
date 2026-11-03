@@ -4,3 +4,4 @@ scikit-learn>=1.4
 soundfile>=0.12
 onnxruntime>=1.18
 onnx>=1.16
+jsonschema>=4.18

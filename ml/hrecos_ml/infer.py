@@ -6,7 +6,7 @@
         "start_time": float,       # seconds from the start of ``audio``
         "end_time": float,
         "label": str,              # sturgeon_thunder | drum_knock | toadfish_boatwhistle | boat | unknown
-        "species_id": str | None,  # ITIS id, or None for boat / unknown
+        "species_id": str | None,  # public.species.id, or None for boat / unknown
         "confidence": float,
         "freq_low_hz": float,
         "freq_high_hz": float,
@@ -14,13 +14,16 @@
         "model_version": str,
     }
 
-``model_name`` and ``model_version`` match the artifact metadata so a row can
-be inserted into the detections table without a second lookup.
+``model_name`` and ``model_version`` match the artifact metadata. Times are
+seconds from the start of ``audio``. :func:`to_detection_rows` turns that list
+into ``public.detections`` objects (absolute timestamps, ``node_id``, species
+slug) that validate against ``contracts/detections.schema.json``.
 """
 
 from __future__ import annotations
 
 import json
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import numpy as np
@@ -196,6 +199,41 @@ def detect(
     """
     detector = load_detector(model_dir, perch_path=perch_path)
     return detector.detect(audio, sample_rate, threshold=threshold, hop_s=hop_s)
+
+
+def to_detection_rows(events: list[dict], *, node_id: str, origin: datetime) -> list[dict]:
+    """Map detector events onto ``public.detections`` inserts.
+
+    ``origin`` is the timezone-aware timestamp of sample 0. Offsets in the
+    events are added to it. ``species_id`` is copied through: a species-table
+    slug, or None for boat and unknown.
+    """
+    if not node_id:
+        raise ValueError("node_id is required")
+    if origin.tzinfo is None or origin.utcoffset() is None:
+        raise ValueError("origin must be timezone-aware")
+    rows = []
+    for event in events:
+        start = origin + timedelta(seconds=float(event["start_time"]))
+        end = origin + timedelta(seconds=float(event["end_time"]))
+        if end < start:
+            raise ValueError("event end_time is before start_time")
+        rows.append(
+            {
+                "node_id": node_id,
+                "start_time": start.isoformat(),
+                "end_time": end.isoformat(),
+                "label": event["label"],
+                "species_id": event["species_id"],
+                "confidence": float(event["confidence"]),
+                "model_name": event["model_name"],
+                "model_version": event["model_version"],
+                "freq_low_hz": float(event["freq_low_hz"]),
+                "freq_high_hz": float(event["freq_high_hz"]),
+                "review_status": "unreviewed",
+            }
+        )
+    return rows
 
 
 def clear_detector_cache() -> None:
