@@ -1,0 +1,53 @@
+# Copy to node.yaml. Environment variables override the file.
+# Required for a live upload (not for --dry-run):
+#   SUPABASE_URL
+#   SUPABASE_SERVICE_ROLE_KEY
+# Optional:
+#   NODE_ID                  westpoint-cornwall | poughkeepsie | tappan-zee
+#   HYDROPHONE_SOURCE        folder | noaa | synth | device
+#   HYDROPHONE_SOURCE_PATH   folder path, or NOAA prefix if NOAA_PREFIX is unset
+#   NOAA_PREFIX              object prefix inside gs://noaa-passive-bioacoustic/
+#   SAMPLE_RATE_HZ
+#   REPLAY_SPEED             1 real time, 0 as fast as possible
+
+node:
+  id: poughkeepsie
+  # name, lat, lon, river_mile default from the node id when omitted
+  status: simulated          # online | offline | simulated
+  sample_rate_hz: 48000
+  hardware: "Aquarian H2a hydrophone + Raspberry Pi (simulated)"
+
+source:
+  kind: synth                # folder | noaa | synth | device
+  # folder:
+  path: ./audio
+  # noaa (anonymous public bucket):
+  bucket: noaa-passive-bioacoustic
+  prefix: sanctsound/
+  max_files: 5
+  # synth:
+  seed: 1
+  duration_s:                # empty = run until stopped
+  calls: true                # sturgeon thunder, drum knocks, toadfish boatwhistle
+  hum: true                  # 60 Hz mains hum
+  ambient_boat: true
+  # device (Raspberry Pi + USB audio interface for the H2a):
+  device: null               # sounddevice name, e.g. "hw:1,0"
+
+segment_seconds: 60
+replay_speed: 1
+heartbeat_interval_s: 60
+# Added to dBFS levels. Leave at 0 until the H2a sensitivity is applied.
+calibration_offset_db: 0
+stream_start: now            # or an ISO-8601 timestamp for a replay clock
+output_dir: out
+clip_pad_s: 0.15
+
+detector:
+  name: band_energy          # or "ml"
+  # entrypoint: my_model.plugin:build_detector
+
+supabase:
+  url: ${SUPABASE_URL}
+  service_role_key: ${SUPABASE_SERVICE_ROLE_KEY}
+  audio_bucket: audio

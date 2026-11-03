@@ -54,3 +54,6 @@ node_modules/
 *.tmp
 *.temp
 .cache/
+
+# Virtual hydrophone dry-run output
+edge/out/
