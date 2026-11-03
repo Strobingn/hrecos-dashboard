@@ -24,7 +24,7 @@ class HRECOSReading(Base):
 
 class AnomalyLog(Base):
     __tablename__ = "anomaly_logs"
-    
+
     id = Column(String(100), primary_key=True)  # station_timestamp format
     station = Column(String(50), nullable=False)
     timestamp = Column(DateTime(timezone=True), nullable=False)
@@ -35,12 +35,8 @@ class AnomalyLog(Base):
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
     alert_sent = Column(String(10), default='pending')  # 'pending', 'sent', 'failed'
 
-class AlertConfig(Base):
-    __tablename__ = "alert_configs"
-    
-    id = Column(String(50), primary_key=True)
-    station = Column(String(50), nullable=True)  # NULL means all stations
-    alert_type = Column(String(20), nullable=False)  # 'email', 'sms', 'webhook'
-    target = Column(String(255), nullable=False)  # email, phone, or webhook URL
-    enabled = Column(String(5), default='true')
-    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    __table_args__ = (
+        Index('idx_anomalies_station', 'station', 'timestamp'),
+        Index('idx_anomalies_severity', 'severity', 'timestamp'),
+    )
+

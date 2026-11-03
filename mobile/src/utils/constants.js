@@ -90,8 +90,9 @@ export const STATIONS_BY_ID = STATIONS.reduce((acc, station) => {
 // =============================================================================
 // API CONFIGURATION
 // =============================================================================
+// The base URL lives in src/config/api.js, which also supports a runtime
+// override from the Settings screen. Do not add a second hard-coded URL here.
 
-export const API_BASE_URL = 'https://hrecos.yourdomain.com';
 export const REFRESH_INTERVAL = 300000; // 5 minutes in milliseconds
 export const REQUEST_TIMEOUT = 15000; // 15 seconds
 

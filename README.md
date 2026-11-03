@@ -27,30 +27,48 @@ Real-time environmental monitoring dashboard for the **Hudson River Environmenta
 
 ```
 hrecos-dashboard/
-├── backend/           # FastAPI Python backend
-│   ├── app/
-│   │   ├── main.py       # API endpoints
-│   │   ├── models.py     # Database models
-│   │   ├── hr_data.py    # HRECOS API integration
-│   │   ├── tasks.py      # Background scheduler
-│   │   ├── anomalies.py  # ML anomaly detection
-│   │   └── alerts.py     # Notification system
-│   ├── Dockerfile
-│   └── requirements.txt
-├── frontend/          # HTML/JS dashboard
-│   └── index.html
-├── .github/           # GitHub Actions & templates
-│   ├── workflows/      # CI/CD pipelines
-│   ├── ISSUE_TEMPLATE/ # Issue templates
-│   └── ...
-├── scripts/           # Helper scripts
-│   ├── setup.sh
-│   ├── backup.sh
-│   └── deploy.sh
-├── docker-compose.yml # Infrastructure orchestration
-├── Makefile          # Development commands
-└── README.md
+├── backend/              # FastAPI service (SQLAlchemy async + APScheduler)
+│   ├── app/              # entry point: app/main.py
+│   └── tests/            # pytest suite (runs in CI)
+├── frontend/             # Served web dashboard (single file, Chart.js + Leaflet)
+│   ├── index.html
+│   └── Dockerfile
+├── mobile/               # Expo / React Native Android app ("RiverWatch")
+├── contracts/            # JSON Schemas for the fish-acoustic network (not wired up yet)
+├── supabase/             # Supabase migration + seed for that schema
+├── init-scripts/         # TimescaleDB init SQL (extension only; tables come from SQLAlchemy)
+├── docs/                 # Design notes (see docs/fish-network.md)
+├── scripts/              # setup / backup / deploy helpers
+├── legacy/               # Superseded PWA + Capacitor shell — reference only
+├── docker-compose.yml        # Development stack (bind mounts, --reload)
+├── docker-compose.local.yml  # Dev stack with plain PostgreSQL instead of TimescaleDB
+├── docker-compose.prod.yml   # Production stack, standalone (images pulled from GHCR)
+└── Makefile
 ```
+
+### Which frontend is which?
+
+- `frontend/index.html` — the web dashboard served by nginx. It calls `/api/` on
+  the same origin by default. Set `window.HRECOS_API_BASE` to point at another
+  backend, or `window.HRECOS_DISABLE_API = true` for a pure offline demo. The
+  badge above the map always reads **Live API** or **SIMULATED DATA** — the
+  dashboard never presents generated numbers as live.
+- `mobile/` — the Expo Android app and the primary mobile client.
+- `legacy/cornwall-pwa/` — an old hard-coded PWA, kept for reference only.
+
+### Data sources
+
+The backend pulls from public observation services directly — there is no
+dependency on a hrecos.org API:
+
+| Source | Used for |
+|--------|----------|
+| USGS NWIS | water temperature, flow, turbidity, dissolved oxygen, pH |
+| NOAA CO-OPS | tide predictions and water temperature (Newburgh 8518935, Turkey Point) |
+| NOAA NDBC | air temperature, wind, pressure (Norrie Point NPXN6) |
+
+Values are converted to imperial units (°F, mph, inHg, ft³/s) at ingestion, so
+every API response is imperial. The mobile app converts to metric on display.
 
 ## 🚀 Quick Start
 
@@ -134,10 +152,21 @@ createdb hrecos
 # Start backend
 uvicorn app.main:app --reload
 
-# Frontend (serve with any static server)
+# Frontend (serve with any static server, or use the Docker stack)
 cd ../frontend
 python -m http.server 8080
 ```
+
+### Testing
+
+```bash
+cd backend
+pip install pytest
+python -m pytest tests -v
+```
+
+The suite uses a throwaway SQLite database and monkeypatches the external data
+fetchers, so it runs offline. CI runs it on every push and pull request.
 
 ## 🔧 Configuration
 
@@ -175,9 +204,11 @@ Edit `backend/app/anomalies.py` to adjust safety thresholds:
 
 ```python
 THRESHOLDS = {
-    'temp': {'min': 0, 'max': 30, 'critical_max': 35},
+    'temp': {'min': 32, 'max': 86, 'critical_max': 95},   # °F
     'flow': {'min': 100, 'max': 5000, 'critical_min': 50},
     'turbidity': {'min': 0, 'max': 100, 'critical_max': 200},
+    'dissolved_oxygen': {'min': 4, 'max': 15, 'critical_min': 2},
+    'ph': {'min': 6.0, 'max': 9.0},
 }
 ```
 
@@ -202,7 +233,9 @@ Set these in your GitHub repository Settings > Secrets and variables > Actions:
 | `DEPLOY_HOST` | Production server IP/hostname |
 | `DEPLOY_USER` | SSH username for deployment |
 | `SSH_PRIVATE_KEY` | SSH private key for deployment |
-| `DB_PASSWORD` | Production database password |
+| `DB_PASSWORD` | Production database password (required) |
+| `SECRET_KEY` | Application secret, 32+ characters (required) |
+| `HRECOS_CORS_ORIGINS` | Comma-separated allowed browser origins |
 | `SMTP_USER` | Email SMTP username |
 | `SMTP_PASS` | Email SMTP password |
 | `TWILIO_SID` | Twilio Account SID |
@@ -219,8 +252,12 @@ Set these in your GitHub repository Settings > Secrets and variables > Actions:
 | GET | `/health` | Health check |
 | GET | `/api/stations` | List all stations |
 | GET | `/api/latest` | Latest readings from all stations |
+| GET | `/api/data` | Alias for `/api/latest` (used by the mobile app) |
+| GET | `/api/history` | Aggregated history for the focus station set |
 | GET | `/api/historical/{station}` | Historical data for a station |
 | GET | `/api/stats/{station}` | Statistical summary |
+| GET | `/api/tides` | NOAA tide predictions (Newburgh 8518935) |
+| GET | `/api/tides/current` | Current tide height and next event |
 
 ### Anomaly Detection
 
@@ -253,13 +290,17 @@ Anomalies are classified by severity:
 
 ## 📊 Monitored Stations
 
-| Station | Location | Parameters |
-|---------|----------|------------|
-| Newburgh | Hudson Valley | Temp, Flow, Turbidity, Salinity, DO, pH |
-| Beacon | Hudson Valley | Temp, Flow, Turbidity, Salinity, DO, pH |
-| West Point | Hudson Valley | Temp, Flow, Turbidity, Salinity, DO, pH |
-| Poughkeepsie | Hudson Valley | Temp, Flow, Turbidity, Salinity, DO, pH |
-| Albany | Capital Region | Temp, Flow, Turbidity |
+The default focus set (`FOCUS_STATIONS` in `backend/app/hr_data.py`) is:
+
+| Station | Source | Parameters |
+|---------|--------|------------|
+| Norrie Point (NPXN6) | NOAA NDBC | air temperature, wind, pressure |
+| Turkey Point | NOAA CO-OPS | water temperature, conductance |
+| Newburgh (8518935) | NOAA CO-OPS | tide predictions |
+| West Point | USGS | water quality (historical / decommissioned site) |
+
+The registry also contains additional Hudson stations that can be queried with
+`?region=`; see `STATIONS` in `backend/app/hr_data.py`.
 
 ## 🗄️ Database Backup & Restore
 
@@ -289,14 +330,17 @@ gunzip < backups/hrecos_backup_20240101_120000.sql.gz | \
 - **Weekly backups**: 4 weeks
 - **Monthly backups**: 12 months
 
-## 🌐 HRECOS Data Source
+## 🌐 Data Sources
 
-This dashboard integrates with the official HRECOS network:
+This dashboard reads public observation data directly. No API key is required.
 
-- **Website**: https://hrecos.org
-- **Data Access**: Real-time API (or mock data for development)
-- **Update Frequency**: Every 15 minutes
-- **Coverage**: Hudson River Estuary environmental conditions
+- **USGS NWIS** — https://waterservices.usgs.gov
+- **NOAA CO-OPS** — https://tidesandcurrents.noaa.gov
+- **NOAA NDBC** — https://www.ndbc.noaa.gov
+
+Each fetcher falls back to generated sample data when a source is unreachable;
+API responses flag which fields are real. The web dashboard shows a prominent
+**SIMULATED DATA** badge whenever it cannot reach the backend.
 
 ## 🐛 Troubleshooting
 

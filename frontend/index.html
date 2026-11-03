@@ -318,6 +318,19 @@
     .badge.alert { color: var(--color-error); }
     .badge.info { color: var(--color-blue); }
 
+    .data-banner {
+      display: none;
+      align-items: flex-start;
+      gap: var(--space-3);
+      padding: var(--space-4);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--color-error);
+      background: color-mix(in srgb, var(--color-error) 12%, var(--color-surface-2));
+      font-size: var(--text-sm);
+    }
+    .data-banner.visible { display: flex; }
+    .data-banner strong { color: var(--color-error); white-space: nowrap; }
+
     .event-list {
       display: grid;
       gap: var(--space-3);
@@ -432,6 +445,11 @@
       </header>
 
       <section class="content">
+        <div class="data-banner" id="dataBanner" role="status" aria-live="polite">
+          <strong>Simulated data.</strong>
+          <span id="dataBannerText">The API could not be reached, so these readings are generated locally.</span>
+        </div>
+
         <section class="hero-grid">
           <article class="card">
             <div class="card-header">
@@ -523,7 +541,7 @@
           </article>
         </section>
 
-        <p class="footer-note">Set <code>window.HRECOS_API_BASE</code> to your backend URL for live NOAA/USGS/NDBC data. Without it, simulated series are shown for layout testing.</p>
+        <p class="footer-note">Live data loads from <code>/api/</code> on this origin by default; set <code>window.HRECOS_API_BASE</code> to point at another backend, or <code>window.HRECOS_DISABLE_API = true</code> to force the offline simulation. The badge above the map always states which mode is active.</p>
       </section>
     </main>
   </div>
@@ -545,7 +563,12 @@
       turkey_point: { name: 'Turkey Point', lat: 42.014, lon: -73.939, riverMile: 84, color: '#006494', tempBase: 54.5, doBase: null, phBase: null, salinityBase: 0.05, conductivityBase: 220, flowBase: null, turbBase: null },
     };
 
+    // API resolution:
+    //   window.HRECOS_API_BASE set  -> use that origin
+    //   unset                       -> same origin (nginx proxies /api/ to the backend)
+    //   window.HRECOS_DISABLE_API   -> force offline simulation, no network calls
     const apiBase = window.HRECOS_API_BASE || '';
+    const apiDisabled = window.HRECOS_DISABLE_API === true;
     const sampleMs = 10 * 60 * 1000;
 
     const state = {
@@ -558,6 +581,8 @@
       map: null,
       charts: { temp: null, flow: null, tide: null },
       anomalyBoost: false,
+      dataMode: 'unknown', // 'live' | 'simulated' — set from the actual fetch result
+      tideSimulated: false,
       pollingEnabled: false,
       refreshTimer: null,
       theme: matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
@@ -615,8 +640,7 @@
       const totalPoints = maxPoints();
       const out = {};
       Object.entries(stationConfig).forEach(([key, cfg], idx) => {
-        const maxPoints = state.hours * 6;
-      const rows = [];
+        const rows = [];
         for (let i = totalPoints - 1; i >= 0; i--) {
           const step = totalPoints - i;
           const temp = cfg.tempBase + Math.sin(step / 9 + idx) * 0.45 + seededNoise(step + idx, 0.12);
@@ -654,7 +678,7 @@
       const flow = cfg.flowBase == null ? null : cfg.flowBase + Math.sin(step / 7 + idx * 0.7) * 180 + seededNoise(step + idx * 4, 40);
       return {
         timestamp: new Date(normalizeTimestamp(last.timestamp).getTime() + sampleMs),
-        temp: cfg.met ? temp : temp,
+        temp,
         air_temp: cfg.met ? temp : null,
         flow,
         turbidity: cfg.turbBase == null ? null : Math.max(1.2, cfg.turbBase + Math.cos(step / 8 + idx) * 0.65 + seededNoise(step + idx * 3, 0.18)),
@@ -688,7 +712,7 @@
     }
 
     async function fetchBackendLatest() {
-      if (!apiBase) return null;
+      if (apiDisabled) return null;
       try {
         const res = await fetch(`${apiBase}/api/latest?region=${state.region}`);
         if (!res.ok) return null;
@@ -706,7 +730,7 @@
     }
 
     async function fetchBackendHistory() {
-      if (!apiBase) return null;
+      if (apiDisabled) return null;
       try {
         const res = await fetch(`${apiBase}/api/history?hours=${state.hours}&region=${state.region}`);
         if (!res.ok) return null;
@@ -728,6 +752,7 @@
 
     async function resetData() {
       const backend = await fetchBackendHistory();
+      state.dataMode = backend ? 'live' : 'simulated';
       state.records = backend || generateInitialSeries();
       Object.keys(state.records).forEach(key => {
         state.records[key] = state.records[key].slice(-maxPoints());
@@ -889,17 +914,17 @@
     let tideData = { predictions: [], current: null };
     
     async function fetchTideData() {
-      const url = apiBase
-        ? `${apiBase}/api/tides?hours=48&region=${state.region}`
-        : null;
-      if (!url) {
-        document.getElementById('tideChartSubtitle').textContent =
-          'Set HRECOS_API_BASE to load NOAA 8518935 Newburgh tides from /api/tides';
+      if (apiDisabled) {
+        setTideUnavailable('Live API disabled — tide predictions are not loaded.');
         return;
       }
+      const url = `${apiBase}/api/tides?hours=48&region=${state.region}`;
       try {
         const res = await fetch(url);
-        if (!res.ok) return;
+        if (!res.ok) {
+          setTideUnavailable(`Tide source unavailable (HTTP ${res.status}).`);
+          return;
+        }
         tideData = await res.json();
         const src = tideData.station_name && tideData.station
           ? `Source: NOAA CO-OPS ${tideData.station} (${tideData.station_name}) via /api/tides`
@@ -910,7 +935,14 @@
         updateTideInfo();
       } catch (e) {
         console.error('Tide fetch failed:', e);
+        setTideUnavailable('Tide source unavailable — network error.');
       }
+    }
+
+    function setTideUnavailable(message) {
+      state.tideSimulated = true;
+      const el = document.getElementById('tideChartSubtitle');
+      if (el) el.textContent = message;
     }
     
     function updateTideInfo() {
@@ -1106,8 +1138,9 @@
     }
 
     function updateChartSourceLabels() {
-      const mode = apiBase ? 'live API' : 'simulated demo data';
-      const hist = apiBase ? '/api/history' : 'local generator';
+      const live = state.dataMode === 'live';
+      const mode = live ? 'live API' : 'simulated demo data';
+      const hist = live ? '/api/history' : 'local generator';
       const tempEl = document.getElementById('tempChartSource');
       const flowEl = document.getElementById('flowChartSource');
       if (tempEl) tempEl.textContent = `Source (${mode}): Norrie Point & Turkey Point via ${hist}`;
@@ -1116,9 +1149,36 @@
 
     function updateStatus() {
       const badge = document.getElementById('updateStatus');
-      const source = apiBase ? 'API connected' : 'Local simulation';
-      badge.textContent = state.anomalyBoost ? 'Anomaly simulation active' : source;
-      badge.className = `badge ${state.anomalyBoost ? 'alert' : 'info'}`;
+      const banner = document.getElementById('dataBanner');
+      const bannerText = document.getElementById('dataBannerText');
+      const simulateBtn = document.getElementById('simulateBtn');
+      const simulated = state.dataMode !== 'live';
+
+      if (banner) banner.classList.toggle('visible', simulated);
+      if (bannerText) {
+        bannerText.textContent = apiDisabled
+          ? 'Live API is disabled via window.HRECOS_DISABLE_API. Readings are generated locally.'
+          : 'The API could not be reached, so these readings are generated locally. Do not use for decisions.';
+      }
+
+      if (state.anomalyBoost) {
+        badge.textContent = 'Anomaly simulation active';
+        badge.className = 'badge alert';
+      } else if (simulated) {
+        badge.textContent = 'SIMULATED DATA';
+        badge.className = 'badge alert';
+      } else {
+        badge.textContent = 'Live API';
+        badge.className = 'badge ok';
+      }
+
+      // Anomaly simulation only affects locally generated rows.
+      if (simulateBtn) {
+        simulateBtn.disabled = !simulated;
+        simulateBtn.title = simulated
+          ? 'Inject a synthetic anomaly into the local series'
+          : 'Available only while simulated data is shown';
+      }
     }
 
     function updatePollingButton() {
@@ -1129,12 +1189,10 @@
     }
 
     async function fullRender({ reset = false } = {}) {
-      if (reset) {
+      if (reset || state.dataMode !== 'simulated') {
         await resetData();
-      } else if (!apiBase) {
-        advanceDataOneStep();
       } else {
-        await resetData();
+        advanceDataOneStep();
       }
       updateStatus();
       updateChartSourceLabels();

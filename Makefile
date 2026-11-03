@@ -43,7 +43,7 @@ logs-backend:
 
 # Testing and linting
 test:
-	cd backend && python -m pytest tests/ -v || echo "No tests directory yet"
+	cd backend && python -m pytest tests/ -v
 
 lint:
 	cd backend && \

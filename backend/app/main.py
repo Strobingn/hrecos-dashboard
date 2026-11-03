@@ -5,7 +5,7 @@ import os
 
 from fastapi import FastAPI, Depends, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import select, desc, func
+from sqlalchemy import select, desc, func, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import get_db, engine
@@ -26,20 +26,37 @@ async def lifespan(app: FastAPI):
     # Startup
     print("🚀 Starting HRECOS Dashboard...")
     
-    # Create database tables
+    # Create database tables first, in their own transaction.
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     print("✅ Database tables created")
-    
-    # Start the scheduler
-    start_scheduler()
-    print("✅ Scheduler started")
-    
+
+    # Promote the readings table to a TimescaleDB hypertable in a separate
+    # transaction. On plain PostgreSQL or SQLite create_hypertable() does not
+    # exist; failing here must not roll back the tables created above.
+    try:
+        async with engine.begin() as conn:
+            await conn.execute(
+                text("SELECT create_hypertable('hrecos_readings', 'timestamp', if_not_exists => TRUE)")
+            )
+        print("✅ TimescaleDB hypertable ready")
+    except Exception:
+        print("ℹ️  TimescaleDB unavailable — using a regular table")
+
+    # Background jobs are skipped for tests and other short-lived processes.
+    scheduler_enabled = os.getenv("DISABLE_SCHEDULER", "").lower() not in ("1", "true", "yes")
+    if scheduler_enabled:
+        start_scheduler()
+        print("✅ Scheduler started")
+    else:
+        print("⏸️  Scheduler disabled via DISABLE_SCHEDULER")
+
     yield
-    
+
     # Shutdown
     print("🛑 Shutting down HRECOS Dashboard...")
-    stop_scheduler()
+    if scheduler_enabled:
+        stop_scheduler()
     await engine.dispose()
     print("✅ Cleanup complete")
 
