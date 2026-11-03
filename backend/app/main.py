@@ -12,8 +12,9 @@ from app.db import get_db, engine
 from app.models import Base, HRECOSReading, AnomalyLog
 from app.hr_data import (
     STATIONS, REGIONS, FOCUS_STATIONS,
-    fetch_all_stations, fetch_historical_data, stations_for_region,
+    fetch_all_stations, fetch_historical_data, fetch_station_async, stations_for_region,
 )
+from app.registry import FOCUS_STATION_KEYS, REGISTRY
 from app.tides import TIDE_STATIONS, get_tide_station_key
 from app.tasks import start_scheduler, stop_scheduler
 from app.anomalies import AnomalyDetector
@@ -87,28 +88,42 @@ async def health_check():
 # Data Retrieval Endpoints
 # ============================================================================
 
+def _public_station(key: str, config: dict) -> dict:
+    return {
+        "key": key,
+        "name": config["name"],
+        "id": config["id"],
+        "provider": config.get("provider"),
+        "kind": config.get("kind"),
+        "focus": config.get("focus", False),
+        "live": config.get("live", False),
+        "river_mile": config.get("river_mile"),
+        "region": config.get("region"),
+        "location": {"lat": config["lat"], "lon": config["lon"]},
+        "parameters": config["params"],
+        "note": config.get("note"),
+    }
+
+
 @app.get("/api/stations")
-async def get_stations(region: Optional[str] = Query(None, description="Filter: cornwall_on_hudson (alias: cornwall)")):
-    """Get list of configured monitoring stations"""
-    if region and region not in REGIONS:
+async def get_stations(
+    region: Optional[str] = Query(None, description="Filter: cornwall_on_hudson (alias: cornwall)"),
+    scope: str = Query("focus", description="focus (Tappan Zee through Poughkeepsie) or all"),
+):
+    """Station registry. Default scope is the Tappan Zee–Poughkeepsie stretch."""
+    if region and region not in REGIONS and region != "all":
         raise HTTPException(status_code=404, detail=f"Region '{region}' not found")
-    pool = stations_for_region(region) if region else {k: STATIONS[k] for k in FOCUS_STATIONS if k in STATIONS}
+    if scope == "all" or region == "all":
+        keys = list(STATIONS)
+    else:
+        keys = list(FOCUS_STATION_KEYS)
     return {
         "region": region,
+        "scope": "all" if scope == "all" or region == "all" else "focus",
+        "registry": "data/stations.json",
         "regions": REGIONS,
-        "stations": [
-            {
-                "key": key,
-                "name": config["name"],
-                "id": config["id"],
-                "region": config.get("region"),
-                "live": config.get("live", False),
-                "location": {"lat": config["lat"], "lon": config["lon"]},
-                "parameters": config["params"],
-                "note": config.get("note"),
-            }
-            for key, config in pool.items()
-        ],
+        "absent": REGISTRY.get("meta", {}).get("not_stations", []),
+        "stations": [_public_station(key, STATIONS[key]) for key in keys],
     }
 
 @app.get("/api/latest")
@@ -123,11 +138,18 @@ async def get_latest_readings(
         raise HTTPException(status_code=404, detail=f"Station '{station}' not found")
     
     try:
-        readings = await fetch_all_stations(region=region)
-        
         if station:
-            return {"station": station, "data": readings.get(station)}
-        
+            config = STATIONS[station]
+            if not config.get("live"):
+                return {
+                    "station": station,
+                    "data": None,
+                    "live": False,
+                    "note": config.get("note"),
+                }
+            return {"station": station, "data": await fetch_station_async(station, config)}
+
+        readings = await fetch_all_stations(region=region)
         return {
             "timestamp": datetime.utcnow().isoformat(),
             "region": region,
@@ -418,6 +440,8 @@ async def get_tides(
         tide_cfg = TIDE_STATIONS[tide_key]
         tides = get_tide_predictions(hours=hours, region=region)
         current = get_current_tide(region=region)
+        if not tides or current.get("error"):
+            raise HTTPException(status_code=502, detail="NOAA returned no tide predictions")
         return {
             "region": region,
             "location": REGIONS[region]["name"],
@@ -449,6 +473,8 @@ async def get_current_tide_info(region: str = Query("cornwall_on_hudson", descri
         raise HTTPException(status_code=404, detail=f"Region '{region}' not found")
     try:
         current = get_current_tide(region=region)
+        if current.get("error"):
+            raise HTTPException(status_code=502, detail="NOAA returned no tide predictions")
         if current.get("next_time"):
             current = {**current, "next_time": current["next_time"].isoformat()}
         return current

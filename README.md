@@ -253,13 +253,18 @@ Anomalies are classified by severity:
 
 ## 📊 Monitored Stations
 
-| Station | Location | Parameters |
-|---------|----------|------------|
-| Newburgh | Hudson Valley | Temp, Flow, Turbidity, Salinity, DO, pH |
-| Beacon | Hudson Valley | Temp, Flow, Turbidity, Salinity, DO, pH |
-| West Point | Hudson Valley | Temp, Flow, Turbidity, Salinity, DO, pH |
-| Poughkeepsie | Hudson Valley | Temp, Flow, Turbidity, Salinity, DO, pH |
-| Albany | Capital Region | Temp, Flow, Turbidity |
+The station list lives in [`data/stations.json`](data/stations.json). The backend and the mobile app load that file. The static GitHub Pages site can fetch `/data/stations.json` (it is not wired up in `app.js` here). Every live id below was checked against HRECOS, USGS, NOAA CO-OPS, or NDBC.
+
+Focus reach: Tappan Zee / Piermont (river mile 25) through Poughkeepsie (river mile 75), with West Point / Cornwall-on-Hudson (river mile ~56) in the middle. Cornwall itself has no public sensor. Water quality in the reach is HRECOS, which moved off USGS NWIS in 2026:
+
+| Station | Provider id | What it reports |
+|---------|-------------|-----------------|
+| Piermont | HRECOS `HPMNT` | Temperature, conductance, salinity, pH, turbidity, DO saturation, depth |
+| West Point | HRECOS `HWEST` | Those, plus dissolved oxygen concentration |
+| Poughkeepsie | HRECOS `HPOUG` | Those, plus chlorophyll and phycocyanin |
+| Tarrytown, Haverstraw, Peekskill, Newburgh, Beacon, New Hamburg, Poughkeepsie tide | NOAA CO-OPS | Tide predictions only |
+
+Albany (`USGS 01359139` and HRECOS `HPORT`), Turkey Point, Coxsackie, and Norrie Point stay in the registry flagged out of focus. Schodack and Bear Mountain are listed but not live. `scripts/check_endpoints.py` rechecks every live parameter.
 
 ## 🗄️ Database Backup & Restore
 

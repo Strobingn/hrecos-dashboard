@@ -1,8 +1,10 @@
 """
-Tide predictions for Cornwall-on-Hudson, NY (Hudson River at West Point).
+Tide predictions for the Hudson between Tappan Zee and Poughkeepsie.
 
-Primary: Newburgh (8518935) — subordinate to The Battery (8518750), ~3 mi from Cornwall
-Fallback: Beacon (8518934) — direct harmonic tide predictions
+Station ids, tide type, and reference stations come from data/stations.json.
+Newburgh (8518935) is subordinate to The Battery (8518750). Beacon (8518934)
+is a harmonic station and the fallback when a subordinate series is empty.
+Times are UTC (NOAA time_zone=gmt).
 """
 
 import math
@@ -10,30 +12,10 @@ import requests
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 
+from app.registry import DEFAULT_TIDE_STATION, REGIONS, TIDE_STATIONS
+
 NOAA_API_BASE = "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter"
 NOAA_META_BASE = "https://api.tidesandcurrents.noaa.gov/mdapi/prod/webapi/stations"
-
-TIDE_STATIONS = {
-    "newburgh": {
-        "id": "8518935",
-        "name": "Newburgh",
-        "lat": 41.500,
-        "lon": -74.007,
-        "type": "subordinate",
-        "reference_id": "8518750",
-        "note": "Primary — ~3 mi south of Cornwall-on-Hudson at West Point",
-    },
-    "beacon": {
-        "id": "8518934",
-        "name": "Beacon",
-        "lat": 41.504,
-        "lon": -73.985,
-        "type": "harmonic",
-        "note": "Harmonic fallback — ~9 km from Cornwall-on-Hudson",
-    },
-}
-
-DEFAULT_TIDE_STATION = "newburgh"
 
 _offsets_cache: Dict[str, Dict] = {}
 
@@ -67,7 +49,7 @@ def _fetch_harmonic_predictions(
         "end_date": (now + timedelta(hours=hours)).strftime("%Y%m%d %H:%M"),
         "datum": "mllw",
         "units": "english",
-        "time_zone": "lst_ldt",
+        "time_zone": "gmt",
         "interval": interval,
         "format": "json",
     }
@@ -100,7 +82,7 @@ def _fetch_reference_hilo(reference_id: str, hours: int) -> List[Dict]:
         "end_date": (now + timedelta(hours=hours)).strftime("%Y%m%d %H:%M"),
         "datum": "mllw",
         "units": "english",
-        "time_zone": "lst_ldt",
+        "time_zone": "gmt",
         "interval": "hilo",
         "format": "json",
     }
@@ -125,14 +107,22 @@ def _fetch_reference_hilo(reference_id: str, hours: int) -> List[Dict]:
 
 
 def _apply_subordinate_offsets(hilo: List[Dict], offsets: Dict) -> List[Dict]:
+    """Apply NOAA tidepredoffsets. heightAdjustedType R is a ratio; A is added feet."""
+    mode = (offsets.get("heightAdjustedType") or "A").upper()
     adjusted = []
     for event in hilo:
         is_high = event["type"] == "h"
-        time_off = offsets.get("timeOffsetHighTide" if is_high else "timeOffsetLowTide", 0)
-        height_off = offsets.get("heightOffsetHighTide" if is_high else "heightOffsetLowTide", 0)
+        time_off = offsets.get("timeOffsetHighTide" if is_high else "timeOffsetLowTide") or 0
+        height_off = offsets.get("heightOffsetHighTide" if is_high else "heightOffsetLowTide")
+        if height_off is None:
+            height_off = 0
+        if mode == "R":
+            height = event["height"] * float(height_off)
+        else:
+            height = event["height"] + float(height_off)
         adjusted.append({
-            "time": event["time"] + timedelta(minutes=time_off),
-            "height": round(event["height"] + height_off, 3),
+            "time": event["time"] + timedelta(minutes=float(time_off)),
+            "height": round(height, 3),
             "type": event["type"],
         })
     return adjusted
@@ -166,6 +156,7 @@ def _interpolate_between_events(events: List[Dict], hours: int) -> List[Dict]:
                 break
 
         span = (next_evt["time"] - prev_evt["time"]).total_seconds()
+        mid = prev_evt["height"]
         if span <= 0:
             height = prev_evt["height"]
         else:
@@ -196,6 +187,8 @@ def _fetch_subordinate_predictions(station_id: str, reference_id: str, hours: in
 
 
 def get_tide_station_key(region: Optional[str] = None) -> str:
+    if region and region in REGIONS:
+        return REGIONS[region].get("tide_station") or DEFAULT_TIDE_STATION
     return DEFAULT_TIDE_STATION
 
 
@@ -207,7 +200,7 @@ def get_tide_predictions(
     key = station_key or get_tide_station_key(region)
     config = TIDE_STATIONS.get(key)
     if not config:
-        return generate_synthetic_tides(hours)
+        return []
 
     if config["type"] == "harmonic":
         preds = _fetch_harmonic_predictions(config["id"], hours, interval="h")
@@ -221,39 +214,36 @@ def get_tide_predictions(
     if preds:
         return preds
 
-    # Fallback: Beacon harmonic tides
     beacon = TIDE_STATIONS.get("beacon")
-    if beacon:
-        preds = _fetch_harmonic_predictions(beacon["id"], hours, interval="h")
-        if preds:
-            return preds
-
-    return generate_synthetic_tides(hours)
-
-
-def generate_synthetic_tides(hours: int = 48) -> List[Dict]:
-    tides = []
-    now = datetime.utcnow()
-    for i in range(hours * 2):
-        t = now + timedelta(minutes=i * 30)
-        height = 2.5 + 2.0 * math.sin(i * 0.52) + 0.5 * math.sin(i * 1.04)
-        prev_height = tides[-1]["height"] if tides else height - 0.01  # Slightly lower to ensure first is "high"
-        tides.append({
-            "time": t,
-            "height": round(height, 2),
-            "type": "high" if height >= prev_height else "low",
-        })
-    return tides
+    if beacon and key != "beacon":
+        return _fetch_harmonic_predictions(beacon["id"], hours, interval="h")
+    return []
 
 
 def get_current_tide(region: Optional[str] = None, station_key: Optional[str] = None) -> Dict:
-    tides = get_tide_predictions(hours=12, region=region, station_key=station_key)
+    key = station_key or get_tide_station_key(region)
+    config = TIDE_STATIONS.get(key, {})
+    tides = get_tide_predictions(hours=12, region=region, station_key=key)
     now = datetime.utcnow()
 
-    current = tides[0] if tides else {"height": 2.5, "type": "unknown", "time": now}
-    for i, tide in enumerate(tides):
+    if not tides:
+        return {
+            "station_key": key,
+            "station_id": config.get("id"),
+            "station_name": config.get("name"),
+            "region": region or "cornwall_on_hudson",
+            "current_height": None,
+            "current_type": None,
+            "next_time": None,
+            "next_type": None,
+            "next_height": None,
+            "error": "no predictions",
+        }
+
+    current = tides[0]
+    for index, tide in enumerate(tides):
         if tide["time"] > now:
-            current = tides[i - 1] if i > 0 else tide
+            current = tides[index - 1] if index > 0 else tide
             break
 
     next_tide = None
@@ -262,14 +252,11 @@ def get_current_tide(region: Optional[str] = None, station_key: Optional[str] = 
             next_tide = tide
             break
 
-    key = station_key or get_tide_station_key(region)
-    config = TIDE_STATIONS.get(key, {})
-
     return {
         "station_key": key,
         "station_id": config.get("id"),
         "station_name": config.get("name"),
-        "region": "cornwall_on_hudson",
+        "region": region or "cornwall_on_hudson",
         "current_height": current["height"],
         "current_type": current["type"],
         "next_time": next_tide["time"] if next_tide else None,
