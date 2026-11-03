@@ -1,0 +1,26 @@
+name: Live station endpoints
+
+on:
+  schedule:
+    # Daily at 13:00 UTC. Public NOAA/USGS/HRECOS/NDBC calls only.
+    - cron: "0 13 * * *"
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install checker dependencies
+        run: python -m pip install --upgrade pip requests pytest
+
+      - name: Live endpoint table
+        run: python -m pytest -m live -o addopts= -s backend/tests/test_live_endpoints.py

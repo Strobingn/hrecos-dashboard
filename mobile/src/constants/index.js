@@ -1,4 +1,7 @@
 // HRECOS RiverWatch - Constants & Parameter Metadata
+// Station list: data/stations.json (linked from mobile/src/data/stations.json)
+
+import registry from '../data/stations.json';
 
 // Fishing ideal ranges (used by calculations.js)
 export const FISHING_IDEAL_TEMPS = { min: 55, max: 75 };
@@ -63,11 +66,11 @@ export const PARAM_INFO = {
   depth: {
     key: 'depth',
     label: 'Depth',
-    unit: 'm',
+    unit: 'ft',
     icon: 'arrow-collapse-down',
     chartColor: '#34495E',
-    description: 'Water depth at station',
-    thresholds: { good: [0, 50], caution: [50, 100], concern: 100 },
+    description: 'Sensor depth. The API converts HRECOS meters to feet.',
+    thresholds: { good: [0, 30], caution: [30, 60], concern: 60 },
   },
   speed: {
     key: 'speed',
@@ -143,69 +146,38 @@ export const PARAM_INFO = {
   },
 };
 
-// Station metadata — Cornwall-on-Hudson at West Point corridor
-export const STATIONS = [
-  {
-    id: 'newburgh',
-    name: 'Newburgh',
-    mile: 60,
-    lat: 41.50,
-    lon: -74.007,
-    source: 'NOAA',
-    sourceLabel: 'NOAA',
-    status: 'offline',
-    parameters: ['tide'],
-    description: 'NOAA tide station 8518935 — ~3 mi south of Cornwall-on-Hudson.',
-  },
-  {
-    id: 'west_point',
-    name: 'West Point',
-    mile: 50,
-    lat: 41.386,
-    lon: -73.955,
-    source: 'USGS',
-    sourceLabel: 'USGS',
-    status: 'offline',
-    parameters: ['temp', 'turbidity', 'do', 'ph', 'conductivity'],
-    description: 'USMA / Cornwall-on-Hudson area — decommissioned 2014.',
-  },
-  {
-    id: 'norrie_point',
-    name: 'Norrie Point',
-    mile: 88,
-    lat: 41.831,
-    lon: -73.942,
-    source: 'NDBC',
-    sourceLabel: 'NDBC',
-    status: 'live',
-    parameters: ['air_temp', 'wind_speed', 'wind_dir', 'pressure'],
-    description: 'Nearest live met station upstream — air/wind only.',
-  },
-  {
-    id: 'turkey_point',
-    name: 'Turkey Point',
-    mile: 84,
-    lat: 42.014,
-    lon: -73.939,
-    source: 'NOAA',
-    sourceLabel: 'NOAA',
-    status: 'live',
-    parameters: ['temp', 'conductivity'],
-    description: 'Nearest live water temp upstream of West Point gap.',
-  },
-  {
-    id: 'bear_mountain',
-    name: 'Bear Mountain',
-    mile: 46,
-    lat: 41.314,
-    lon: -73.985,
-    source: 'NDBC',
-    sourceLabel: 'NDBC',
-    status: 'offline',
-    parameters: ['air_temp', 'wind_speed', 'pressure'],
-    description: 'HRNERR met station — offline.',
-  },
-];
+const PROVIDER_LABEL = { usgs: 'USGS', noaa: 'NOAA', ndbc: 'NDBC', hrecos: 'HRECOS' };
+const APP_PARAM = {
+  temp: 'temp',
+  dissolved_oxygen: 'do',
+  conductance: 'conductivity',
+  turbidity: 'turbidity',
+  ph: 'ph',
+  salinity: 'salinity',
+  depth: 'depth',
+  air_temp: 'air_temp',
+  wind_speed: 'wind_speed',
+  wind_direction: 'wind_dir',
+  pressure: 'pressure',
+  tide_prediction: 'tide',
+  water_level: 'tide',
+};
+
+export const STATIONS = registry.stations.map((station) => ({
+  id: station.key,
+  name: station.name,
+  mile: station.river_mile,
+  lat: station.lat,
+  lon: station.lon,
+  source: PROVIDER_LABEL[station.provider] || station.provider,
+  sourceLabel: PROVIDER_LABEL[station.provider] || station.provider,
+  sourceId: station.id,
+  status: station.live ? 'live' : 'offline',
+  focus: !!station.focus,
+  kind: station.kind,
+  parameters: [...new Set((station.parameters || []).map((param) => APP_PARAM[param.field]).filter(Boolean))],
+  description: station.note || '',
+}));
 
 export const STATIONS_BY_ID = STATIONS.reduce((acc, station) => {
   acc[station.id] = station;
@@ -247,7 +219,7 @@ export const TIDE_LOCATION = {
   landmark: 'West Point',
   stationName: 'Newburgh',
   stationId: '8518935',
-  distance: '~3 mi south of Cornwall-on-Hudson',
+  distance: 'Subordinate tide station ~3 mi south of Cornwall-on-Hudson',
   apiEndpoint: '/api/tides',
   dataProvider: 'NOAA CO-OPS',
 };

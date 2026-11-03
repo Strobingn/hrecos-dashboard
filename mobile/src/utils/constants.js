@@ -1,85 +1,32 @@
 // ============================================================================
 // HRECOS RiverWatch - Application Constants
 // Station data, API configuration, and parameter metadata
+// Station list: data/stations.json (linked from mobile/src/data/stations.json)
 // ============================================================================
 
+import registry from '../data/stations.json';
+
 // =============================================================================
-// STATIONS - Hudson River Environmental Monitoring Stations
+// STATIONS - shared registry
 // =============================================================================
 
-export const STATIONS = [
-  {
-    id: 'turkey_point',
-    name: 'Turkey Point',
-    shortName: 'Turkey Pt',
-    location: 'Catskill, NY',
-    lat: 42.014,
-    lon: -73.939,
-    riverMile: 84,
-    source: 'NOAA',
-    sourceId: '8518962',
-    params: ['temp', 'conductance'],
-    live: true,
-    description: 'Lower Hudson estuary monitoring station near Catskill Creek.',
-  },
-  {
-    id: 'norrie_point',
-    name: 'Norrie Point',
-    shortName: 'Norrie Pt',
-    location: 'Hyde Park, NY',
-    lat: 41.831,
-    lon: -73.942,
-    riverMile: 88,
-    source: 'NDBC',
-    sourceId: 'NPXN6',
-    params: ['air_temp', 'wind_speed', 'wind_direction', 'pressure', 'dewpoint'],
-    live: true,
-    note: 'Met station - air/wind/pressure only',
-    description: 'Meteorological station at the Hudson River National Estuarine Research Reserve.',
-  },
-  {
-    id: 'coxsackie',
-    name: 'Coxsackie',
-    shortName: 'Coxsackie',
-    location: 'Coxsackie, NY',
-    lat: 42.353,
-    lon: -73.795,
-    riverMile: 108,
-    source: 'NOAA',
-    sourceId: '8518979',
-    params: ['temp'],
-    live: true,
-    description: 'Mid-channel water temperature monitoring on the upper Hudson estuary.',
-  },
-  {
-    id: 'schodack',
-    name: 'Schodack Landing',
-    shortName: 'Schodack',
-    location: 'Schodack Landing, NY',
-    lat: 42.5,
-    lon: -73.777,
-    riverMile: 120,
-    source: 'USGS',
-    sourceId: '0135980207',
-    params: ['temp', 'conductance', 'dissolved_oxygen', 'turbidity'],
-    live: true,
-    description: 'Comprehensive water quality station on the Hudson River near Castleton.',
-  },
-  {
-    id: 'albany',
-    name: 'Albany',
-    shortName: 'Albany',
-    location: 'Albany, NY',
-    lat: 42.648,
-    lon: -73.748,
-    riverMile: 143,
-    source: 'USGS',
-    sourceId: '01359139',
-    params: ['temp'],
-    live: true,
-    description: 'Upper Hudson monitoring station near the Port of Albany.',
-  },
-];
+const PROVIDER_LABEL = { usgs: 'USGS', noaa: 'NOAA', ndbc: 'NDBC', hrecos: 'HRECOS' };
+
+export const STATIONS = registry.stations.map((station) => ({
+  id: station.key,
+  name: station.name,
+  shortName: station.name,
+  location: station.place || '',
+  lat: station.lat,
+  lon: station.lon,
+  riverMile: station.river_mile,
+  source: PROVIDER_LABEL[station.provider] || station.provider,
+  sourceId: station.id,
+  params: (station.parameters || []).map((param) => param.field),
+  live: !!station.live,
+  focus: !!station.focus,
+  description: station.note || '',
+}));
 
 // Station lookup by ID
 export const STATIONS_BY_ID = STATIONS.reduce((acc, station) => {
