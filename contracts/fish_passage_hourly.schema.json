@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hrecos.local/contracts/fish_passage_hourly.schema.json",
+  "title": "fish_passage_hourly",
+  "description": "One row of the view public.fish_passage_hourly. fish_count is the number of non-rejected sonar tracks with that species and direction in that UTC hour. It is an individual-fish count (one track per fish in the beam), not calling activity. Tracks with a null species_id are omitted. Rejected tracks are omitted. hour is the UTC hour start. mean_length_cm is the mean of length_cm.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["node_id", "species_id", "direction", "hour", "fish_count", "mean_length_cm"],
+  "properties": {
+    "node_id": { "type": "string", "minLength": 1 },
+    "species_id": { "type": "string", "minLength": 1 },
+    "direction": {
+      "type": "string",
+      "enum": ["upstream", "downstream", "milling"]
+    },
+    "hour": {
+      "type": "string",
+      "format": "date-time",
+      "description": "UTC hour start from date_trunc on sonar_tracks.start_time."
+    },
+    "fish_count": { "type": "integer", "minimum": 0 },
+    "mean_length_cm": { "type": ["number", "null"], "exclusiveMinimum": 0 }
+  }
+}

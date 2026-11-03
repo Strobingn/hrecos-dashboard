@@ -1,0 +1,4 @@
+numpy>=1.26
+PyYAML>=6
+requests>=2.31
+supabase>=2.0
