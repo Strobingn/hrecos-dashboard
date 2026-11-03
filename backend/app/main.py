@@ -462,6 +462,8 @@ async def get_tides(
                 for t in tides[:48]
             ],
         }
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching tides: {str(e)}")
 
@@ -478,6 +480,8 @@ async def get_current_tide_info(region: str = Query("cornwall_on_hudson", descri
         if current.get("next_time"):
             current = {**current, "next_time": current["next_time"].isoformat()}
         return current
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching current tide: {str(e)}")
 

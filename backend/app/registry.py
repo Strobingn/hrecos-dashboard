@@ -9,7 +9,26 @@ import json
 from pathlib import Path
 from typing import Dict, List
 
-REGISTRY_PATH = Path(__file__).resolve().parents[2] / "data" / "stations.json"
+def resolve_registry_path() -> Path:
+    """Find stations.json in a repo checkout or in the backend image.
+
+    A checkout has backend/app/registry.py, so the file is two directories up
+    at <repo>/data/stations.json. The image copies that file to /app/data
+    while this module lives at /app/app/registry.py, one directory up.
+    """
+    here = Path(__file__).resolve()
+    candidates = [
+        here.parents[2] / "data" / "stations.json",
+        here.parents[1] / "data" / "stations.json",
+    ]
+    for path in candidates:
+        if path.is_file():
+            return path
+    tried = ", ".join(str(path) for path in candidates)
+    raise FileNotFoundError(f"Station registry not found. Tried: {tried}")
+
+
+REGISTRY_PATH = resolve_registry_path()
 
 
 def load_registry(path: Path = REGISTRY_PATH) -> Dict:

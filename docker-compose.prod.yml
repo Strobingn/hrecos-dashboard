@@ -29,7 +29,9 @@ services:
           memory: 256M
 
   backend:
-    build: ./backend
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     container_name: hrecos-backend
     restart: unless-stopped
     depends_on:

@@ -66,11 +66,11 @@ export const PARAM_INFO = {
   depth: {
     key: 'depth',
     label: 'Depth',
-    unit: 'm',
+    unit: 'ft',
     icon: 'arrow-collapse-down',
     chartColor: '#34495E',
-    description: 'Water depth at station',
-    thresholds: { good: [0, 50], caution: [50, 100], concern: 100 },
+    description: 'Sensor depth. The API converts HRECOS meters to feet.',
+    thresholds: { good: [0, 30], caution: [30, 60], concern: 60 },
   },
   speed: {
     key: 'speed',

@@ -23,7 +23,9 @@ services:
       - hrecos-network
 
   backend:
-    build: ./backend
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     container_name: hrecos-backend
     restart: unless-stopped
     depends_on:
@@ -51,6 +53,7 @@ services:
       - SLACK_WEBHOOK=
     volumes:
       - ./backend/app:/app/app
+      - ./data/stations.json:/app/data/stations.json:ro
     networks:
       - hrecos-network
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
