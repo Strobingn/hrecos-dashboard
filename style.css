@@ -26,10 +26,11 @@ body{background:#F0F4F8;color:#1A2B3C;min-height:100vh}
 .sn{font-weight:600;font-size:15px}
 .sl{font-size:12px;color:#5A6B7C}
 .sp{font-size:12px;color:#5A6B7C;display:flex;flex-wrap:wrap;gap:4px 8px}
-.nb{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#fff;border-top:1px solid #D0DAE4;display:flex;justify-content:space-around;padding:6px 0 10px;z-index:100}
-.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 0;background:none;border:none;color:#5A6B7C;font-size:10px;cursor:pointer}
+.nb{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#fff;border-top:1px solid #D0DAE4;display:flex;justify-content:flex-start;padding:6px 0 10px;z-index:100;overflow-x:auto;scrollbar-width:none}
+.nb::-webkit-scrollbar{display:none}
+.ni{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 0;background:none;border:none;color:#5A6B7C;font-size:9px;cursor:pointer}
 .ni.on{color:#0A7EA4}
-.ni svg{width:24px;height:24px}
+.ni svg{width:22px;height:22px}
 .bb{height:18px;background:#F0F4F8;border-radius:10px;overflow:hidden;margin:6px 0}
 .bf{height:100%;border-radius:10px;transition:width .5s}
 .ac{border-left:4px solid;padding:12px;margin-bottom:8px;border-radius:0 12px 12px 0;background:#fff}
@@ -48,13 +49,17 @@ body{background:#F0F4F8;color:#1A2B3C;min-height:100vh}
 .fti{background:#fff;border-radius:12px;padding:14px;text-align:center}
 .tp{background:rgba(10,126,164,.06);border-left:3px solid #0A7EA4;padding:12px;border-radius:0 12px 12px 0;font-size:13px}
 
-/* ===== GOOGLE MAPS ===== */
-#map-container{position:relative;width:100%;height:380px;border-radius:16px;overflow:hidden;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
-#google-map{width:100%;height:100%}
-.map-controls{position:absolute;top:10px;right:10px;z-index:10;display:flex;flex-direction:column;gap:6px}
+/* ===== LEAFLET MAPS ===== */
+#map-container{position:relative;width:100%;height:380px;border-radius:16px;overflow:hidden;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);z-index:0;isolation:isolate}
+#leaflet-map{width:100%;height:100%;background:#d5e3ea}
+.pin-icon{background:transparent;border:none}
+.map-fallback{display:flex;align-items:center;justify-content:center;height:100%;padding:16px;text-align:center;color:#5A6B7C;font-size:13px}
+.leaflet-control-attribution{font-size:10px;max-width:70%}
+#map-container .leaflet-bottom{bottom:58px}
+.map-controls{position:absolute;top:10px;right:10px;z-index:800;display:flex;flex-direction:column;gap:6px}
 .map-btn{background:#fff;border:none;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.3);cursor:pointer;font-size:18px;transition:.2s}
 .map-btn:active{transform:scale(.9)}
-.map-overlay{position:absolute;bottom:10px;left:10px;right:10px;background:rgba(255,255,255,.95);border-radius:12px;padding:12px;z-index:10;backdrop-filter:blur(4px)}
+.map-overlay{position:absolute;bottom:10px;left:10px;right:10px;background:rgba(255,255,255,.95);border-radius:12px;padding:12px;z-index:800;backdrop-filter:blur(4px)}
 .map-overlay-dark{background:rgba(13,27,42,.95);color:#E0ECF4}
 .gps-status{font-size:12px;display:flex;align-items:center;gap:6px}
 .gps-dot{width:8px;height:8px;border-radius:50%;background:#43A047;animation:pu 1.5s infinite}
@@ -106,3 +111,33 @@ body{background:#F0F4F8;color:#1A2B3C;min-height:100vh}
 [data-theme="dark"] .fc,[data-theme="dark"] .tide-loc-btn{background:#1B2838;border-color:#2A3A4A;color:#8A9BAE}
 [data-theme="dark"] .map-overlay{background:rgba(13,27,42,.95);color:#E0ECF4}
 [data-theme="dark"] .station-list-item.on{background:#1B2838}
+
+/* Fish Sounds */
+.fs-map-wrap{position:relative;width:100%;height:320px;border-radius:16px;overflow:hidden;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);z-index:0;isolation:isolate}
+#fs-map{width:100%;height:100%;background:#d5e3ea}
+.fs-nodes{display:flex;flex-wrap:wrap;gap:8px}
+.fs-banner{font-size:12px;line-height:1.4;padding:10px 12px;border-radius:12px;background:rgba(255,143,0,.14);color:#8A5A00;margin-bottom:12px}
+.fs-banner.live{background:rgba(67,160,71,.14);color:#2E7D32}
+.fs-select{width:100%;margin:6px 0 8px;padding:8px 10px;border-radius:10px;border:1px solid #D0DAE4;background:#fff;color:#1A2B3C;font-size:14px}
+.fs-chart{width:100%;height:148px;display:block}
+.fs-total{font-size:13px;font-weight:700;color:#0A7EA4;margin-top:4px}
+.fs-det{width:100%;text-align:left;border:1px solid transparent;background:#F7FAFC;border-radius:12px;padding:10px 12px;margin-bottom:8px;cursor:pointer;color:inherit;font:inherit;display:block}
+.fs-det.on{border-color:#0A7EA4;background:#E7F4F8}
+.fs-det-top{display:flex;justify-content:space-between;gap:8px;font-size:14px}
+.fs-spec{width:100%;margin-top:12px;border-radius:12px;background:#07141C;display:block}
+.fs-play{width:100%;margin-top:10px;padding:12px;border:none;border-radius:12px;background:#0A7EA4;color:#fff;font-weight:700;font-size:15px;cursor:pointer}
+.fs-play:active{transform:scale(.99)}
+.fs-species{padding:12px 0;border-top:1px solid #F0F4F8}
+.fs-species:first-of-type{border-top:none;padding-top:0}
+.fs-sp-head{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.fs-desc{font-size:13px;margin:8px 0;line-height:1.4}
+.fs-badge{flex-shrink:0;font-size:10px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;padding:3px 8px;border-radius:999px;background:#F0F4F8;color:#5A6B7C}
+.fs-badge.on{background:rgba(10,126,164,.12);color:#0A7EA4}
+.fs-link{display:inline-block;margin-top:6px;color:#0A7EA4;font-size:13px;font-weight:600}
+[data-theme="dark"] .fs-banner{color:#FFD180}
+[data-theme="dark"] .fs-banner.live{color:#A5D6A7}
+[data-theme="dark"] .fs-select,[data-theme="dark"] .fs-det{background:#2A3A4A;color:#E0ECF4;border-color:#2A3A4A}
+[data-theme="dark"] .fs-det.on{background:#163244;border-color:#0A7EA4}
+[data-theme="dark"] .fs-species{border-color:#2A3A4A}
+[data-theme="dark"] .fs-badge{background:#2A3A4A;color:#8A9BAE}
+[data-theme="dark"] .fs-badge.on{background:rgba(10,126,164,.25);color:#7FDBDA}

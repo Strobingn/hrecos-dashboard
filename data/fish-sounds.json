@@ -1,0 +1,2283 @@
+{
+  "species": [
+    {
+      "id": "oyster-toadfish",
+      "common_name": "Oyster toadfish",
+      "scientific_name": "Opsanus tau",
+      "soniferous": true,
+      "freq_low_hz": 90,
+      "freq_high_hz": 400,
+      "call_description": "Long tonal boatwhistle, often preceded by a short grunt. A lower-estuary night caller.",
+      "season": "May\u2013August",
+      "fishsounds_url": "https://fishsounds.net/",
+      "image_url": null
+    },
+    {
+      "id": "weakfish",
+      "common_name": "Weakfish",
+      "scientific_name": "Cynoscion regalis",
+      "soniferous": true,
+      "freq_low_hz": 200,
+      "freq_high_hz": 800,
+      "call_description": "Pulsed swim-bladder drums, usually a short series of knocks.",
+      "season": "May\u2013July",
+      "fishsounds_url": "https://fishsounds.net/",
+      "image_url": null
+    },
+    {
+      "id": "atlantic-croaker",
+      "common_name": "Atlantic croaker",
+      "scientific_name": "Micropogonias undulatus",
+      "soniferous": true,
+      "freq_low_hz": 300,
+      "freq_high_hz": 1200,
+      "call_description": "Rapid croaks that build into a chorus on summer evenings.",
+      "season": "July\u2013October",
+      "fishsounds_url": "https://fishsounds.net/",
+      "image_url": null
+    },
+    {
+      "id": "striped-cusk-eel",
+      "common_name": "Striped cusk-eel",
+      "scientific_name": "Ophidion marginatum",
+      "soniferous": true,
+      "freq_low_hz": 800,
+      "freq_high_hz": 2000,
+      "call_description": "Dusk chorus of high pulses. One of the loudest warm-season sounds in this reach.",
+      "season": "May\u2013September",
+      "fishsounds_url": "https://fishsounds.net/",
+      "image_url": null
+    },
+    {
+      "id": "channel-catfish",
+      "common_name": "Channel catfish",
+      "scientific_name": "Ictalurus punctatus",
+      "soniferous": true,
+      "freq_low_hz": 100,
+      "freq_high_hz": 1500,
+      "call_description": "Low growls plus higher rasps from pectoral-spine stridulation. More common upriver.",
+      "season": "May\u2013August",
+      "fishsounds_url": "https://fishsounds.net/",
+      "image_url": null
+    },
+    {
+      "id": "striped-bass",
+      "common_name": "Striped bass",
+      "scientific_name": "Morone saxatilis",
+      "soniferous": false,
+      "freq_low_hz": null,
+      "freq_high_hz": null,
+      "call_description": "Not treated as a sound-producing species in this network. Listed because it is the river's main sport fish, so a quiet hour is not a count of bass.",
+      "season": "April\u2013June spawning run",
+      "fishsounds_url": "https://fishsounds.net/",
+      "image_url": null
+    }
+  ],
+  "hydrophone_nodes": [
+    {
+      "id": "tappan-zee",
+      "name": "Tappan Zee",
+      "lat": 41.0715,
+      "lon": -73.891,
+      "river_mile": 27,
+      "hardware": "AudioMoth 1.2 + Aquarian H2a",
+      "sample_rate_hz": 48000,
+      "status": "online",
+      "last_heartbeat_minutes_ago": 3
+    },
+    {
+      "id": "westpoint-cornwall",
+      "name": "West Point / Cornwall",
+      "lat": 41.42,
+      "lon": -73.958,
+      "river_mile": 53,
+      "hardware": "AudioMoth 1.2 + Aquarian H2a",
+      "sample_rate_hz": 48000,
+      "status": "online",
+      "last_heartbeat_minutes_ago": 1
+    },
+    {
+      "id": "poughkeepsie",
+      "name": "Poughkeepsie",
+      "lat": 41.7065,
+      "lon": -73.9405,
+      "river_mile": 75,
+      "hardware": "AudioMoth 1.2 + Aquarian H2a",
+      "sample_rate_hz": 48000,
+      "status": "online",
+      "last_heartbeat_minutes_ago": 6
+    }
+  ],
+  "detections": [
+    {
+      "id": "det-wp-001",
+      "node_id": "westpoint-cornwall",
+      "segment_id": "seg-westpoint-cornwall-001",
+      "minutes_ago": 8,
+      "duration_s": 2.4,
+      "label": "chorus pulse",
+      "species_id": "striped-cusk-eel",
+      "confidence": 0.93,
+      "model_name": "hrecos-acoustics",
+      "model_version": "0.4.0",
+      "freq_low_hz": 980,
+      "freq_high_hz": 1880,
+      "clip_path": "westpoint-cornwall/det-wp-001.wav",
+      "review_status": "confirmed"
+    },
+    {
+      "id": "det-tz-002",
+      "node_id": "tappan-zee",
+      "segment_id": "seg-tappan-zee-002",
+      "minutes_ago": 16,
+      "duration_s": 3.1,
+      "label": "boatwhistle",
+      "species_id": "oyster-toadfish",
+      "confidence": 0.88,
+      "model_name": "hrecos-acoustics",
+      "model_version": "0.4.0",
+      "freq_low_hz": 136,
+      "freq_high_hz": 369,
+      "clip_path": "tappan-zee/det-tz-002.wav",
+      "review_status": "confirmed"
+    },
+    {
+      "id": "det-wp-003",
+      "node_id": "westpoint-cornwall",
+      "segment_id": "seg-westpoint-cornwall-003",
+      "minutes_ago": 28,
+      "duration_s": 1.2,
+      "label": "drum",
+      "species_id": "weakfish",
+      "confidence": 0.81,
+      "model_name": "hrecos-acoustics",
+      "model_version": "0.4.0",
+      "freq_low_hz": 290,
+      "freq_high_hz": 740,
+      "clip_path": "westpoint-cornwall/det-wp-003.wav",
+      "review_status": "unreviewed"
+    },
+    {
+      "id": "det-pk-004",
+      "node_id": "poughkeepsie",
+      "segment_id": "seg-poughkeepsie-004",
+      "minutes_ago": 47,
+      "duration_s": 1.8,
+      "label": "growl",
+      "species_id": "channel-catfish",
+      "confidence": 0.76,
+      "model_name": "hrecos-acoustics",
+      "model_version": "0.4.0",
+      "freq_low_hz": 310,
+      "freq_high_hz": 1360,
+      "clip_path": "poughkeepsie/det-pk-004.wav",
+      "review_status": "unreviewed"
+    },
+    {
+      "id": "det-tz-005",
+      "node_id": "tappan-zee",
+      "segment_id": "seg-tappan-zee-005",
+      "minutes_ago": 63,
+      "duration_s": 0.9,
+      "label": "drum",
+      "species_id": "weakfish",
+      "confidence": 0.84,
+      "model_name": "hrecos-acoustics",
+      "model_version": "0.4.0",
+      "freq_low_hz": 290,
+      "freq_high_hz": 740,
+      "clip_path": "tappan-zee/det-tz-005.wav",
+      "review_status": "confirmed"
+    },
+    {
+      "id": "det-wp-006",
+      "node_id": "westpoint-cornwall",
+      "segment_id": "seg-westpoint-cornwall-006",
+      "minutes_ago": 95,
+      "duration_s": 1.5,
+      "label": "croak",
+      "species_id": "atlantic-croaker",
+      "confidence": 0.79,
+      "model_name": "hrecos-acoustics",
+      "model_version": "0.4.0",
+      "freq_low_hz": 435,
+      "freq_high_hz": 1110,
+      "clip_path": "westpoint-cornwall/det-wp-006.wav",
+      "review_status": "unreviewed"
+    },
+    {
+      "id": "det-tz-007",
+      "node_id": "tappan-zee",
+      "segment_id": "seg-tappan-zee-007",
+      "minutes_ago": 140,
+      "duration_s": 1.1,
+      "label": "croak",
+      "species_id": "atlantic-croaker",
+      "confidence": 0.71,
+      "model_name": "hrecos-acoustics",
+      "model_version": "0.4.0",
+      "freq_low_hz": 435,
+      "freq_high_hz": 1110,
+      "clip_path": "tappan-zee/det-tz-007.wav",
+      "review_status": "unreviewed"
+    },
+    {
+      "id": "det-wp-008",
+      "node_id": "westpoint-cornwall",
+      "segment_id": "seg-westpoint-cornwall-008",
+      "minutes_ago": 210,
+      "duration_s": 2.8,
+      "label": "boatwhistle",
+      "species_id": "oyster-toadfish",
+      "confidence": 0.9,
+      "model_name": "hrecos-acoustics",
+      "model_version": "0.4.0",
+      "freq_low_hz": 136,
+      "freq_high_hz": 369,
+      "clip_path": "westpoint-cornwall/det-wp-008.wav",
+      "review_status": "confirmed"
+    },
+    {
+      "id": "det-pk-009",
+      "node_id": "poughkeepsie",
+      "segment_id": "seg-poughkeepsie-009",
+      "minutes_ago": 260,
+      "duration_s": 2.2,
+      "label": "growl",
+      "species_id": "channel-catfish",
+      "confidence": 0.66,
+      "model_name": "hrecos-acoustics",
+      "model_version": "0.4.0",
+      "freq_low_hz": 310,
+      "freq_high_hz": 1360,
+      "clip_path": "poughkeepsie/det-pk-009.wav",
+      "review_status": "unreviewed"
+    },
+    {
+      "id": "det-tz-010",
+      "node_id": "tappan-zee",
+      "segment_id": "seg-tappan-zee-010",
+      "minutes_ago": 340,
+      "duration_s": 2.0,
+      "label": "chorus pulse",
+      "species_id": "striped-cusk-eel",
+      "confidence": 0.74,
+      "model_name": "hrecos-acoustics",
+      "model_version": "0.4.0",
+      "freq_low_hz": 980,
+      "freq_high_hz": 1880,
+      "clip_path": "tappan-zee/det-tz-010.wav",
+      "review_status": "rejected"
+    },
+    {
+      "id": "det-wp-011",
+      "node_id": "westpoint-cornwall",
+      "segment_id": "seg-westpoint-cornwall-011",
+      "minutes_ago": 480,
+      "duration_s": 2.6,
+      "label": "chorus pulse",
+      "species_id": "striped-cusk-eel",
+      "confidence": 0.86,
+      "model_name": "hrecos-acoustics",
+      "model_version": "0.4.0",
+      "freq_low_hz": 980,
+      "freq_high_hz": 1880,
+      "clip_path": "westpoint-cornwall/det-wp-011.wav",
+      "review_status": "confirmed"
+    },
+    {
+      "id": "det-pk-012",
+      "node_id": "poughkeepsie",
+      "segment_id": "seg-poughkeepsie-012",
+      "minutes_ago": 620,
+      "duration_s": 1.0,
+      "label": "drum",
+      "species_id": "weakfish",
+      "confidence": 0.58,
+      "model_name": "hrecos-acoustics",
+      "model_version": "0.4.0",
+      "freq_low_hz": 290,
+      "freq_high_hz": 740,
+      "clip_path": "poughkeepsie/det-pk-012.wav",
+      "review_status": "unreviewed"
+    },
+    {
+      "id": "det-tz-013",
+      "node_id": "tappan-zee",
+      "segment_id": "seg-tappan-zee-013",
+      "minutes_ago": 800,
+      "duration_s": 3.4,
+      "label": "boatwhistle",
+      "species_id": "oyster-toadfish",
+      "confidence": 0.91,
+      "model_name": "hrecos-acoustics",
+      "model_version": "0.4.0",
+      "freq_low_hz": 136,
+      "freq_high_hz": 369,
+      "clip_path": "tappan-zee/det-tz-013.wav",
+      "review_status": "confirmed"
+    },
+    {
+      "id": "det-wp-014",
+      "node_id": "westpoint-cornwall",
+      "segment_id": "seg-westpoint-cornwall-014",
+      "minutes_ago": 1100,
+      "duration_s": 1.6,
+      "label": "growl",
+      "species_id": "channel-catfish",
+      "confidence": 0.63,
+      "model_name": "hrecos-acoustics",
+      "model_version": "0.4.0",
+      "freq_low_hz": 310,
+      "freq_high_hz": 1360,
+      "clip_path": "westpoint-cornwall/det-wp-014.wav",
+      "review_status": "unreviewed"
+    }
+  ],
+  "detection_counts_hourly": [
+    {
+      "node_id": "tappan-zee",
+      "species_id": "oyster-toadfish",
+      "label": "boatwhistle",
+      "hour_of_day": 0,
+      "detections": 2,
+      "avg_confidence": 0.86
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "oyster-toadfish",
+      "label": "boatwhistle",
+      "hour_of_day": 1,
+      "detections": 2,
+      "avg_confidence": 0.88
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "oyster-toadfish",
+      "label": "boatwhistle",
+      "hour_of_day": 2,
+      "detections": 2,
+      "avg_confidence": 0.88
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "oyster-toadfish",
+      "label": "boatwhistle",
+      "hour_of_day": 3,
+      "detections": 3,
+      "avg_confidence": 0.87
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "oyster-toadfish",
+      "label": "boatwhistle",
+      "hour_of_day": 4,
+      "detections": 4,
+      "avg_confidence": 0.84
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "oyster-toadfish",
+      "label": "boatwhistle",
+      "hour_of_day": 5,
+      "detections": 5,
+      "avg_confidence": 0.8
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "oyster-toadfish",
+      "label": "boatwhistle",
+      "hour_of_day": 6,
+      "detections": 7,
+      "avg_confidence": 0.75
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "oyster-toadfish",
+      "label": "boatwhistle",
+      "hour_of_day": 7,
+      "detections": 8,
+      "avg_confidence": 0.7
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "oyster-toadfish",
+      "label": "boatwhistle",
+      "hour_of_day": 8,
+      "detections": 7,
+      "avg_confidence": 0.65
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "oyster-toadfish",
+      "label": "boatwhistle",
+      "hour_of_day": 9,
+      "detections": 5,
+      "avg_confidence": 0.62
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "oyster-toadfish",
+      "label": "boatwhistle",
+      "hour_of_day": 10,
+      "detections": 2,
+      "avg_confidence": 0.59
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "oyster-toadfish",
+      "label": "boatwhistle",
+      "hour_of_day": 11,
+      "detections": 1,
+      "avg_confidence": 0.58
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "oyster-toadfish",
+      "label": "boatwhistle",
+      "hour_of_day": 12,
+      "detections": 1,
+      "avg_confidence": 0.59
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "oyster-toadfish",
+      "label": "boatwhistle",
+      "hour_of_day": 13,
+      "detections": 1,
+      "avg_confidence": 0.61
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "oyster-toadfish",
+      "label": "boatwhistle",
+      "hour_of_day": 14,
+      "detections": 1,
+      "avg_confidence": 0.64
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "oyster-toadfish",
+      "label": "boatwhistle",
+      "hour_of_day": 15,
+      "detections": 1,
+      "avg_confidence": 0.69
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "oyster-toadfish",
+      "label": "boatwhistle",
+      "hour_of_day": 16,
+      "detections": 2,
+      "avg_confidence": 0.74
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "oyster-toadfish",
+      "label": "boatwhistle",
+      "hour_of_day": 17,
+      "detections": 5,
+      "avg_confidence": 0.79
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "oyster-toadfish",
+      "label": "boatwhistle",
+      "hour_of_day": 18,
+      "detections": 7,
+      "avg_confidence": 0.83
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "oyster-toadfish",
+      "label": "boatwhistle",
+      "hour_of_day": 19,
+      "detections": 9,
+      "avg_confidence": 0.86
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "oyster-toadfish",
+      "label": "boatwhistle",
+      "hour_of_day": 20,
+      "detections": 7,
+      "avg_confidence": 0.88
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "oyster-toadfish",
+      "label": "boatwhistle",
+      "hour_of_day": 21,
+      "detections": 5,
+      "avg_confidence": 0.88
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "oyster-toadfish",
+      "label": "boatwhistle",
+      "hour_of_day": 22,
+      "detections": 4,
+      "avg_confidence": 0.86
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "oyster-toadfish",
+      "label": "boatwhistle",
+      "hour_of_day": 23,
+      "detections": 3,
+      "avg_confidence": 0.83
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 0,
+      "detections": 2,
+      "avg_confidence": 0.83
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 1,
+      "detections": 2,
+      "avg_confidence": 0.86
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 2,
+      "detections": 2,
+      "avg_confidence": 0.88
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 3,
+      "detections": 2,
+      "avg_confidence": 0.88
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 4,
+      "detections": 3,
+      "avg_confidence": 0.86
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 5,
+      "detections": 3,
+      "avg_confidence": 0.83
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 6,
+      "detections": 5,
+      "avg_confidence": 0.79
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 7,
+      "detections": 6,
+      "avg_confidence": 0.74
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 8,
+      "detections": 5,
+      "avg_confidence": 0.69
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 9,
+      "detections": 3,
+      "avg_confidence": 0.64
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 10,
+      "detections": 2,
+      "avg_confidence": 0.61
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 11,
+      "detections": 1,
+      "avg_confidence": 0.59
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 12,
+      "detections": 1,
+      "avg_confidence": 0.58
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 14,
+      "detections": 1,
+      "avg_confidence": 0.62
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 15,
+      "detections": 1,
+      "avg_confidence": 0.65
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 16,
+      "detections": 2,
+      "avg_confidence": 0.7
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 17,
+      "detections": 4,
+      "avg_confidence": 0.75
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 18,
+      "detections": 6,
+      "avg_confidence": 0.8
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 19,
+      "detections": 6,
+      "avg_confidence": 0.84
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 20,
+      "detections": 6,
+      "avg_confidence": 0.87
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 21,
+      "detections": 4,
+      "avg_confidence": 0.88
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 22,
+      "detections": 3,
+      "avg_confidence": 0.88
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 23,
+      "detections": 2,
+      "avg_confidence": 0.86
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "atlantic-croaker",
+      "label": "croak",
+      "hour_of_day": 0,
+      "detections": 1,
+      "avg_confidence": 0.8
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "atlantic-croaker",
+      "label": "croak",
+      "hour_of_day": 1,
+      "detections": 1,
+      "avg_confidence": 0.84
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "atlantic-croaker",
+      "label": "croak",
+      "hour_of_day": 2,
+      "detections": 1,
+      "avg_confidence": 0.86
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "atlantic-croaker",
+      "label": "croak",
+      "hour_of_day": 3,
+      "detections": 1,
+      "avg_confidence": 0.88
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "atlantic-croaker",
+      "label": "croak",
+      "hour_of_day": 4,
+      "detections": 2,
+      "avg_confidence": 0.88
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "atlantic-croaker",
+      "label": "croak",
+      "hour_of_day": 5,
+      "detections": 2,
+      "avg_confidence": 0.86
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "atlantic-croaker",
+      "label": "croak",
+      "hour_of_day": 6,
+      "detections": 3,
+      "avg_confidence": 0.83
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "atlantic-croaker",
+      "label": "croak",
+      "hour_of_day": 7,
+      "detections": 3,
+      "avg_confidence": 0.78
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "atlantic-croaker",
+      "label": "croak",
+      "hour_of_day": 8,
+      "detections": 3,
+      "avg_confidence": 0.73
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "atlantic-croaker",
+      "label": "croak",
+      "hour_of_day": 9,
+      "detections": 2,
+      "avg_confidence": 0.68
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "atlantic-croaker",
+      "label": "croak",
+      "hour_of_day": 10,
+      "detections": 1,
+      "avg_confidence": 0.64
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "atlantic-croaker",
+      "label": "croak",
+      "hour_of_day": 11,
+      "detections": 1,
+      "avg_confidence": 0.61
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "atlantic-croaker",
+      "label": "croak",
+      "hour_of_day": 15,
+      "detections": 1,
+      "avg_confidence": 0.62
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "atlantic-croaker",
+      "label": "croak",
+      "hour_of_day": 16,
+      "detections": 1,
+      "avg_confidence": 0.66
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "atlantic-croaker",
+      "label": "croak",
+      "hour_of_day": 17,
+      "detections": 2,
+      "avg_confidence": 0.71
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "atlantic-croaker",
+      "label": "croak",
+      "hour_of_day": 18,
+      "detections": 3,
+      "avg_confidence": 0.75
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "atlantic-croaker",
+      "label": "croak",
+      "hour_of_day": 19,
+      "detections": 4,
+      "avg_confidence": 0.8
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "atlantic-croaker",
+      "label": "croak",
+      "hour_of_day": 20,
+      "detections": 3,
+      "avg_confidence": 0.84
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "atlantic-croaker",
+      "label": "croak",
+      "hour_of_day": 21,
+      "detections": 2,
+      "avg_confidence": 0.87
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "atlantic-croaker",
+      "label": "croak",
+      "hour_of_day": 22,
+      "detections": 2,
+      "avg_confidence": 0.88
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "atlantic-croaker",
+      "label": "croak",
+      "hour_of_day": 23,
+      "detections": 1,
+      "avg_confidence": 0.87
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 0,
+      "detections": 1,
+      "avg_confidence": 0.77
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 1,
+      "detections": 1,
+      "avg_confidence": 0.82
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 2,
+      "detections": 1,
+      "avg_confidence": 0.85
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 3,
+      "detections": 1,
+      "avg_confidence": 0.87
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 4,
+      "detections": 1,
+      "avg_confidence": 0.88
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 5,
+      "detections": 1,
+      "avg_confidence": 0.87
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 6,
+      "detections": 2,
+      "avg_confidence": 0.84
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 7,
+      "detections": 2,
+      "avg_confidence": 0.8
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 8,
+      "detections": 2,
+      "avg_confidence": 0.76
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 9,
+      "detections": 1,
+      "avg_confidence": 0.71
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 10,
+      "detections": 1,
+      "avg_confidence": 0.66
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 16,
+      "detections": 1,
+      "avg_confidence": 0.64
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 17,
+      "detections": 1,
+      "avg_confidence": 0.68
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 18,
+      "detections": 2,
+      "avg_confidence": 0.73
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 19,
+      "detections": 3,
+      "avg_confidence": 0.78
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 20,
+      "detections": 2,
+      "avg_confidence": 0.82
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 21,
+      "detections": 1,
+      "avg_confidence": 0.86
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 22,
+      "detections": 1,
+      "avg_confidence": 0.88
+    },
+    {
+      "node_id": "tappan-zee",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 23,
+      "detections": 1,
+      "avg_confidence": 0.88
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "oyster-toadfish",
+      "label": "boatwhistle",
+      "hour_of_day": 0,
+      "detections": 1,
+      "avg_confidence": 0.79
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "oyster-toadfish",
+      "label": "boatwhistle",
+      "hour_of_day": 1,
+      "detections": 1,
+      "avg_confidence": 0.83
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "oyster-toadfish",
+      "label": "boatwhistle",
+      "hour_of_day": 2,
+      "detections": 1,
+      "avg_confidence": 0.86
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "oyster-toadfish",
+      "label": "boatwhistle",
+      "hour_of_day": 3,
+      "detections": 1,
+      "avg_confidence": 0.88
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "oyster-toadfish",
+      "label": "boatwhistle",
+      "hour_of_day": 4,
+      "detections": 2,
+      "avg_confidence": 0.88
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "oyster-toadfish",
+      "label": "boatwhistle",
+      "hour_of_day": 5,
+      "detections": 2,
+      "avg_confidence": 0.86
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "oyster-toadfish",
+      "label": "boatwhistle",
+      "hour_of_day": 6,
+      "detections": 3,
+      "avg_confidence": 0.83
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "oyster-toadfish",
+      "label": "boatwhistle",
+      "hour_of_day": 7,
+      "detections": 3,
+      "avg_confidence": 0.79
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "oyster-toadfish",
+      "label": "boatwhistle",
+      "hour_of_day": 8,
+      "detections": 3,
+      "avg_confidence": 0.74
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "oyster-toadfish",
+      "label": "boatwhistle",
+      "hour_of_day": 9,
+      "detections": 2,
+      "avg_confidence": 0.69
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "oyster-toadfish",
+      "label": "boatwhistle",
+      "hour_of_day": 10,
+      "detections": 1,
+      "avg_confidence": 0.65
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "oyster-toadfish",
+      "label": "boatwhistle",
+      "hour_of_day": 11,
+      "detections": 1,
+      "avg_confidence": 0.61
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "oyster-toadfish",
+      "label": "boatwhistle",
+      "hour_of_day": 16,
+      "detections": 1,
+      "avg_confidence": 0.65
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "oyster-toadfish",
+      "label": "boatwhistle",
+      "hour_of_day": 17,
+      "detections": 2,
+      "avg_confidence": 0.7
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "oyster-toadfish",
+      "label": "boatwhistle",
+      "hour_of_day": 18,
+      "detections": 3,
+      "avg_confidence": 0.75
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "oyster-toadfish",
+      "label": "boatwhistle",
+      "hour_of_day": 19,
+      "detections": 3,
+      "avg_confidence": 0.8
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "oyster-toadfish",
+      "label": "boatwhistle",
+      "hour_of_day": 20,
+      "detections": 3,
+      "avg_confidence": 0.84
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "oyster-toadfish",
+      "label": "boatwhistle",
+      "hour_of_day": 21,
+      "detections": 2,
+      "avg_confidence": 0.86
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "oyster-toadfish",
+      "label": "boatwhistle",
+      "hour_of_day": 22,
+      "detections": 2,
+      "avg_confidence": 0.88
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "oyster-toadfish",
+      "label": "boatwhistle",
+      "hour_of_day": 23,
+      "detections": 1,
+      "avg_confidence": 0.88
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 0,
+      "detections": 2,
+      "avg_confidence": 0.84
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 1,
+      "detections": 2,
+      "avg_confidence": 0.87
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 2,
+      "detections": 2,
+      "avg_confidence": 0.88
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 3,
+      "detections": 2,
+      "avg_confidence": 0.87
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 4,
+      "detections": 3,
+      "avg_confidence": 0.85
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 5,
+      "detections": 4,
+      "avg_confidence": 0.82
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 6,
+      "detections": 6,
+      "avg_confidence": 0.77
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 7,
+      "detections": 6,
+      "avg_confidence": 0.72
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 8,
+      "detections": 6,
+      "avg_confidence": 0.68
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 9,
+      "detections": 4,
+      "avg_confidence": 0.63
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 10,
+      "detections": 2,
+      "avg_confidence": 0.6
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 11,
+      "detections": 1,
+      "avg_confidence": 0.58
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 12,
+      "detections": 1,
+      "avg_confidence": 0.58
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 13,
+      "detections": 1,
+      "avg_confidence": 0.6
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 14,
+      "detections": 1,
+      "avg_confidence": 0.63
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 15,
+      "detections": 1,
+      "avg_confidence": 0.67
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 16,
+      "detections": 2,
+      "avg_confidence": 0.72
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 17,
+      "detections": 4,
+      "avg_confidence": 0.76
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 18,
+      "detections": 6,
+      "avg_confidence": 0.81
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 19,
+      "detections": 7,
+      "avg_confidence": 0.85
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 20,
+      "detections": 6,
+      "avg_confidence": 0.87
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 21,
+      "detections": 4,
+      "avg_confidence": 0.88
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 22,
+      "detections": 3,
+      "avg_confidence": 0.87
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 23,
+      "detections": 2,
+      "avg_confidence": 0.85
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "atlantic-croaker",
+      "label": "croak",
+      "hour_of_day": 0,
+      "detections": 1,
+      "avg_confidence": 0.8
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "atlantic-croaker",
+      "label": "croak",
+      "hour_of_day": 1,
+      "detections": 1,
+      "avg_confidence": 0.84
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "atlantic-croaker",
+      "label": "croak",
+      "hour_of_day": 2,
+      "detections": 1,
+      "avg_confidence": 0.87
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "atlantic-croaker",
+      "label": "croak",
+      "hour_of_day": 3,
+      "detections": 1,
+      "avg_confidence": 0.88
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "atlantic-croaker",
+      "label": "croak",
+      "hour_of_day": 4,
+      "detections": 2,
+      "avg_confidence": 0.87
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "atlantic-croaker",
+      "label": "croak",
+      "hour_of_day": 5,
+      "detections": 2,
+      "avg_confidence": 0.85
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "atlantic-croaker",
+      "label": "croak",
+      "hour_of_day": 6,
+      "detections": 3,
+      "avg_confidence": 0.82
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "atlantic-croaker",
+      "label": "croak",
+      "hour_of_day": 7,
+      "detections": 4,
+      "avg_confidence": 0.78
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "atlantic-croaker",
+      "label": "croak",
+      "hour_of_day": 8,
+      "detections": 3,
+      "avg_confidence": 0.73
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "atlantic-croaker",
+      "label": "croak",
+      "hour_of_day": 9,
+      "detections": 2,
+      "avg_confidence": 0.68
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "atlantic-croaker",
+      "label": "croak",
+      "hour_of_day": 10,
+      "detections": 1,
+      "avg_confidence": 0.63
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "atlantic-croaker",
+      "label": "croak",
+      "hour_of_day": 11,
+      "detections": 1,
+      "avg_confidence": 0.6
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "atlantic-croaker",
+      "label": "croak",
+      "hour_of_day": 15,
+      "detections": 1,
+      "avg_confidence": 0.62
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "atlantic-croaker",
+      "label": "croak",
+      "hour_of_day": 16,
+      "detections": 1,
+      "avg_confidence": 0.66
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "atlantic-croaker",
+      "label": "croak",
+      "hour_of_day": 17,
+      "detections": 2,
+      "avg_confidence": 0.71
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "atlantic-croaker",
+      "label": "croak",
+      "hour_of_day": 18,
+      "detections": 4,
+      "avg_confidence": 0.76
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "atlantic-croaker",
+      "label": "croak",
+      "hour_of_day": 19,
+      "detections": 4,
+      "avg_confidence": 0.81
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "atlantic-croaker",
+      "label": "croak",
+      "hour_of_day": 20,
+      "detections": 4,
+      "avg_confidence": 0.85
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "atlantic-croaker",
+      "label": "croak",
+      "hour_of_day": 21,
+      "detections": 2,
+      "avg_confidence": 0.87
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "atlantic-croaker",
+      "label": "croak",
+      "hour_of_day": 22,
+      "detections": 2,
+      "avg_confidence": 0.88
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "atlantic-croaker",
+      "label": "croak",
+      "hour_of_day": 23,
+      "detections": 1,
+      "avg_confidence": 0.87
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 0,
+      "detections": 2,
+      "avg_confidence": 0.86
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 1,
+      "detections": 2,
+      "avg_confidence": 0.88
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 2,
+      "detections": 2,
+      "avg_confidence": 0.88
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 3,
+      "detections": 3,
+      "avg_confidence": 0.87
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 4,
+      "detections": 4,
+      "avg_confidence": 0.84
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 5,
+      "detections": 5,
+      "avg_confidence": 0.8
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 6,
+      "detections": 7,
+      "avg_confidence": 0.75
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 7,
+      "detections": 8,
+      "avg_confidence": 0.7
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 8,
+      "detections": 7,
+      "avg_confidence": 0.65
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 9,
+      "detections": 5,
+      "avg_confidence": 0.62
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 10,
+      "detections": 2,
+      "avg_confidence": 0.59
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 11,
+      "detections": 1,
+      "avg_confidence": 0.58
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 12,
+      "detections": 1,
+      "avg_confidence": 0.59
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 13,
+      "detections": 1,
+      "avg_confidence": 0.61
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 14,
+      "detections": 1,
+      "avg_confidence": 0.64
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 15,
+      "detections": 1,
+      "avg_confidence": 0.69
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 16,
+      "detections": 2,
+      "avg_confidence": 0.74
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 17,
+      "detections": 5,
+      "avg_confidence": 0.79
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 18,
+      "detections": 7,
+      "avg_confidence": 0.83
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 19,
+      "detections": 9,
+      "avg_confidence": 0.86
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 20,
+      "detections": 7,
+      "avg_confidence": 0.88
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 21,
+      "detections": 5,
+      "avg_confidence": 0.88
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 22,
+      "detections": 4,
+      "avg_confidence": 0.86
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 23,
+      "detections": 3,
+      "avg_confidence": 0.83
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "channel-catfish",
+      "label": "growl",
+      "hour_of_day": 3,
+      "detections": 1,
+      "avg_confidence": 0.87
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "channel-catfish",
+      "label": "growl",
+      "hour_of_day": 4,
+      "detections": 1,
+      "avg_confidence": 0.88
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "channel-catfish",
+      "label": "growl",
+      "hour_of_day": 5,
+      "detections": 1,
+      "avg_confidence": 0.87
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "channel-catfish",
+      "label": "growl",
+      "hour_of_day": 6,
+      "detections": 1,
+      "avg_confidence": 0.85
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "channel-catfish",
+      "label": "growl",
+      "hour_of_day": 7,
+      "detections": 2,
+      "avg_confidence": 0.82
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "channel-catfish",
+      "label": "growl",
+      "hour_of_day": 8,
+      "detections": 1,
+      "avg_confidence": 0.77
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "channel-catfish",
+      "label": "growl",
+      "hour_of_day": 9,
+      "detections": 1,
+      "avg_confidence": 0.72
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "channel-catfish",
+      "label": "growl",
+      "hour_of_day": 17,
+      "detections": 1,
+      "avg_confidence": 0.67
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "channel-catfish",
+      "label": "growl",
+      "hour_of_day": 18,
+      "detections": 1,
+      "avg_confidence": 0.72
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "channel-catfish",
+      "label": "growl",
+      "hour_of_day": 19,
+      "detections": 2,
+      "avg_confidence": 0.77
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "channel-catfish",
+      "label": "growl",
+      "hour_of_day": 20,
+      "detections": 1,
+      "avg_confidence": 0.81
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "channel-catfish",
+      "label": "growl",
+      "hour_of_day": 21,
+      "detections": 1,
+      "avg_confidence": 0.85
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "channel-catfish",
+      "label": "growl",
+      "hour_of_day": 22,
+      "detections": 1,
+      "avg_confidence": 0.87
+    },
+    {
+      "node_id": "westpoint-cornwall",
+      "species_id": "channel-catfish",
+      "label": "growl",
+      "hour_of_day": 23,
+      "detections": 1,
+      "avg_confidence": 0.88
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "channel-catfish",
+      "label": "growl",
+      "hour_of_day": 0,
+      "detections": 2,
+      "avg_confidence": 0.86
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "channel-catfish",
+      "label": "growl",
+      "hour_of_day": 1,
+      "detections": 2,
+      "avg_confidence": 0.88
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "channel-catfish",
+      "label": "growl",
+      "hour_of_day": 2,
+      "detections": 2,
+      "avg_confidence": 0.88
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "channel-catfish",
+      "label": "growl",
+      "hour_of_day": 3,
+      "detections": 3,
+      "avg_confidence": 0.87
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "channel-catfish",
+      "label": "growl",
+      "hour_of_day": 4,
+      "detections": 4,
+      "avg_confidence": 0.84
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "channel-catfish",
+      "label": "growl",
+      "hour_of_day": 5,
+      "detections": 5,
+      "avg_confidence": 0.8
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "channel-catfish",
+      "label": "growl",
+      "hour_of_day": 6,
+      "detections": 7,
+      "avg_confidence": 0.75
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "channel-catfish",
+      "label": "growl",
+      "hour_of_day": 7,
+      "detections": 8,
+      "avg_confidence": 0.7
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "channel-catfish",
+      "label": "growl",
+      "hour_of_day": 8,
+      "detections": 7,
+      "avg_confidence": 0.65
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "channel-catfish",
+      "label": "growl",
+      "hour_of_day": 9,
+      "detections": 5,
+      "avg_confidence": 0.62
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "channel-catfish",
+      "label": "growl",
+      "hour_of_day": 10,
+      "detections": 2,
+      "avg_confidence": 0.59
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "channel-catfish",
+      "label": "growl",
+      "hour_of_day": 11,
+      "detections": 1,
+      "avg_confidence": 0.58
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "channel-catfish",
+      "label": "growl",
+      "hour_of_day": 12,
+      "detections": 1,
+      "avg_confidence": 0.59
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "channel-catfish",
+      "label": "growl",
+      "hour_of_day": 13,
+      "detections": 1,
+      "avg_confidence": 0.61
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "channel-catfish",
+      "label": "growl",
+      "hour_of_day": 14,
+      "detections": 1,
+      "avg_confidence": 0.64
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "channel-catfish",
+      "label": "growl",
+      "hour_of_day": 15,
+      "detections": 1,
+      "avg_confidence": 0.69
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "channel-catfish",
+      "label": "growl",
+      "hour_of_day": 16,
+      "detections": 2,
+      "avg_confidence": 0.74
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "channel-catfish",
+      "label": "growl",
+      "hour_of_day": 17,
+      "detections": 5,
+      "avg_confidence": 0.79
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "channel-catfish",
+      "label": "growl",
+      "hour_of_day": 18,
+      "detections": 7,
+      "avg_confidence": 0.83
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "channel-catfish",
+      "label": "growl",
+      "hour_of_day": 19,
+      "detections": 9,
+      "avg_confidence": 0.86
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "channel-catfish",
+      "label": "growl",
+      "hour_of_day": 20,
+      "detections": 7,
+      "avg_confidence": 0.88
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "channel-catfish",
+      "label": "growl",
+      "hour_of_day": 21,
+      "detections": 5,
+      "avg_confidence": 0.88
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "channel-catfish",
+      "label": "growl",
+      "hour_of_day": 22,
+      "detections": 4,
+      "avg_confidence": 0.86
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "channel-catfish",
+      "label": "growl",
+      "hour_of_day": 23,
+      "detections": 3,
+      "avg_confidence": 0.83
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 0,
+      "detections": 1,
+      "avg_confidence": 0.77
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 1,
+      "detections": 1,
+      "avg_confidence": 0.81
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 2,
+      "detections": 1,
+      "avg_confidence": 0.85
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 3,
+      "detections": 1,
+      "avg_confidence": 0.87
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 4,
+      "detections": 1,
+      "avg_confidence": 0.88
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 5,
+      "detections": 1,
+      "avg_confidence": 0.87
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 6,
+      "detections": 2,
+      "avg_confidence": 0.85
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 7,
+      "detections": 2,
+      "avg_confidence": 0.81
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 8,
+      "detections": 2,
+      "avg_confidence": 0.76
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 9,
+      "detections": 1,
+      "avg_confidence": 0.71
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 10,
+      "detections": 1,
+      "avg_confidence": 0.67
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 16,
+      "detections": 1,
+      "avg_confidence": 0.63
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 17,
+      "detections": 1,
+      "avg_confidence": 0.68
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 18,
+      "detections": 2,
+      "avg_confidence": 0.73
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 19,
+      "detections": 2,
+      "avg_confidence": 0.77
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 20,
+      "detections": 2,
+      "avg_confidence": 0.82
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 21,
+      "detections": 1,
+      "avg_confidence": 0.85
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 22,
+      "detections": 1,
+      "avg_confidence": 0.87
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "striped-cusk-eel",
+      "label": "chorus pulse",
+      "hour_of_day": 23,
+      "detections": 1,
+      "avg_confidence": 0.88
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 5,
+      "detections": 1,
+      "avg_confidence": 0.88
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 6,
+      "detections": 1,
+      "avg_confidence": 0.86
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 7,
+      "detections": 1,
+      "avg_confidence": 0.83
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 8,
+      "detections": 1,
+      "avg_confidence": 0.78
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 9,
+      "detections": 1,
+      "avg_confidence": 0.73
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 17,
+      "detections": 1,
+      "avg_confidence": 0.66
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 18,
+      "detections": 1,
+      "avg_confidence": 0.71
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 19,
+      "detections": 1,
+      "avg_confidence": 0.76
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 20,
+      "detections": 1,
+      "avg_confidence": 0.8
+    },
+    {
+      "node_id": "poughkeepsie",
+      "species_id": "weakfish",
+      "label": "drum",
+      "hour_of_day": 21,
+      "detections": 1,
+      "avg_confidence": 0.84
+    }
+  ]
+}

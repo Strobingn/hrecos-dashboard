@@ -44,24 +44,24 @@ function hdr(t,s){return'<div class="hdr"><div class="hdr-row"><div><h1>'+t+'</h
 const IC={home:'<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',pin:'<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>',waves:'<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/></svg>',drop:'<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></svg>',fish:'<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6.5 12c.94-3.46 4.94-6 8.5-6 3.56 0 6.06 2.54 7 6-.94 3.47-3.44 6-7 6-3.56 0-7.56-2.53-8.5-6Z"/><path d="M18 12v.5"/><path d="M7 10.67C7 8 5.58 5.97 2.73 5.5c-1 1.5-1 5 .23 6.5-1.24 1.5-1.24 5-.23 6.5C5.58 18.03 7 16 7 13.33"/><circle cx="16" cy="12" r="1"/></svg>',bell:'<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>',map:'<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 21 18 21 2 16 6 8 2 1 6"/><line x1="8" x2="8" y1="2" y2="18"/><line x1="16" x2="16" y1="6" y2="22"/></svg>'};
 
 // ===== PAGES =====
-function pageHome(){const live=STATIONS.filter(s=>s.live);const avgT=Math.round(live.filter(s=>s.readings.temp).reduce((a,s)=>a+s.readings.temp,0)/live.filter(s=>s.readings.temp).length);const T=genTidesForLocation(56,"Cornwall");const turkey=STATIONS.find(s=>s.id==="turkey_point")||STATIONS[0];const wqi=calcWQI(turkey.readings);const wl=wqiLab(wqi);const A=genAlerts();const norrie=STATIONS.find(s=>s.id==="norrie");const hr=new Date().getHours();const fs=fishScore(turkey.readings,hr);const fl=fishLabel(fs);let h=hdr("Cornwall RiverWatch","Cornwall-on-Hudson, NY \u00B7 Hudson River RM 56");h+='<div class="page on">';h+=gauge(wqi,"Water Quality",170);h+='<div style="text-align:center;margin:-8px 0 12px"><span style="color:'+wl.c+';font-size:18px;font-weight:700">'+wl.t+'</span><p style="font-size:12px;color:#5A6B7C;margin-top:4px">Based on West Point & Beacon stations</p></div>';h+='<div class="mg">';h+='<div class="m"><div style="font-size:24px">\uD83C\uDF21</div><div class="mv">'+avgT+'\u00B0F</div><div class="ml">Avg Water Temp</div></div>';h+='<div class="m"><div style="font-size:24px">\uD83C\uDF0A</div><div class="mv">'+T[0].h.toFixed(1)+' ft</div><div class="ml">'+T[0].ty+", "+ft(T[0].t)+'</div></div>';h+='<div class="m"><div style="font-size:24px">\uD83C\uDFA3</div><div class="mv" style="color:'+fl.c+'">'+fs+'</div><div class="ml">'+fl.t+" Score"+'</div></div>';h+='<div class="m"><div style="font-size:24px">\uD83D\uDD14</div><div class="mv">'+A.length+'</div><div class="ml">Alerts</div></div>';h+='</div>';if(norrie){h+='<div class="weather-card"><div style="font-size:14px;opacity:.8;margin-bottom:4px">\u2600 Weather \u00B7 Norrie Point (29 mi)</div><div class="weather-row"><div class="weather-item"><div class="weather-val">'+norrie.readings.air_temp+'\u00B0</div><div class="weather-label">Temp</div></div><div class="weather-item"><div class="weather-val">'+norrie.readings.wind_speed+'</div><div class="weather-label">Wind mph</div></div><div class="weather-item"><div class="weather-val">'+norrie.readings.pressure+'</div><div class="weather-label">inHg</div></div><div class="weather-item"><div class="weather-val">'+norrie.readings.humidity+'%</div><div class="weather-label">Humidity</div></div></div></div>';}h+='<div class="card"><div class="tl">\uD83D\uDCCD Stations Near You</div>';STATIONS.slice(0,6).forEach(s=>{h+='<div class="sc" style="cursor:pointer" onclick="selTide(\''+s.id+'\')"><div class="'+(s.live?'sd':'sd-off')+'"></div><div style="flex:1"><div class="sn">'+s.name+' <span class="dist-badge">'+(s.dist===0?"HERE":s.dist+" mi")+'</span></div><div class="sl">'+s.desc+'</div><div class="sp">'+s.params.filter(p=>s.readings[p]).map(p=>(PARAMS[p]?.l||p)+": "+s.readings[p]+(PARAMS[p]?.u||"")).join(" \u00B7 ")+'</div></div></div>';});h+='</div>';h+='<div class="card"><div class="tl">\uD83C\uDF24 Forecast</div><div class="tp">Today: High 78\u00B0F, partly cloudy. Wind SW 5-10 mph. Humidity 55%. Barometer 30.15 inHg and steady. Good fishing conditions expected this evening.</div></div>';h+='</div>';return h;}
+function pageHome(){const live=STATIONS.filter(s=>s.live);const avgT=Math.round(live.filter(s=>s.readings.temp).reduce((a,s)=>a+s.readings.temp,0)/live.filter(s=>s.readings.temp).length);const T=genTidesForLocation(56,"Cornwall");const turkey=STATIONS.find(s=>s.id==="turkey_point")||STATIONS[0];const wqi=calcWQI(turkey.readings);const wl=wqiLab(wqi);const A=genAlerts();const norrie=STATIONS.find(s=>s.id==="norrie");const hr=new Date().getHours();const fs=fishScore(turkey.readings,hr);const fl=fishLabel(fs);let h=hdr("Cornwall RiverWatch","Cornwall-on-Hudson, NY \u00B7 Hudson River RM 56");h+='<div class="page on">';h+=gauge(wqi,"Water Quality",170);h+='<div style="text-align:center;margin:-8px 0 12px"><span style="color:'+wl.c+';font-size:18px;font-weight:700">'+wl.t+'</span><p style="font-size:12px;color:#5A6B7C;margin-top:4px">Based on West Point & Beacon stations</p></div>';h+='<div class="mg">';h+='<div class="m"><div style="font-size:24px">\uD83C\uDF21</div><div class="mv">'+avgT+'\u00B0F</div><div class="ml">Avg Water Temp</div></div>';h+='<div class="m"><div style="font-size:24px">\uD83C\uDF0A</div><div class="mv">'+T[0].h.toFixed(1)+' ft</div><div class="ml">'+T[0].ty+", "+ft(T[0].t)+'</div></div>';h+='<div class="m"><div style="font-size:24px">\uD83C\uDFA3</div><div class="mv" style="color:'+fl.c+'">'+fs+'</div><div class="ml">'+fl.t+" Score"+'</div></div>';h+='<div class="m"><div style="font-size:24px">\uD83D\uDD14</div><div class="mv">'+A.length+'</div><div class="ml">Alerts</div></div>';h+='</div>';if(norrie){h+='<div class="weather-card"><div style="font-size:14px;opacity:.8;margin-bottom:4px">\u2600 Weather \u00B7 Norrie Point (29 mi)</div><div class="weather-row"><div class="weather-item"><div class="weather-val">'+norrie.readings.air_temp+'\u00B0</div><div class="weather-label">Temp</div></div><div class="weather-item"><div class="weather-val">'+norrie.readings.wind_speed+'</div><div class="weather-label">Wind mph</div></div><div class="weather-item"><div class="weather-val">'+norrie.readings.pressure+'</div><div class="weather-label">inHg</div></div><div class="weather-item"><div class="weather-val">'+norrie.readings.humidity+'%</div><div class="weather-label">Humidity</div></div></div></div>';}h+='<div class="card"><div class="tl">\uD83D\uDCCD Stations Near You</div>';STATIONS.slice(0,6).forEach(s=>{h+='<div class="sc" style="cursor:pointer" onclick="selTide(\''+s.id+'\')"><div class="'+(s.live?'sd':'sd-off')+'"></div><div style="flex:1"><div class="sn">'+s.name+' <span class="dist-badge">'+(s.dist===0?"HERE":s.dist+" mi")+'</span></div><div class="sl">'+s.desc+'</div><div class="sp">'+s.params.filter(p=>s.readings[p]).map(p=>(P[p]?.l||p)+": "+s.readings[p]+(P[p]?.u||"")).join(" \u00B7 ")+'</div></div></div>';});h+='</div>';h+='<div class="card"><div class="tl">\uD83C\uDF24 Forecast</div><div class="tp">Today: High 78\u00B0F, partly cloudy. Wind SW 5-10 mph. Humidity 55%. Barometer 30.15 inHg and steady. Good fishing conditions expected this evening.</div></div>';h+='</div>';return h;}
 
 function pageStations(){let h=hdr("Stations","10 stations along Hudson River");h+='<div class="page on">';const cornwall=STATIONS.find(s=>s.id==="cornwall");if(cornwall){h+='<div class="card" style="border:2px solid #0A7EA4"><div style="display:flex;align-items:center;gap:10px"><div style="font-size:32px">\uD83D\uDCCD</div><div><div style="font-size:18px;font-weight:700;color:#0A7EA4">'+cornwall.name+'</div><div class="sl">'+cornwall.desc+'</div><div class="gps-text">'+cornwall.lat.toFixed(4)+", "+cornwall.lon.toFixed(4)+'</div></div></div></div>';}STATIONS.filter(s=>s.id!=="cornwall").forEach(s=>{const q=calcWQI(s.readings);const wl=wqiLab(q);const isMet=s.met;h+='<div class="card" style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center"><div style="flex:1"><div class="sn">'+s.name+' <span class="dist-badge">'+s.dist+' mi</span></div><div class="sl">RM '+s.rm+' \u00B7 '+s.loc+' \u00B7 '+s.src+(isMet?' \u00B7 MET':"")+(s.live?' \u00B7 LIVE':'')+'</div><div class="gps-text">'+s.lat.toFixed(4)+'\u00B0N, '+Math.abs(s.lon).toFixed(4)+'\u00B0W</div></div><div class="'+(s.live?'sd':'sd-off')+'"></div></div>';h+='<div style="margin-top:10px">';if(s.readings.temp)h+='<span style="display:inline-block;margin:2px 4px;padding:4px 10px;background:#F0F4F8;border-radius:8px;font-size:13px">\uD83C\uDF21 '+s.readings.temp+'\u00B0F</span>';if(s.readings.dissolved_oxygen)h+='<span style="display:inline-block;margin:2px 4px;padding:4px 10px;background:#F0F4F8;border-radius:8px;font-size:13px">\uD83D\uDCA8 '+s.readings.dissolved_oxygen+' mg/L</span>';if(s.readings.turbidity)h+='<span style="display:inline-block;margin:2px 4px;padding:4px 10px;background:#F0F4F8;border-radius:8px;font-size:13px">\uD83C\uDF2B '+s.readings.turbidity+' NTU</span>';if(s.readings.ph)h+='<span style="display:inline-block;margin:2px 4px;padding:4px 10px;background:#F0F4F8;border-radius:8px;font-size:13px">\u2696 pH '+s.readings.ph+'</span>';if(s.readings.wind_speed)h+='<span style="display:inline-block;margin:2px 4px;padding:4px 10px;background:#F0F4F8;border-radius:8px;font-size:13px">\uD83D\uDCA8 '+s.readings.wind_speed+' mph '+windDir(s.readings.wind_direction)+'</span>';if(s.readings.pressure)h+='<span style="display:inline-block;margin:2px 4px;padding:4px 10px;background:#F0F4F8;border-radius:8px;font-size:13px">\uD83D\uDCCA '+s.readings.pressure+' inHg</span>';h+='</div></div>';});h+='</div>';return h;}
 
-function pageTides(){const loc=TIDE_LOCS.find(l=>l.name.toLowerCase()===tideLoc)||TIDE_LOCS.find(l=>l.name==="Cornwall");const T=genTidesForLocation(loc.rm,loc.name);const cur=T[0];const nh=T.find(t=>t.t>new Date()&&t.ty==="high")||T[0];const nl=T.find(t=>t.t>new Date()&&t.ty==="low")||T[1];let h=hdr("Tide Predictions","Multi-location tide charts for Hudson River");h+='<div class="page on">';h+='<div class="tide-loc">';TIDE_LOCS.forEach(l=>{h+='<button class="tide-loc-btn '+(tideLoc===l.name.toLowerCase()?"on":"")+'" onclick="selTide(\''+l.name.toLowerCase().replace(/\s+/g,"_")+'\')">'+l.name+'</button>';});h+='</div>';h+='<div class="card" style="text-align:center;padding:24px">';h+='<div style="font-size:14px;color:#5A6B7C;margin-bottom:8px">River Mile '+loc.rm+' \u00B7 '+loc.name+', NY</div>';h+='<div style="font-size:48px">\uD83C\uDF0A</div>';h+='<div style="font-size:42px;font-weight:700;color:#0A7EA4">'+cur.h.toFixed(1)+'<span style="font-size:18px"> ft</span></div>';h+='<div style="font-size:15px;color:#5A6B7C;margin-top:4px">'+(cur.ty==="high"?"High Tide":"Low Tide")+" at "+ft(cur.t)+'</div>';h+='<div style="display:flex;justify-content:center;gap:24px;margin-top:16px;font-size:13px">';h+='<div>Next High<br><strong>'+nh.h.toFixed(1)+' ft</strong><br><small>'+ft(nh.t)+'</small></div>';h+='<div>Next Low<br><strong>'+nl.h.toFixed(1)+' ft</strong><br><small>'+ft(nl.t)+'</small></div>';h+='<div>Tide Range<br><strong>'+(nh.h-nl.h).toFixed(1)+' ft</strong></div>';h+='</div></div>';h+='<div class="card"><div class="tl">24-Hour Forecast for '+loc.name+'</div><div class="tc"><svg viewBox="0 0 480 160" preserveAspectRatio="none"><defs><linearGradient id="tg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#0A7EA4" stop-opacity=".3"/><stop offset="100%" stop-color="#0A7EA4" stop-opacity="0"/></linearGradient></defs><path fill="url(#tg)" d="M0,80 '+T.map((t,i)=>'L'+(i*10)+','+(80-t.h*8)).join(' ')+' L470,80 Z"/><polyline fill="none" stroke="#0A7EA4" stroke-width="2" points="'+T.map((t,i)=>'L'+(i*10)+','+(80-t.h*8)).join(' ')+'"/><circle cx="0" cy="'+(80-cur.h*8)+'" r="4" fill="#FF8F00"/></svg></div></div>';h+='<div class="card"><div class="tl">Upcoming Tides \u00B7 '+loc.name+'</div>';T.filter(t=>t.t>new Date()).slice(0,12).forEach(t=>{h+='<div class="tl2"><span class="'+(t.ty==="high"?"th":"tl3")+'">'+(t.ty==="high"?"\u25B2 High":"\u25BC Low")+'</span><span>'+t.h.toFixed(1)+' ft</span><span style="color:#5A6B7C">'+ft(t.t)+'</span></div>';});h+='</div>';h+='<div class="card"><div class="tl">Tide Timing Differences</div>';const baseRM=loc.rm;TIDE_LOCS.filter(l=>l.rm!==baseRM).slice(0,4).forEach(l=>{const diff=tideOffset(baseRM,l.rm);h+='<div class="tl2"><span>'+l.name+' (RM '+l.rm+')</span><span style="color:'+(diff<0?'#E53935':'#43A047')+'">'+(diff<0?"":"+")+Math.round(diff)+' min</span></div>';});h+='</div>';const m=moonPhase(new Date());h+='<div class="mp"><div class="mpi">\uD83C\uDF19</div><div style="font-size:18px;font-weight:600;margin-top:8px">'+m.name+' Moon</div><div style="font-size:14px;color:#5A6B7C">'+m.illum+'% illuminated \u00B7 Affects tides</div></div>';h+='</div>';return h;}
+function pageTides(){const loc=TIDE_LOCS.find(l=>l.name.toLowerCase()===tideLoc)||TIDE_LOCS.find(l=>l.name==="Cornwall");const T=genTidesForLocation(loc.rm,loc.name);const cur=T[0];const nh=T.find(t=>t.t>new Date()&&t.ty==="high")||T[0];const nl=T.find(t=>t.t>new Date()&&t.ty==="low")||T[1];let h=hdr("Tide Predictions","Multi-location tide charts for Hudson River");h+='<div class="page on">';h+='<div class="tide-loc">';TIDE_LOCS.forEach(l=>{h+='<button class="tide-loc-btn '+(tideLoc===l.name.toLowerCase()?"on":"")+'" onclick="selTide(\''+l.name.toLowerCase().replace(/\s+/g,"_")+'\')">'+l.name+'</button>';});h+='</div>';h+='<div class="card" style="text-align:center;padding:24px">';h+='<div style="font-size:14px;color:#5A6B7C;margin-bottom:8px">River Mile '+loc.rm+' \u00B7 '+loc.name+', NY</div>';h+='<div style="font-size:48px">\uD83C\uDF0A</div>';h+='<div style="font-size:42px;font-weight:700;color:#0A7EA4">'+cur.h.toFixed(1)+'<span style="font-size:18px"> ft</span></div>';h+='<div style="font-size:15px;color:#5A6B7C;margin-top:4px">'+(cur.ty==="high"?"High Tide":"Low Tide")+" at "+ft(cur.t)+'</div>';h+='<div style="display:flex;justify-content:center;gap:24px;margin-top:16px;font-size:13px">';h+='<div>Next High<br><strong>'+nh.h.toFixed(1)+' ft</strong><br><small>'+ft(nh.t)+'</small></div>';h+='<div>Next Low<br><strong>'+nl.h.toFixed(1)+' ft</strong><br><small>'+ft(nl.t)+'</small></div>';h+='<div>Tide Range<br><strong>'+(nh.h-nl.h).toFixed(1)+' ft</strong></div>';h+='</div></div>';h+='<div class="card"><div class="tl">24-Hour Forecast for '+loc.name+'</div><div class="tc"><svg viewBox="0 0 480 160" preserveAspectRatio="none"><defs><linearGradient id="tg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#0A7EA4" stop-opacity=".3"/><stop offset="100%" stop-color="#0A7EA4" stop-opacity="0"/></linearGradient></defs><path fill="url(#tg)" d="M0,80 '+T.map((t,i)=>'L'+(i*10)+','+(80-t.h*8)).join(' ')+' L470,80 Z"/><polyline fill="none" stroke="#0A7EA4" stroke-width="2" points="'+T.map((t,i)=>(i*10)+','+(80-t.h*8)).join(' ')+'"/><circle cx="0" cy="'+(80-cur.h*8)+'" r="4" fill="#FF8F00"/></svg></div></div>';h+='<div class="card"><div class="tl">Upcoming Tides \u00B7 '+loc.name+'</div>';T.filter(t=>t.t>new Date()).slice(0,12).forEach(t=>{h+='<div class="tl2"><span class="'+(t.ty==="high"?"th":"tl3")+'">'+(t.ty==="high"?"\u25B2 High":"\u25BC Low")+'</span><span>'+t.h.toFixed(1)+' ft</span><span style="color:#5A6B7C">'+ft(t.t)+'</span></div>';});h+='</div>';h+='<div class="card"><div class="tl">Tide Timing Differences</div>';const baseRM=loc.rm;TIDE_LOCS.filter(l=>l.rm!==baseRM).slice(0,4).forEach(l=>{const diff=tideOffset(baseRM,l.rm);h+='<div class="tl2"><span>'+l.name+' (RM '+l.rm+')</span><span style="color:'+(diff<0?'#E53935':'#43A047')+'">'+(diff<0?"":"+")+Math.round(diff)+' min</span></div>';});h+='</div>';const m=moonPhase(new Date());h+='<div class="mp"><div class="mpi">\uD83C\uDF19</div><div style="font-size:18px;font-weight:600;margin-top:8px">'+m.name+' Moon</div><div style="font-size:14px;color:#5A6B7C">'+m.illum+'% illuminated \u00B7 Affects tides</div></div>';h+='</div>';return h;}
 
-function pageQuality(){const cornwall=STATIONS.find(s=>s.id==="cornwall");const westPt=STATIONS.find(s=>s.id==="west_point");const beacon=STATIONS.find(s=>s.id==="beacon");const wqi=calcWQI(cornwall.readings);const sw=swimLabel(wqi);const c=cornwall.readings.turbidity?clarLabel(cornwall.readings.turbidity):{l:"No data",c:"#999"};let h=hdr("Water Quality","Cornwall-on-Hudson cleanliness & safety");h+='<div class="page on">';h+=gauge(wqi,"Water Quality Index",170);h+='<div class="'+sw.cl+' sw"><div style="font-size:48px">'+sw.ic+'</div><div style="font-size:22px;font-weight:700;margin-top:8px">Swimming: '+sw.l+'</div><p style="font-size:13px;margin-top:8px;color:#5A6B7C">'+sw.m+'</p></div>';h+='<div class="card"><div class="tl">\uD83D\uDC41 Water Clarity at Cornwall</div>';h+=bar("Clarity Score",Math.max(0,100-cornwall.readings.turbidity*2),cornwall.readings.turbidity+" NTU \u00B7 "+c.l);h+='<div style="margin-top:12px;padding:10px;border-radius:8px;background:'+c.c+'15;color:'+c.c+';font-size:14px;text-align:center;font-weight:600">'+c.l+' water at Cornwall</div>';h+='<div style="margin-top:10px;font-size:13px;color:#5A6B7C">NTU (Nephelometric Turbidity Units): Lower = cleaner water. &lt;5 is crystal clear, 5-15 is clean, 15-35 is slightly murky, 35+ is murky.</div></div>';h+='<div class="card"><div class="tl">\uD83D\uDCCD Multi-Station Comparison</div>';[cornwall,westPt,beacon].forEach(s=>{if(s&&s.readings.turbidity){const cl=clarLabel(s.readings.turbidity);h+='<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #F0F4F8"><div><strong>'+s.name+'</strong> <span class="dist-badge">'+s.dist+' mi</span></div><div><span style="color:'+cl.c+';font-weight:600">'+s.readings.turbidity+' NTU</span> <span style="font-size:12px;color:#5A6B7C">'+cl.l+'</span></div></div>';}});h+='</div>';if(westPt){h+='<div class="card"><div class="tl">West Point Readings (6 mi south)</div>';westPt.params.filter(p=>westPt.readings[p]).forEach(p=>{h+='<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #F0F4F8"><span>'+(PARAMS[p]?.l||p)+'</span><strong style="color:#0A7EA4">'+westPt.readings[p]+' '+(PARAMS[p]?.u||"")+'</strong></div>';});h+='</div>';}h+='<div class="card"><div class="tl">Advisory</div><div class="tp">Turbidity measures water clarity \u2014 lower values mean cleaner water. Dissolved oxygen above 6 mg/L supports healthy fish. pH 6.5-8.5 is optimal. These readings are for reference only.</div></div>';h+='</div>';return h;}
+function pageQuality(){const cornwall=STATIONS.find(s=>s.id==="cornwall");const westPt=STATIONS.find(s=>s.id==="west_point");const beacon=STATIONS.find(s=>s.id==="beacon");const wqi=calcWQI(cornwall.readings);const sw=swimLabel(wqi);const c=cornwall.readings.turbidity?clarLabel(cornwall.readings.turbidity):{l:"No data",c:"#999"};let h=hdr("Water Quality","Cornwall-on-Hudson cleanliness & safety");h+='<div class="page on">';h+=gauge(wqi,"Water Quality Index",170);h+='<div class="'+sw.cl+' sw"><div style="font-size:48px">'+sw.ic+'</div><div style="font-size:22px;font-weight:700;margin-top:8px">Swimming: '+sw.l+'</div><p style="font-size:13px;margin-top:8px;color:#5A6B7C">'+sw.m+'</p></div>';h+='<div class="card"><div class="tl">\uD83D\uDC41 Water Clarity at Cornwall</div>';h+=bar("Clarity Score",Math.max(0,100-cornwall.readings.turbidity*2),cornwall.readings.turbidity+" NTU \u00B7 "+c.l);h+='<div style="margin-top:12px;padding:10px;border-radius:8px;background:'+c.c+'15;color:'+c.c+';font-size:14px;text-align:center;font-weight:600">'+c.l+' water at Cornwall</div>';h+='<div style="margin-top:10px;font-size:13px;color:#5A6B7C">NTU (Nephelometric Turbidity Units): Lower = cleaner water. &lt;5 is crystal clear, 5-15 is clean, 15-35 is slightly murky, 35+ is murky.</div></div>';h+='<div class="card"><div class="tl">\uD83D\uDCCD Multi-Station Comparison</div>';[cornwall,westPt,beacon].forEach(s=>{if(s&&s.readings.turbidity){const cl=clarLabel(s.readings.turbidity);h+='<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #F0F4F8"><div><strong>'+s.name+'</strong> <span class="dist-badge">'+s.dist+' mi</span></div><div><span style="color:'+cl.c+';font-weight:600">'+s.readings.turbidity+' NTU</span> <span style="font-size:12px;color:#5A6B7C">'+cl.l+'</span></div></div>';}});h+='</div>';if(westPt){h+='<div class="card"><div class="tl">West Point Readings (6 mi south)</div>';westPt.params.filter(p=>westPt.readings[p]).forEach(p=>{h+='<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #F0F4F8"><span>'+(P[p]?.l||p)+'</span><strong style="color:#0A7EA4">'+westPt.readings[p]+' '+(P[p]?.u||"")+'</strong></div>';});h+='</div>';}h+='<div class="card"><div class="tl">Advisory</div><div class="tp">Turbidity measures water clarity \u2014 lower values mean cleaner water. Dissolved oxygen above 6 mg/L supports healthy fish. pH 6.5-8.5 is optimal. These readings are for reference only.</div></div>';h+='</div>';return h;}
 
-function pageFish(){const cornwall=STATIONS.find(s=>s.id==="cornwall");const westPt=STATIONS.find(s=>s.id==="west_point");const hr=new Date().getHours();const fs=fishScore(cornwall.readings,hr);const fl=fishLabel(fs);const timeLabel=hr>=5&&hr<=9?"Morning":hr>=10&&hr<=16?"Afternoon":hr>=17&&hr<=20?"Evening":"Night";const timeScore=(hr>=5&&hr<=9)||(hr>=17&&hr<=20)?100:hr>=10&&hr<=16?60:40;const turb=cornwall.readings.turbidity||10;const clar=clarLabel(turb);const tideT=genTidesForLocation(56,"Cornwall").find(t=>t.t>new Date())||{ty:"incoming"};const isIncoming=tideT.ty==="incoming";let h=hdr("Fishing Conditions","Hudson River at Cornwall, NY");h+='<div class="page on">';h+=gauge(fs,"\uD83C\uDFA3 Fishing Score",170);h+='<div style="text-align:center;margin:-8px 0 16px"><span style="color:'+fl.c+';font-size:20px;font-weight:700">'+fl.t+'</span></div>';h+='<div class="card"><div class="tl">Score Breakdown</div>';h+=bar("\uD83C\uDF21 Water Temp",cornwall.readings.temp>=55&&cornwall.readings.temp<=75?100:cornwall.readings.temp>=45&&cornwall.readings.temp<=85?60:20,cornwall.readings.temp+'\u00B0F');h+=bar("\uD83D\uDC41 Water Clarity",Math.max(0,100-turb*2),turb+' NTU \u00B7 '+clar.l);h+=bar("\uD83C\uDF0A Tide Phase",isIncoming?100:70,isIncoming?"Incoming \u00B7 BEST":"Outgoing \u00B7 OK");h+=bar("\u23F0 Time of Day",timeScore,timeLabel);h+='</div>';h+='<div class="card"><div class="tl">Best Windows Today</div><div class="ft">';h+='<div class="fti"><div style="font-size:28px">\uD83C\uDF05</div><div style="font-weight:600;margin-top:4px">5:30-8:30 AM</div><div style="font-size:12px;color:#43A047">Dawn \u00B7 Excellent</div></div>';h+='<div class="fti"><div style="font-size:28px">\uD83C\uDF06</div><div style="font-weight:600;margin-top:4px">5:30-8:30 PM</div><div style="font-size:12px;color:#43A047">Dusk \u00B7 Great</div></div>';h+='</div></div>';h+='<div class="card"><div class="tl">Current Conditions</div><div class="param-grid">';[{l:"Water Temp",v:cornwall.readings.temp+"\u00B0F",c:"#0A7EA4"},{l:"Turbidity",v:turb+" NTU",c:turb<15?"#43A047":turb<50?"#FFB300":"#E53935"},{l:"Tide",v:(isIncoming?"Rising":"Falling"),c:isIncoming?"#43A047":"#FFB300"},{l:"Wind",v:(westPt?"SW 7mph":"N/A"),c:"#0A7EA4"}].forEach(p=>{h+='<div class="param-item"><div class="param-val" style="color:'+p.c+'">'+p.v+'</div><div class="param-name">'+p.l+'</div></div>';});h+='</div></div>';h+='<div class="card"><div class="tl">\uD83C\uDFA3 Pro Tips</div><div class="tp">';if(turb>30)h+="Murky water \u00B7 Use noisy lures (Chatterbaits, spinnerbaits). Fish tight to cover.";else if(isIncoming)h+"Incoming tide pushes baitfish toward shore. Target rocky points, docks, and submerged timber!";else if(fs>=70)h+"Excellent conditions! Try topwater poppers, jerkbaits, and soft plastics. Focus on drop-offs and weed edges.";else h+"Decent conditions. Try slow-rolled spinnerbaits or Carolina-rigged worms. Fish deeper structure.";h+='</div></div>';h+='<div class="card"><div class="tl">\uD83D\uDCCA Weekly Outlook</div><div class="tp">Mon: Good (65\u00B0F, clear) \u00B7 Tue: Great (68\u00B0F, incoming AM tide) \u00B7 Wed: Excellent (70\u00B0F, overcast) \u00B7 Thu: Good (67\u00B0F) \u00B7 Fri: Fair (72\u00B0F, high flow)</div></div>';h+='</div>';return h;}
+function pageFish(){const cornwall=STATIONS.find(s=>s.id==="cornwall");const westPt=STATIONS.find(s=>s.id==="west_point");const hr=new Date().getHours();const fs=fishScore(cornwall.readings,hr);const fl=fishLabel(fs);const timeLabel=hr>=5&&hr<=9?"Morning":hr>=10&&hr<=16?"Afternoon":hr>=17&&hr<=20?"Evening":"Night";const timeScore=(hr>=5&&hr<=9)||(hr>=17&&hr<=20)?100:hr>=10&&hr<=16?60:40;const turb=cornwall.readings.turbidity||10;const clar=clarLabel(turb);const tideT=genTidesForLocation(56,"Cornwall").find(t=>t.t>new Date())||{ty:"incoming"};const isIncoming=tideT.ty==="incoming";let h=hdr("Fishing Conditions","Hudson River at Cornwall, NY");h+='<div class="page on">';h+=gauge(fs,"\uD83C\uDFA3 Fishing Score",170);h+='<div style="text-align:center;margin:-8px 0 16px"><span style="color:'+fl.c+';font-size:20px;font-weight:700">'+fl.t+'</span></div>';h+='<div class="card"><div class="tl">Score Breakdown</div>';h+=bar("\uD83C\uDF21 Water Temp",cornwall.readings.temp>=55&&cornwall.readings.temp<=75?100:cornwall.readings.temp>=45&&cornwall.readings.temp<=85?60:20,cornwall.readings.temp+'\u00B0F');h+=bar("\uD83D\uDC41 Water Clarity",Math.max(0,100-turb*2),turb+' NTU \u00B7 '+clar.l);h+=bar("\uD83C\uDF0A Tide Phase",isIncoming?100:70,isIncoming?"Incoming \u00B7 BEST":"Outgoing \u00B7 OK");h+=bar("\u23F0 Time of Day",timeScore,timeLabel);h+='</div>';h+='<div class="card"><div class="tl">Best Windows Today</div><div class="ft">';h+='<div class="fti"><div style="font-size:28px">\uD83C\uDF05</div><div style="font-weight:600;margin-top:4px">5:30-8:30 AM</div><div style="font-size:12px;color:#43A047">Dawn \u00B7 Excellent</div></div>';h+='<div class="fti"><div style="font-size:28px">\uD83C\uDF06</div><div style="font-weight:600;margin-top:4px">5:30-8:30 PM</div><div style="font-size:12px;color:#43A047">Dusk \u00B7 Great</div></div>';h+='</div></div>';h+='<div class="card"><div class="tl">Current Conditions</div><div class="param-grid">';[{l:"Water Temp",v:cornwall.readings.temp+"\u00B0F",c:"#0A7EA4"},{l:"Turbidity",v:turb+" NTU",c:turb<15?"#43A047":turb<50?"#FFB300":"#E53935"},{l:"Tide",v:(isIncoming?"Rising":"Falling"),c:isIncoming?"#43A047":"#FFB300"},{l:"Wind",v:(westPt?"SW 7mph":"N/A"),c:"#0A7EA4"}].forEach(p=>{h+='<div class="param-item"><div class="param-val" style="color:'+p.c+'">'+p.v+'</div><div class="param-name">'+p.l+'</div></div>';});h+='</div></div>';h+='<div class="card"><div class="tl">\uD83C\uDFA3 Pro Tips</div><div class="tp">';if(turb>30)h+="Murky water \u00B7 Use noisy lures (Chatterbaits, spinnerbaits). Fish tight to cover.";else if(isIncoming)h+="Incoming tide pushes baitfish toward shore. Target rocky points, docks, and submerged timber!";else if(fs>=70)h+="Excellent conditions! Try topwater poppers, jerkbaits, and soft plastics. Focus on drop-offs and weed edges.";else h+="Decent conditions. Try slow-rolled spinnerbaits or Carolina-rigged worms. Fish deeper structure.";h+='</div></div>';h+='<div class="card"><div class="tl">\uD83D\uDCCA Weekly Outlook</div><div class="tp">Mon: Good (65\u00B0F, clear) \u00B7 Tue: Great (68\u00B0F, incoming AM tide) \u00B7 Wed: Excellent (70\u00B0F, overcast) \u00B7 Thu: Good (67\u00B0F) \u00B7 Fri: Fair (72\u00B0F, high flow)</div></div>';h+='</div>';return h;}
 
 function pageAlerts(){const A=genAlerts();let h=hdr("Alerts","AI-detected anomalies");h+='<div class="page on">';h+='<div class="fr"><button class="fc on">All</button><button class="fc">High</button><button class="fc">Medium</button><button class="fc">Low</button></div>';if(A.length===0){h+='<div style="text-align:center;padding:40px;color:#5A6B7C">No anomalies detected</div>';}else{A.forEach(a=>{h+='<div class="ac '+(a.sev==="high"?"ah":a.sev==="medium"?"am":"al")+'"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><strong>'+a.s+'</strong><span style="font-size:11px;color:#5A6B7C">'+a.time+'</span></div><div style="margin-bottom:4px">'+a.t+'</div><div style="font-size:12px;color:#5A6B7C">Actual: <strong style="color:#1A2B3C">'+a.act+'</strong> \u00B7 Expected: '+a.exp+'</div></div>';});}h+='<div class="card"><div class="tl">About Alerts</div><div class="tp">Our system monitors all HRECOS stations in real-time and flags readings outside normal ranges. Data refreshes every 15 minutes.</div></div>';h+='</div>';return h;}
 
-// ===== GOOGLE MAPS PAGE =====
+// ===== STATION MAP (Leaflet + OpenStreetMap) =====
 function pageMap() {
   let h = hdr("Station Map", "GPS tracking & monitoring stations");
   h += '<div class="page on">';
   h += '<div id="map-container">';
-  h += '<div id="google-map"></div>';
+  h += '<div id="leaflet-map"></div>';
   h += '<div class="map-controls">';
   h += '<button class="map-btn" onclick="centerOnMe()" title="My Location">\uD83D\uDCCD</button>';
   h += '<button class="map-btn" onclick="centerOnCornwall()" title="Cornwall">\uD83C\uDFE0</button>';
@@ -84,36 +84,67 @@ function pageMap() {
   h += '<div class="tp">Cornwall Landing (41.4442, -74.0238) \u00B7 Cold Spring Dock (41.4203, -73.9545) \u00B7 Beacon Riverfront (41.5083, -73.9850). Always check tides before launching.</div>';
   h += '</div>';
   h += '</div>';
-  
-  // Initialize map after a short delay so DOM is ready
-  setTimeout(function() {
-    if (typeof google !== 'undefined' && google.maps) {
-      initMap();
-    }
-  }, 100);
-  
+  setTimeout(function() { initMap(); }, 50);
   return h;
 }
 
-// ===== GOOGLE MAPS FUNCTIONS =====
-function initMap() {
-  const cornwallPos = { lat: 41.4442, lng: -74.0238 };
-  
-  const mapEl = document.getElementById('google-map');
-  if (!mapEl) return;
-  
-  map = new google.maps.Map(mapEl, {
-    center: cornwallPos,
-    zoom: 11,
-    mapTypeId: 'terrain',
-    mapTypeControl: false,
-    fullscreenControl: false,
-    streetViewControl: false,
-    zoomControl: true,
-    zoomControlOptions: { position: google.maps.ControlPosition.RIGHT_BOTTOM }
+function destroyStationMap() {
+  if (window.accuracyCircle && map) {
+    try { map.removeLayer(window.accuracyCircle); } catch (e) {}
+  }
+  window.accuracyCircle = null;
+  userMarker = null;
+  stationMarkers = [];
+  if (map) {
+    try { map.remove(); } catch (e) {}
+    map = null;
+  }
+}
+
+function stationTiles() {
+  if (dark) {
+    return L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; OpenStreetMap &copy; CARTO',
+      subdomains: 'abcd',
+      maxZoom: 19
+    });
+  }
+  return L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    maxZoom: 19
   });
-  
-  // Add station markers
+}
+
+function stationPinIcon(color, big, label) {
+  const w = big ? 36 : 28;
+  const h = big ? 48 : 38;
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + h + '" viewBox="0 0 36 48">' +
+    '<path fill="' + color + '" d="M18 0C8.06 0 0 8.06 0 18c0 13.5 18 30 18 30s18-16.5 18-30C36 8.06 27.94 0 18 0z"/>' +
+    '<circle fill="white" cx="18" cy="16" r="7"/>' +
+    (label ? '<text x="18" y="19" text-anchor="middle" font-size="8" font-weight="700" fill="' + color + '">' + label + '</text>' : '') +
+    '</svg>';
+  return L.divIcon({
+    className: 'pin-icon',
+    html: svg,
+    iconSize: [w, h],
+    iconAnchor: [w / 2, h],
+    popupAnchor: [0, -h + 6]
+  });
+}
+
+function initMap() {
+  const mapEl = document.getElementById('leaflet-map');
+  if (!mapEl) return;
+  if (typeof L === 'undefined') {
+    mapEl.innerHTML = '<div class="map-fallback">Map tiles could not load. Check your connection and reload.</div>';
+    return;
+  }
+  destroyStationMap();
+  const cornwallPos = [41.4442, -74.0238];
+  map = L.map(mapEl, { zoomControl: true, attributionControl: true }).setView(cornwallPos, 11);
+  stationTiles().addTo(map);
+  L.control.scale({ imperial: true, metric: false }).addTo(map);
+
   const markerColors = {
     cornwall: '#FF8F00',
     west_point: '#43A047',
@@ -126,167 +157,112 @@ function initMap() {
     schodack: '#795548',
     albany: '#607D8B'
   };
-  
+
   stationMarkers = [];
-  
   STATIONS.forEach(function(s) {
     const isCornwall = s.id === 'cornwall';
-    const pinSvg = 'data:image/svg+xml,' + encodeURIComponent(
-      '<svg xmlns="http://www.w3.org/2000/svg" width="36" height="48" viewBox="0 0 36 48">' +
-      '<path fill="' + (markerColors[s.id] || '#0A7EA4') + '" d="M18 0C8.06 0 0 8.06 0 18c0 13.5 18 30 18 30s18-16.5 18-30C36 8.06 27.94 0 18 0z"/>' +
-      '<circle fill="white" cx="18" cy="18" r="8"/>' +
-      (isCornwall ? '<text x="18" y="22" text-anchor="middle" font-size="10" font-weight="bold" fill="#FF8F00">ME</text>' : '') +
-      '</svg>'
-    );
-    
-    const marker = new google.maps.Marker({
-      position: { lat: s.lat, lng: s.lon },
-      map: map,
+    const marker = L.marker([s.lat, s.lon], {
       title: s.name + ' (RM ' + s.rm + ')',
-      icon: {
-        url: pinSvg,
-        scaledSize: new google.maps.Size(isCornwall ? 40 : 30, isCornwall ? 54 : 40),
-        anchor: new google.maps.Point(isCornwall ? 20 : 15, isCornwall ? 54 : 40)
-      },
-      animation: isCornwall ? google.maps.Animation.DROP : null
+      icon: stationPinIcon(markerColors[s.id] || '#0A7EA4', isCornwall, isCornwall ? 'ME' : '')
     });
-    
-    // Info window content
-    let infoContent = '<div style="padding:8px;max-width:200px;font-family:sans-serif">';
-    infoContent += '<h3 style="margin:0 0 6px;font-size:15px;color:#0A7EA4">' + s.name + '</h3>';
-    infoContent += '<p style="margin:0 0 4px;font-size:12px;color:#5A6B7C">' + s.desc + '</p>';
-    infoContent += '<p style="margin:0 0 6px;font-size:11px;color:#999">' + s.lat.toFixed(4) + '\u00B0N, ' + Math.abs(s.lon).toFixed(4) + '\u00B0W</p>';
-    if (s.readings.temp) {
-      infoContent += '<div style="font-size:13px;margin-bottom:3px">\uD83C\uDF21 Water Temp: <strong>' + s.readings.temp + '\u00B0F</strong></div>';
-    }
+    let info = '<div style="font-family:sans-serif;max-width:200px">';
+    info += '<h3 style="margin:0 0 6px;font-size:15px;color:#0A7EA4">' + s.name + '</h3>';
+    info += '<p style="margin:0 0 4px;font-size:12px;color:#5A6B7C">' + s.desc + '</p>';
+    info += '<p style="margin:0 0 6px;font-size:11px;color:#999">' + s.lat.toFixed(4) + '\u00B0N, ' + Math.abs(s.lon).toFixed(4) + '\u00B0W</p>';
+    if (s.readings.temp) info += '<div style="font-size:13px;margin-bottom:3px">\uD83C\uDF21 Water Temp: <strong>' + s.readings.temp + '\u00B0F</strong></div>';
     if (s.readings.turbidity) {
       const cl = clarLabel(s.readings.turbidity);
-      infoContent += '<div style="font-size:13px;margin-bottom:3px">\uD83C\uDF2B Turbidity: <strong style="color:' + cl.c + '">' + s.readings.turbidity + ' NTU (' + cl.l + ')</strong></div>';
+      info += '<div style="font-size:13px;margin-bottom:3px">\uD83C\uDF2B Turbidity: <strong style="color:' + cl.c + '">' + s.readings.turbidity + ' NTU (' + cl.l + ')</strong></div>';
     }
-    if (s.readings.dissolved_oxygen) {
-      infoContent += '<div style="font-size:13px;margin-bottom:3px">\uD83D\uDCA8 Dissolved O\u2082: <strong>' + s.readings.dissolved_oxygen + ' mg/L</strong></div>';
-    }
-    infoContent += '</div>';
-    
-    const infoWindow = new google.maps.InfoWindow({ content: infoContent });
-    
-    marker.addListener('click', function() {
-      stationMarkers.forEach(function(m) { if (m.infoWindow) m.infoWindow.close(); });
-      infoWindow.open(map, marker);
-    });
-    
-    marker.infoWindow = infoWindow;
+    if (s.readings.dissolved_oxygen) info += '<div style="font-size:13px">\uD83D\uDCA8 Dissolved O\u2082: <strong>' + s.readings.dissolved_oxygen + ' mg/L</strong></div>';
+    info += '</div>';
+    marker.bindPopup(info);
+    marker.stationId = s.id;
+    marker.addTo(map);
     stationMarkers.push(marker);
   });
-  
   updateGpsStatus('Tap \uD83D\uDCCD to find your location', false);
+  setTimeout(function() {
+    if (!map) return;
+    map.invalidateSize();
+    map.setView(cornwallPos, 11);
+  }, 60);
+}
+
+function placeUserMarker(lat, lng, accuracy) {
+  const latlng = [lat, lng];
+  if (userMarker) userMarker.setLatLng(latlng);
+  else {
+    userMarker = L.circleMarker(latlng, {
+      radius: 8,
+      color: '#fff',
+      weight: 3,
+      fillColor: '#4285F4',
+      fillOpacity: 1
+    }).addTo(map).bindTooltip('You are here');
+  }
+  if (window.accuracyCircle) {
+    window.accuracyCircle.setLatLng(latlng);
+    window.accuracyCircle.setRadius(accuracy);
+  } else {
+    window.accuracyCircle = L.circle(latlng, {
+      radius: accuracy,
+      color: '#4285F4',
+      weight: 1,
+      fillColor: '#4285F4',
+      fillOpacity: 0.08
+    }).addTo(map);
+  }
+  map.setView(latlng, 14);
+}
+
+function onUserLocation(position) {
+  const lat = position.coords.latitude;
+  const lng = position.coords.longitude;
+  const accuracy = position.coords.accuracy || 100;
+  placeUserMarker(lat, lng, accuracy);
+  const distToCornwall = getDistanceMiles(lat, lng, 41.4442, -74.0238);
+  updateGpsStatus('You: ' + lat.toFixed(4) + ', ' + lng.toFixed(4) + ' \u00B7 ' + distToCornwall.toFixed(1) + ' mi from Cornwall', false);
+}
+
+function onUserLocationError(error) {
+  let msg = 'Location error.';
+  if (error && error.code === 1) msg = 'Permission denied. Enable location access and try again.';
+  else if (error && error.code === 2) msg = 'GPS signal unavailable. Try outdoors.';
+  else if (error && error.code === 3) msg = 'GPS timed out. Try again.';
+  updateGpsStatus(msg, false);
+  centerOnCornwall();
+}
+
+function requestUserLocation() {
+  updateGpsStatus('Getting your location...', true);
+  navigator.geolocation.getCurrentPosition(onUserLocation, onUserLocationError, {
+    enableHighAccuracy: true,
+    timeout: 15000,
+    maximumAge: 60000
+  });
 }
 
 function centerOnMe() {
   if (!map) return;
-  
   if (!navigator.geolocation) {
     updateGpsStatus('GPS not supported on this device.', false);
     centerOnCornwall();
     return;
   }
-  
   updateGpsStatus('Requesting GPS permission...', true);
-  
-  navigator.permissions.query({ name: 'geolocation' }).then(function(result) {
-    if (result.state === 'denied') {
-      updateGpsStatus('GPS permission denied. Enable in Settings > Privacy > Location.', false);
-      centerOnCornwall();
-      return;
-    }
-    
-    updateGpsStatus('Getting your location...', true);
-    
-    navigator.geolocation.getCurrentPosition(
-      function(position) {
-        const pos = {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude
-        };
-        const accuracy = position.coords.accuracy || 100;
-        
-        if (userMarker) {
-          userMarker.setPosition(pos);
-          if (window.accuracyCircle) window.accuracyCircle.setCenter(pos);
-        } else {
-          userMarker = new google.maps.Marker({
-            position: pos,
-            map: map,
-            title: 'You are here (\u00B1' + Math.round(accuracy) + 'm)',
-            icon: {
-              path: google.maps.SymbolPath.CIRCLE,
-              scale: 12,
-              fillColor: '#4285F4',
-              fillOpacity: 1,
-              strokeColor: '#fff',
-              strokeWeight: 3
-            },
-            animation: google.maps.Animation.DROP
-          });
-          
-          window.accuracyCircle = new google.maps.Circle({
-            map: map,
-            center: pos,
-            radius: accuracy,
-            fillColor: '#4285F4',
-            fillOpacity: 0.08,
-            strokeColor: '#4285F4',
-            strokeOpacity: 0.2,
-            strokeWeight: 1
-          });
-        }
-        
-        map.setCenter(pos);
-        map.setZoom(14);
-        
-        const distToCornwall = getDistanceMiles(pos.lat, pos.lng, 41.4442, -74.0238);
-        updateGpsStatus('You: ' + pos.lat.toFixed(4) + ', ' + pos.lng.toFixed(4) + ' \u00B7 ' + distToCornwall.toFixed(1) + ' mi from Cornwall', false);
-      },
-      function(error) {
-        let msg = 'Location error.';
-        switch(error.code) {
-          case error.PERMISSION_DENIED:
-            msg = 'Permission denied. Enable GPS in Settings > Privacy > Location Services.';
-            break;
-          case error.POSITION_UNAVAILABLE:
-            msg = 'GPS signal unavailable. Try outdoors.';
-            break;
-          case error.TIMEOUT:
-            msg = 'GPS timed out. Try again.';
-            break;
-        }
-        updateGpsStatus(msg, false);
+  if (navigator.permissions && navigator.permissions.query) {
+    navigator.permissions.query({ name: 'geolocation' }).then(function(result) {
+      if (result.state === 'denied') {
+        updateGpsStatus('GPS permission denied. Enable location access in your browser settings.', false);
         centerOnCornwall();
-      },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
-    );
-  }).catch(function() {
-    // permissions API not supported, try geolocation directly
-    updateGpsStatus('Getting location...', true);
-    navigator.geolocation.getCurrentPosition(
-      function(position) {
-        const pos = { lat: position.coords.latitude, lng: position.coords.longitude };
-        if (userMarker) {
-          userMarker.setPosition(pos);
-        } else {
-          userMarker = new google.maps.Marker({
-            position: pos, map: map, title: 'You are here',
-            icon: { path: google.maps.SymbolPath.CIRCLE, scale: 12, fillColor: '#4285F4', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3 },
-            animation: google.maps.Animation.DROP
-          });
-        }
-        map.setCenter(pos); map.setZoom(14);
-        updateGpsStatus('Location found!', false);
-      },
-      function() { updateGpsStatus('GPS unavailable.', false); centerOnCornwall(); },
-      { enableHighAccuracy: true, timeout: 15000 }
-    );
-  });
+        return;
+      }
+      requestUserLocation();
+    }).catch(function() { requestUserLocation(); });
+  } else {
+    requestUserLocation();
+  }
 }
 
 function getDistanceMiles(lat1, lon1, lat2, lon2) {
@@ -299,37 +275,27 @@ function getDistanceMiles(lat1, lon1, lat2, lon2) {
 
 function centerOnCornwall() {
   if (!map) return;
-  map.setCenter({ lat: 41.4442, lng: -74.0238 });
-  map.setZoom(11);
+  map.setView([41.4442, -74.0238], 11);
   updateGpsStatus('Centered on Cornwall-on-Hudson (RM 56)', false);
 }
 
 function showAllStations() {
   if (!map || stationMarkers.length === 0) return;
-  const bounds = new google.maps.LatLngBounds();
-  stationMarkers.forEach(function(m) { bounds.extend(m.getPosition()); });
-  map.fitBounds(bounds);
+  const bounds = L.latLngBounds(stationMarkers.map(function(m) { return m.getLatLng(); }));
+  map.fitBounds(bounds, { padding: [30, 30] });
   updateGpsStatus('Showing all stations', false);
 }
 
 function focusStation(stationId) {
   const s = STATIONS.find(function(st) { return st.id === stationId; });
   if (!s || !map) return;
-  
-  map.setCenter({ lat: s.lat, lng: s.lon });
-  map.setZoom(14);
-  
-  // Find and click the marker
-  const idx = STATIONS.findIndex(function(st) { return st.id === stationId; });
-  if (idx >= 0 && stationMarkers[idx]) {
-    google.maps.event.trigger(stationMarkers[idx], 'click');
+  map.setView([s.lat, s.lon], 13);
+  const marker = stationMarkers.find(function(m) { return m.stationId === stationId; });
+  if (marker) marker.openPopup();
+  document.querySelectorAll('.station-list-item').forEach(function(el) { el.classList.remove('on'); });
+  if (window.event && window.event.currentTarget && window.event.currentTarget.classList) {
+    window.event.currentTarget.classList.add('on');
   }
-  
-  // Update list highlighting
-  document.querySelectorAll('.station-list-item').forEach(function(el) {
-    el.classList.remove('on');
-  });
-  event.currentTarget.classList.add('on');
 }
 
 function updateGpsStatus(text, active) {
@@ -343,11 +309,13 @@ function updateGpsStatus(text, active) {
 }
 
 // ===== NAVIGATION =====
-const PAGES={home:pageHome,stations:pageStations,tides:pageTides,quality:pageQuality,fish:pageFish,alerts:pageAlerts,map:pageMap};
-const NAV=[{k:"home",l:"Home",i:"home"},{k:"stations",l:"Stations",i:"pin"},{k:"tides",l:"Tides",i:"waves"},{k:"quality",l:"Quality",i:"drop"},{k:"fish",l:"Fish",i:"fish"},{k:"map",l:"Map",i:"map"},{k:"alerts",l:"Alerts",i:"bell"}];
+const PAGES={home:pageHome,stations:pageStations,tides:pageTides,quality:pageQuality,fish:pageFish,sounds:function(){return typeof pageFishSounds==="function"?pageFishSounds():hdr("Fish Sounds","")+'<div class="page on"><div class="card">Fish Sounds failed to load.</div></div>';},alerts:pageAlerts,map:pageMap};
+const NAV=[{k:"home",l:"Home",i:"home"},{k:"stations",l:"Stations",i:"pin"},{k:"tides",l:"Tides",i:"waves"},{k:"quality",l:"Quality",i:"drop"},{k:"fish",l:"Fish",i:"fish"},{k:"sounds",l:"Sounds",i:"sound"},{k:"map",l:"Map",i:"map"},{k:"alerts",l:"Alerts",i:"bell"}];
+IC.sound='<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 10v4"/><path d="M6 7v10"/><path d="M10 4v16"/><path d="M14 8v8"/><path d="M18 6v12"/><path d="M22 10v4"/></svg>';
 
-function render(){document.getElementById("app").innerHTML=PAGES[cur]();document.getElementById("nav").innerHTML=NAV.map(n=>'<button class="ni '+(n.k===cur?"on":"")+'" onclick="go(\''+n.k+'\')">'+IC[n.i]+n.l+'</button>').join("");}
-function go(k){cur=k;render();}
+function render(){document.getElementById("app").innerHTML=PAGES[cur]();document.getElementById("nav").innerHTML=NAV.map(n=>'<button class="ni '+(n.k===cur?"on":"")+'" onclick="go(\''+n.k+'\')">'+IC[n.i]+n.l+'</button>').join("");window.scrollTo(0,0);}
+function go(k){if(k!==cur){if(cur==="map")destroyStationMap();if(cur==="sounds"&&typeof teardownFishSounds==="function")teardownFishSounds();}cur=k;render();}
 function selTide(loc){tideLoc=loc;cur="tides";render();}
-function togDark(){dark=!dark;localStorage.setItem("dark",dark);document.documentElement.setAttribute("data-theme",dark?"dark":"light");document.getElementById("tm").content=dark?"#0D1B2A":"#0A7EA4";render();}
+function togDark(){if(cur==="map")destroyStationMap();if(cur==="sounds"&&typeof teardownFishSounds==="function")teardownFishSounds();dark=!dark;localStorage.setItem("dark",dark);document.documentElement.setAttribute("data-theme",dark?"dark":"light");document.getElementById("tm").content=dark?"#0D1B2A":"#0A7EA4";render();}
+(function(){try{var p=new URLSearchParams(location.search).get("page");if(p&&PAGES[p])cur=p;}catch(e){}})();
 render();
