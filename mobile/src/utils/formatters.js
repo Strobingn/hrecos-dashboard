@@ -3,7 +3,7 @@
 // Value formatting, date/time display, and trend indicators
 // ============================================================================
 
-import { PARAM_INFO } from './constants';
+import { PARAM_INFO } from './constants.js';
 
 // =============================================================================
 // TEMPERATURE CONVERSION
@@ -64,7 +64,7 @@ export function formatValue(value, param, options = {}) {
 
   // Apply unit conversions
   if (param === 'temp' || param === 'air_temp' || param === 'dewpoint') {
-    displayValue = useMetric ? numValue : celsiusToFahrenheit(numValue);
+    displayValue = useMetric ? fahrenheitToCelsius(numValue) : numValue;
   } else if (param === 'wind_speed') {
     displayValue = useMetric ? numValue * 0.44704 : numValue;
   } else if (param === 'pressure') {

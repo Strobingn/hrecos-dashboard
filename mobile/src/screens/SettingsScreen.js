@@ -21,6 +21,8 @@ import { useTheme } from '../hooks/useTheme';
 import SectionHeader from '../components/common/SectionHeader';
 import Card from '../components/common/Card';
 import { API_BASE_URL } from '../config/api';
+import { usePreferences } from '../context/PreferencesContext';
+import WeatherSettings from '../components/cards/WeatherSettings';
 
 // Storage keys
 const STORAGE_KEYS = {
@@ -155,7 +157,7 @@ export default function SettingsScreen() {
   // Settings state
   const [apiUrl, setApiUrl] = useState(DEFAULT_API_URL);
   const [refreshInterval, setRefreshInterval] = useState(300000);
-  const [units, setUnits] = useState('imperial');
+  const { units, setUnits } = usePreferences();
   const [pushNotifications, setPushNotifications] = useState(true);
   const [alertOnAnomalies, setAlertOnAnomalies] = useState(true);
   const [dailySummary, setDailySummary] = useState(false);
@@ -168,14 +170,12 @@ export default function SettingsScreen() {
         const [
           savedUrl,
           savedInterval,
-          savedUnits,
           savedPush,
           savedAlerts,
           savedDaily,
         ] = await Promise.all([
           AsyncStorage.getItem(STORAGE_KEYS.apiBaseUrl),
           AsyncStorage.getItem(STORAGE_KEYS.refreshInterval),
-          AsyncStorage.getItem(STORAGE_KEYS.units),
           AsyncStorage.getItem(STORAGE_KEYS.pushNotifications),
           AsyncStorage.getItem(STORAGE_KEYS.alertOnAnomalies),
           AsyncStorage.getItem(STORAGE_KEYS.dailySummary),
@@ -183,7 +183,6 @@ export default function SettingsScreen() {
 
         if (savedUrl) setApiUrl(savedUrl);
         if (savedInterval) setRefreshInterval(parseInt(savedInterval, 10));
-        if (savedUnits) setUnits(savedUnits);
         if (savedPush !== null) setPushNotifications(savedPush === 'true');
         if (savedAlerts !== null) setAlertOnAnomalies(savedAlerts === 'true');
         if (savedDaily !== null) setDailySummary(savedDaily === 'true');
@@ -216,9 +215,9 @@ export default function SettingsScreen() {
   }, [persistSetting]);
 
   const handleUnitsChange = useCallback(async (value) => {
-    setUnits(value);
-    await persistSetting(STORAGE_KEYS.units, value);
-  }, [persistSetting]);
+    try { await setUnits(value); }
+    catch { Alert.alert('Could not save units', 'Please try again.'); }
+  }, [setUnits]);
 
   const UNIT_OPTIONS = [
     { label: 'Imperial (°F, ft³/s)', value: 'imperial' },
@@ -227,6 +226,7 @@ export default function SettingsScreen() {
 
   return (
     <ScrollView
+      keyboardShouldPersistTaps="handled"
       style={[styles.container, { backgroundColor: theme.colors.background }]}
       contentContainerStyle={styles.contentContainer}
     >
@@ -333,6 +333,8 @@ export default function SettingsScreen() {
           </View>
         </Card>
       </View>
+
+      <View style={styles.section}><WeatherSettings /></View>
 
       {/* Notifications Section */}
       <View style={styles.section}>

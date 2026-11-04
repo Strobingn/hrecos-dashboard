@@ -15,6 +15,8 @@ import {
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../hooks/useTheme';
+import { usePreferences } from '../context/PreferencesContext';
+import { formatMeasurement } from '../utils/measurements';
 import { useTides } from '../hooks/useTides';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import ErrorView from '../components/common/ErrorView';
@@ -125,6 +127,7 @@ function formatTime(timeStr) {
 }
 
 export default function TidesScreen() {
+  const { units } = usePreferences();
   const theme = useTheme();
   const { data, loading, error, refetch } = useTides();
   const [refreshing, setRefreshing] = useState(false);
@@ -238,7 +241,7 @@ export default function TidesScreen() {
         <View style={styles.statusContent}>
           <View style={styles.statusMain}>
             <Text style={[styles.tideHeight, { color: theme.colors.primary }]}>
-              {data?.current?.height?.toFixed(1) || '--'} ft
+              {formatMeasurement(data?.current?.height, 'tide', units)}
             </Text>
             <View style={styles.phaseRow}>
               <MaterialCommunityIcons
@@ -261,7 +264,7 @@ export default function TidesScreen() {
                 <Text style={[styles.nextTideText, { color: theme.colors.textPrimary || theme.colors.text }]}>
                   Next High Tide:{' '}
                   <Text style={styles.nextTideTime}>{formatTime(nextHigh.time)}</Text>
-                  {' '}({nextHigh.height.toFixed(1)} ft)
+                  {' '}({formatMeasurement(nextHigh.height, 'tide', units)})
                 </Text>
               </View>
             )}
@@ -271,7 +274,7 @@ export default function TidesScreen() {
                 <Text style={[styles.nextTideText, { color: theme.colors.textPrimary || theme.colors.text }]}>
                   Next Low Tide:{' '}
                   <Text style={styles.nextTideTime}>{formatTime(nextLow.time)}</Text>
-                  {' '}({nextLow.height.toFixed(1)} ft)
+                  {' '}({formatMeasurement(nextLow.height, 'tide', units)})
                 </Text>
               </View>
             )}
@@ -319,7 +322,7 @@ export default function TidesScreen() {
                 </View>
                 <View style={styles.scheduleRight}>
                   <Text style={[styles.scheduleHeight, { color: theme.colors.textPrimary || theme.colors.text }]}>
-                    {event.height.toFixed(1)} ft
+                    {formatMeasurement(event.height, 'tide', units)}
                   </Text>
                   <Text style={[styles.scheduleRelative, { color: theme.colors.textSecondary }]}>
                     {getRelativeTime(event.time)}

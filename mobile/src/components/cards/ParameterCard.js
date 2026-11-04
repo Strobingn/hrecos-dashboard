@@ -1,8 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
 import { PARAM_INFO } from '../../constants';
+import { usePreferences } from '../../context/PreferencesContext';
+import { measurement } from '../../utils/measurements';
 
 export const ParameterCard = ({
   paramKey,
@@ -15,6 +17,9 @@ export const ParameterCard = ({
   isSelected,
 }) => {
   const { theme } = useTheme();
+  const { units } = usePreferences();
+  const display = measurement(value, paramKey, units, unit);
+  const numeric = (v) => measurement(v, paramKey, units).value?.toFixed(1) ?? '—';
   const info = PARAM_INFO[paramKey] || { label: paramKey, icon: 'circle', chartColor: theme.colors.primary };
 
   const getValueColor = () => {
@@ -42,7 +47,7 @@ export const ParameterCard = ({
   };
 
   return (
-    <View
+    <TouchableOpacity onPress={onPress} accessibilityRole="button" accessibilityState={{ selected: !!isSelected }}
       style={[
         styles.card,
         {
@@ -63,12 +68,12 @@ export const ParameterCard = ({
 
       <View style={styles.valueRow}>
         <Text style={[styles.value, { color: theme.colors.text }]}>
-          {value !== undefined && value !== null ? value : 'N/A'}
+          {display.value?.toFixed(1) ?? '—'}
         </Text>
         {value !== undefined && value !== null && (
           <>
             <Text style={[styles.unit, { color: theme.colors.textTertiary }]}>
-              {unit || info.unit}
+              {display.unit || info.unit}
             </Text>
             {trend && (
               <MaterialCommunityIcons
@@ -85,14 +90,14 @@ export const ParameterCard = ({
       {(min !== undefined || max !== undefined) && (
         <View style={styles.rangeRow}>
           <Text style={[styles.rangeText, { color: theme.colors.textTertiary }]}>
-            Min: {min !== undefined ? min : '--'}
+            Min: {numeric(min)}
           </Text>
           <Text style={[styles.rangeText, { color: theme.colors.textTertiary }]}>
-            Max: {max !== undefined ? max : '--'}
+            Max: {numeric(max)}
           </Text>
         </View>
       )}
-    </View>
+    </TouchableOpacity>
   );
 };
 

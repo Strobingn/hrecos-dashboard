@@ -18,6 +18,8 @@ import {
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../hooks/useTheme';
+import { useNavigation } from '@react-navigation/native';
+import WeatherPanel from '../components/cards/WeatherPanel';
 import { useAnomalies } from '../hooks/useAnomalies';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import ErrorView from '../components/common/ErrorView';
@@ -186,15 +188,15 @@ function EmptyAlertsState() {
         No Anomalies Detected
       </Text>
       <Text style={[styles.emptyDescription, { color: theme.colors.textSecondary }]}>
-        All monitoring stations are reporting normal values. Our AI system continuously
-        watches for unusual patterns in river data and will alert you immediately
-        when anything abnormal is detected.
+        No river anomalies match this filter. Weather warnings are shown above.
+        Pull to refresh the latest available readings.
       </Text>
     </View>
   );
 }
 
 export default function AlertsScreen() {
+  const navigation = useNavigation();
   const theme = useTheme();
   const { anomalies, loading, error, refetch } = useAnomalies();
   const [refreshing, setRefreshing] = useState(false);
@@ -247,9 +249,11 @@ export default function AlertsScreen() {
           Alerts
         </Text>
         <Text style={[styles.headerSubtitle, { color: theme.colors.textSecondary }]}>
-          AI-detected anomalies
+          Weather warnings & river anomalies
         </Text>
       </View>
+
+      <WeatherPanel details onConfigure={() => navigation.navigate('Settings')} />
 
       {/* Filter Tabs */}
       <View style={styles.filterRow}>

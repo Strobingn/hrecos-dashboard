@@ -2,6 +2,8 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
+import { usePreferences } from '../../context/PreferencesContext';
+import { measurement, formatMeasurement } from '../../utils/measurements';
 
 export default function TideCard({
   currentTide,
@@ -9,6 +11,7 @@ export default function TideCard({
   tidePhase,
 }) {
   const theme = useTheme();
+  const { units } = usePreferences();
 
   const isRising = tidePhase === 'rising';
   const arrowRotation = isRising ? '0deg' : '180deg';
@@ -71,12 +74,12 @@ export default function TideCard({
         </Text>
         <View style={styles.currentValueRow}>
           <Text style={[styles.currentValue, { color: theme.colors.text }]}>
-            {safeCurrent.height != null ? safeCurrent.height.toFixed(1) : '--'}
+            {measurement(safeCurrent.height, 'tide', units).value?.toFixed(1) ?? '—'}
           </Text>
           <Text
             style={[styles.currentUnit, { color: theme.colors.textTertiary }]}
           >
-            ft
+            {units === 'metric' ? 'm' : 'ft'}
           </Text>
           {/* Direction arrow */}
           <View
@@ -140,7 +143,7 @@ export default function TideCard({
                   ]}
                 >
                   {' '}
-                  ({safeNext.height.toFixed(1)} ft)
+                  ({formatMeasurement(safeNext.height, 'tide', units)})
                 </Text>
               )}
             </Text>

@@ -2,10 +2,10 @@
 
 export const COLORS = {
   // Primary palette - Hudson River blues
-  primary: '#1A6BAA',
-  primaryLight: '#4A9BD4',
-  primaryDark: '#0D4A7A',
-  primaryFaded: '#1A6BAA20',
+  primary: '#27665E',
+  primaryLight: '#66A79B',
+  primaryDark: '#153E3C',
+  primaryFaded: '#27665E15',
 
   // Secondary accent - teal/water
   secondary: '#2A9D8F',
@@ -30,14 +30,14 @@ export const COLORS = {
   wqiBad: '#DC3545',
 
   // Backgrounds
-  background: '#F0F4F8',
+  background: '#F5F6F2',
   card: '#FFFFFF',
   surface: '#FFFFFF',
-  surfaceVariant: '#E8EDF2',
+  surfaceVariant: '#EFF2ED',
 
   // Text
-  text: '#1A2332',
-  textPrimary: '#1A2332',
+  text: '#203A36',
+  textPrimary: '#203A36',
   textSecondary: '#5A6A7A',
   textTertiary: '#8A96A5',
   textInverse: '#FFFFFF',
@@ -49,8 +49,8 @@ export const COLORS = {
   chartGrid: '#E2E8F0',
 
   // Border & dividers
-  border: '#D5DDE5',
-  divider: '#E2E8F0',
+  border: '#E1E7DF',
+  divider: '#E6EBE3',
 
   // Chart colors
   chartTemp: '#E74C3C',
@@ -106,23 +106,23 @@ export const SHADOWS = {
   small: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.03,
     shadowRadius: 2,
     elevation: 2,
   },
   medium: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
+    shadowOpacity: 0.04,
     shadowRadius: 4,
-    elevation: 4,
+    elevation: 1,
   },
   large: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.06,
     shadowRadius: 8,
-    elevation: 6,
+    elevation: 2,
   },
 };
 
@@ -136,7 +136,9 @@ export const RADIUS = {
 
 export const DARK_THEME = {
   ...COLORS,
-  background: '#0F1923',
+  primary: '#8ACDBD',
+  primaryFaded: '#8ACDBD20',
+  background: '#101E1C',
   card: '#1A2332',
   surface: '#1A2332',
   surfaceVariant: '#253042',

@@ -3,6 +3,8 @@ import { View, Text, Dimensions, StyleSheet } from 'react-native';
 import { LineChart as RNLineChart } from 'react-native-chart-kit';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
+import { usePreferences } from '../../context/PreferencesContext';
+import { formatMeasurement, measurement } from '../../utils/measurements';
 import ErrorView from '../common/ErrorView';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -11,6 +13,7 @@ const CHART_HEIGHT = 240;
 
 export default function TideChart({ predictions, title }) {
   const theme = useTheme();
+  const { units } = usePreferences();
 
   const {
     chartData,
@@ -101,7 +104,7 @@ export default function TideChart({ predictions, title }) {
     labels: chartLabels,
     datasets: [
       {
-        data: chartData,
+        data: chartData.map((value) => measurement(value, 'tide', units).value),
         color: () => theme.colors.secondary,
         strokeWidth: 2.5,
       },
@@ -163,6 +166,7 @@ export default function TideChart({ predictions, title }) {
 
       <RNLineChart
         data={data}
+        yAxisSuffix={units === 'metric' ? ' m' : ' ft'}
         width={CHART_WIDTH}
         height={CHART_HEIGHT}
         chartConfig={chartConfig}
@@ -195,7 +199,7 @@ export default function TideChart({ predictions, title }) {
             >
               High{' '}
               <Text style={[styles.markerValue, { color: theme.colors.success }]}>
-                {chartData[idx]?.toFixed(1)} ft
+                {formatMeasurement(chartData[idx], 'tide', units)}
               </Text>{' '}
               {formatTime(predictions[idx]?.time)}
             </Text>
@@ -214,7 +218,7 @@ export default function TideChart({ predictions, title }) {
             >
               Low{' '}
               <Text style={[styles.markerValue, { color: theme.colors.warning }]}>
-                {chartData[idx]?.toFixed(1)} ft
+                {formatMeasurement(chartData[idx], 'tide', units)}
               </Text>{' '}
               {formatTime(predictions[idx]?.time)}
             </Text>

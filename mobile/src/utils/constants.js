@@ -1,7 +1,7 @@
 // ============================================================================
 // HRECOS RiverWatch - Application Constants
 // Station data, API configuration, and parameter metadata
-// Station list: data/stations.json (linked from mobile/src/data/stations.json)
+// Station list: data/stations.json (copied to mobile/src/data/stations.json)
 // ============================================================================
 
 import registry from '../data/stations.json';

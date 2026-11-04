@@ -15,6 +15,8 @@ import {
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../hooks/useTheme';
+import { usePreferences } from '../context/PreferencesContext';
+import { measurement, formatMeasurement } from '../utils/measurements';
 import { useStations } from '../hooks/useStations';
 import { useStationData } from '../hooks/useStationData';
 import LoadingSpinner from '../components/common/LoadingSpinner';
@@ -63,7 +65,7 @@ function calculateWaterQualityIndex(readings) {
 
   // Temperature (ideal: 10-25 C)
   if (readings.temp) {
-    const temp = parseFloat(readings.temp.value);
+    const temp = (parseFloat(readings.temp.value) - 32) * 5 / 9;
     if (temp > 30) score -= 15;
     else if (temp > 25) score -= 8;
     else if (temp < 5) score -= 10;
@@ -156,6 +158,7 @@ function getParameterStatus(value, param) {
       if (value >= 6 && value <= 9) return { label: 'Fair', color: '#FFB300' };
       return { label: 'Poor', color: '#E53935' };
     case 'temp':
+      value = (value - 32) * 5 / 9;
       if (value >= 15 && value <= 25) return { label: 'Optimal', color: '#43A047' };
       if (value >= 10 && value <= 30) return { label: 'Good', color: '#8BC34A' };
       if (value >= 5 && value <= 35) return { label: 'Fair', color: '#FFB300' };
@@ -275,6 +278,7 @@ function ParameterBar({ label, value, unit, min, max, optimalMin, optimalMax, co
 }
 
 export default function WaterQualityScreen() {
+  const { units } = usePreferences();
   const theme = useTheme();
   const { stations, loading: stationsLoading, error: stationsError, refetch: refetchStations } = useStations();
   const { data: schodackData, loading: schodackLoading, error: schodackError, refetch: refetchSchodack } = useStationData('schodack');
@@ -468,7 +472,7 @@ export default function WaterQualityScreen() {
                         {reading.label || key}
                       </Text>
                       <Text style={[styles.paramValue, { color: theme.colors.textPrimary || theme.colors.text }]}>
-                        {reading.value} {reading.unit}
+                        {formatMeasurement(reading.value, key, units, 1, reading.unit)}
                       </Text>
                       <Badge label={status.label} color={status.color} size="small" />
                     </View>
@@ -517,12 +521,12 @@ export default function WaterQualityScreen() {
               {schodackData.readings.temp && (
                 <ParameterBar
                   label="Water Temperature"
-                  value={parseFloat(schodackData.readings.temp.value)}
-                  unit="°C"
-                  min={0}
-                  max={40}
-                  optimalMin={10}
-                  optimalMax={25}
+                  value={measurement(schodackData.readings.temp.value, 'temp', units).value}
+                  unit={units === 'metric' ? '°C' : '°F'}
+                  min={units === 'metric' ? 0 : 32}
+                  max={units === 'metric' ? 40 : 104}
+                  optimalMin={units === 'metric' ? 10 : 50}
+                  optimalMax={units === 'metric' ? 25 : 77}
                   color="#E74C3C"
                 />
               )}

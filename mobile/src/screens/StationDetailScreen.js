@@ -10,6 +10,8 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useTheme } from '../hooks/useTheme';
+import { usePreferences } from '../context/PreferencesContext';
+import { measurement, formatMeasurement } from '../utils/measurements';
 import { useStationData } from '../hooks/useStationData';
 import { useHistorical } from '../hooks/useHistorical';
 import { useStats } from '../hooks/useStats';
@@ -26,6 +28,7 @@ export default function StationDetailScreen() {
   const route = useRoute();
   const { stationId } = route.params || {};
   const { theme } = useTheme();
+  const { units } = usePreferences();
 
   const [isFavorite, setIsFavorite] = useState(false);
   const [selectedParam, setSelectedParam] = useState(null);
@@ -80,8 +83,8 @@ export default function StationDetailScreen() {
   // Chart data for selected parameter
   const chartData = useMemo(() => {
     if (!historicalData || !historicalData[currentParamKey]) return [];
-    return historicalData[currentParamKey];
-  }, [historicalData, currentParamKey]);
+    return historicalData[currentParamKey].map((point) => ({ ...point, value: measurement(point.value, currentParamKey, units).value }));
+  }, [historicalData, currentParamKey, units]);
 
   const toggleFavorite = () => {
     setIsFavorite(prev => !prev);
@@ -356,19 +359,19 @@ export default function StationDetailScreen() {
                       <View style={styles.statItem}>
                         <Text style={[styles.statItemLabel, { color: theme.colors.textTertiary }]}>Avg</Text>
                         <Text style={[styles.statItemValue, { color: theme.colors.textSecondary }]}>
-                          {stat?.avg ?? '--'}
+                          {formatMeasurement(stat?.avg, param, units, 1, info.unit)}
                         </Text>
                       </View>
                       <View style={styles.statItem}>
                         <Text style={[styles.statItemLabel, { color: theme.colors.textTertiary }]}>Min</Text>
                         <Text style={[styles.statItemValue, { color: theme.colors.primary }]}>
-                          {stat?.min ?? '--'}
+                          {formatMeasurement(stat?.min, param, units, 1, info.unit)}
                         </Text>
                       </View>
                       <View style={styles.statItem}>
                         <Text style={[styles.statItemLabel, { color: theme.colors.textTertiary }]}>Max</Text>
                         <Text style={[styles.statItemValue, { color: theme.colors.danger }]}>
-                          {stat?.max ?? '--'}
+                          {formatMeasurement(stat?.max, param, units, 1, info.unit)}
                         </Text>
                       </View>
                     </View>

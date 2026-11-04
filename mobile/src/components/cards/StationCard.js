@@ -8,6 +8,9 @@ import {
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
+import { usePreferences } from '../../context/PreferencesContext';
+import { measurement } from '../../utils/measurements';
+import { PARAM_INFO } from '../../constants';
 
 function LivePulse({ color }) {
   const pulseAnim = useRef(new RNAnimated.Value(0)).current;
@@ -66,37 +69,16 @@ export default function StationCard({
 }) {
   const theme = useTheme();
 
+  const { units } = usePreferences();
   if (!station) return null;
-
   const isLive = station.status === 'live';
   const statusColor = isLive ? theme.colors.success : theme.colors.disabled;
   const readings = station.readings || {};
-  const params = station.params || [];
-
-  const keyParams = params.slice(0, 3);
-  if (keyParams.length === 0) {
-    if (readings.temperature != null)
-      keyParams.push({
-        label: 'Temp',
-        value: readings.temperature,
-        unit: '°F',
-        icon: 'thermometer',
-      });
-    if (readings.turbidity != null)
-      keyParams.push({
-        label: 'Turbidity',
-        value: readings.turbidity,
-        unit: 'NTU',
-        icon: 'water-opacity',
-      });
-    if (readings.dissolvedOxygen != null)
-      keyParams.push({
-        label: 'D.O.',
-        value: readings.dissolvedOxygen,
-        unit: 'mg/L',
-        icon: 'molecule-co2',
-      });
-  }
+  const keyParams = Object.entries(readings).filter(([, reading]) => reading?.value != null).slice(0, 3).map(([key, reading]) => {
+    const info = PARAM_INFO[key] || {};
+    const converted = measurement(reading.value, key, units, reading.unit);
+    return { label: info.label || key, icon: info.icon, value: converted.value?.toFixed(1), unit: converted.unit };
+  });
 
   return (
     <TouchableOpacity
@@ -134,7 +116,7 @@ export default function StationCard({
                 styles.locationText,
                 { color: theme.colors.textSecondary },
               ]}>
-              {station.location || 'Hudson River'}
+              {station.mile != null ? `River mile ${station.mile} · ${station.sourceLabel || 'HRECOS'}` : 'Hudson River'}
             </Text>
           </View>
         </View>
@@ -255,9 +237,9 @@ const styles = StyleSheet.create({
   container: {
     marginHorizontal: 16,
     marginVertical: 6,
-    borderRadius: 14,
+    borderRadius: 20,
     borderWidth: 1,
-    padding: 14,
+    padding: 18,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
     shadowRadius: 6,
@@ -366,3 +348,5 @@ const styles = StyleSheet.create({
     fontWeight: '400',
   },
 });
+
+export { StationCard };
