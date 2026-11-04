@@ -1,0 +1,20 @@
+[Unit]
+Description=Hudson River hydrophone node (Aquarian H2a)
+Documentation=file:/opt/hydrophone/README.md
+After=network-online.target sound.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=hydrophone
+Group=hydrophone
+WorkingDirectory=/opt/hydrophone
+EnvironmentFile=-/etc/hydrophone/node.env
+ExecStart=/opt/hydrophone/.venv/bin/python -m hydrophone_node --config /etc/hydrophone/node.yaml
+Restart=on-failure
+RestartSec=5
+# The USB audio interface for the Aquarian H2a should win CPU over background jobs.
+Nice=-5
+
+[Install]
+WantedBy=multi-user.target

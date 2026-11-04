@@ -1,0 +1,6 @@
+numpy>=1.26
+scipy>=1.11
+PyYAML>=6
+requests>=2.31
+supabase>=2.0
+soundfile>=0.12

@@ -1,0 +1,25 @@
+node:
+  id: westpoint-cornwall
+  status: simulated
+  sample_rate_hz: 48000
+  hardware: "Aquarian H2a hydrophone + Raspberry Pi (simulated)"
+
+source:
+  kind: synth
+  seed: 11
+  calls: true
+  hum: true
+  ambient_boat: true
+
+segment_seconds: 60
+replay_speed: 0
+heartbeat_interval_s: 60
+output_dir: out
+
+detector:
+  name: band_energy
+
+supabase:
+  url: ${SUPABASE_URL}
+  service_role_key: ${SUPABASE_SERVICE_ROLE_KEY}
+  audio_bucket: audio
