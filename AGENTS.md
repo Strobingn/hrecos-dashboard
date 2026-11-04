@@ -73,7 +73,7 @@ npm install --legacy-peer-deps
 npx expo start
 ```
 
-CI (`Build-apk.yml`) runs `npx expo prebuild --platform android` then `./gradlew assembleRelease` on Node 20 / Java 17. `mobile/android/` is generated; don't commit it. API base URL is in `mobile/src/config/api.js` and can be overridden at runtime in Settings (AsyncStorage).
+CI (`build.yml`) runs `npx expo prebuild --platform android` then `./gradlew assembleRelease` on Node 20 / Java 17. `mobile/android/` is generated; don't commit it. API base URL is in `mobile/src/config/api.js` and can be overridden at runtime in Settings (AsyncStorage).
 
 ### Supabase
 
@@ -92,7 +92,7 @@ supabase start && supabase db reset     # local only
 - `edge-image` — builds `edge/Dockerfile` and runs one simulated minute
 - `docker-build-test` — builds backend image from **repo root context** and curls `/health`; builds frontend image
 
-Other workflows: `pages.yml` (deploys static site on push to `main`), `Build-apk.yml` (APK on push to `main`), `deploy.yml` (SSH deploy on `v*` tags), `security-scan.yml`, `live-endpoints.yml` (daily). Don't add triggers that deploy or publish without being asked.
+Other workflows: `pages.yml` (deploys static site on push to `main`), `build.yml` (APK on mobile changes pushed to `main` or `codex`, or a manual run), `deploy.yml` (SSH deploy on `v*` tags), `security-scan.yml`, `live-endpoints.yml` (daily). Don't add triggers that deploy or publish without being asked.
 
 ## Rules that are easy to break
 

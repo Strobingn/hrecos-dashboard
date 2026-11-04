@@ -98,7 +98,11 @@ npx expo start
 
 ### Building for Production
 
-**APK Build (easiest)**:
+**GitHub APK build**:
+
+[Build Android APK](https://github.com/Strobingn/hrecos-dashboard/actions/workflows/build.yml) runs on mobile changes pushed to `main` or `codex`. It can also be started with **Run workflow**. It runs the mobile tests, generates Android files, builds the release APK, verifies its signature and uploads `hrecos-riverwatch-apk` as a downloadable artifact. The artifact contains `hrecos-riverwatch.apk` and its SHA-256 checksum.
+
+**EAS APK build**:
 ```bash
 npx eas build -p android --profile preview
 ```
