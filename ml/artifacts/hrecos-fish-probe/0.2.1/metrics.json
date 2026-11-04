@@ -1,0 +1,1276 @@
+{
+  "model_name": "hrecos-fish-probe",
+  "model_version": "0.2.1",
+  "synthetic_test": {
+    "perch_v2_backbone": {
+      "labels": [
+        "bass_spawning_splash",
+        "sturgeon_thunder",
+        "drum_knock",
+        "toadfish_boatwhistle",
+        "boat",
+        "train",
+        "rain",
+        "wave_slap",
+        "background"
+      ],
+      "per_class": [
+        {
+          "label": "bass_spawning_splash",
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 24
+        },
+        {
+          "label": "sturgeon_thunder",
+          "precision": 1.0,
+          "recall": 0.9583333333333334,
+          "f1": 0.9787234042553191,
+          "support": 24
+        },
+        {
+          "label": "drum_knock",
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 24
+        },
+        {
+          "label": "toadfish_boatwhistle",
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 24
+        },
+        {
+          "label": "boat",
+          "precision": 0.96,
+          "recall": 1.0,
+          "f1": 0.9795918367346939,
+          "support": 24
+        },
+        {
+          "label": "train",
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 24
+        },
+        {
+          "label": "rain",
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 24
+        },
+        {
+          "label": "wave_slap",
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 24
+        },
+        {
+          "label": "background",
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 24
+        }
+      ],
+      "macro_f1": 0.9953683601100014,
+      "accuracy": 0.9953703703703703,
+      "confusion_matrix": [
+        [
+          24,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          23,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          24,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          24,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          24,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          24,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          24,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          24,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          24
+        ]
+      ],
+      "n": 216,
+      "n_train": 432,
+      "n_features": 1536
+    },
+    "lowband_v1": {
+      "labels": [
+        "bass_spawning_splash",
+        "sturgeon_thunder",
+        "drum_knock",
+        "toadfish_boatwhistle",
+        "boat",
+        "train",
+        "rain",
+        "wave_slap",
+        "background"
+      ],
+      "per_class": [
+        {
+          "label": "bass_spawning_splash",
+          "precision": 0.96,
+          "recall": 1.0,
+          "f1": 0.9795918367346939,
+          "support": 24
+        },
+        {
+          "label": "sturgeon_thunder",
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 24
+        },
+        {
+          "label": "drum_knock",
+          "precision": 1.0,
+          "recall": 0.9583333333333334,
+          "f1": 0.9787234042553191,
+          "support": 24
+        },
+        {
+          "label": "toadfish_boatwhistle",
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 24
+        },
+        {
+          "label": "boat",
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 24
+        },
+        {
+          "label": "train",
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 24
+        },
+        {
+          "label": "rain",
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 24
+        },
+        {
+          "label": "wave_slap",
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 24
+        },
+        {
+          "label": "background",
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 24
+        }
+      ],
+      "macro_f1": 0.9953683601100014,
+      "accuracy": 0.9953703703703703,
+      "confusion_matrix": [
+        [
+          24,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          24,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          0,
+          23,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          24,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          24,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          24,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          24,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          24,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          24
+        ]
+      ],
+      "n": 216,
+      "n_train": 432,
+      "n_features": 26
+    },
+    "perch_v2_backbone+lowband_v1": {
+      "labels": [
+        "bass_spawning_splash",
+        "sturgeon_thunder",
+        "drum_knock",
+        "toadfish_boatwhistle",
+        "boat",
+        "train",
+        "rain",
+        "wave_slap",
+        "background"
+      ],
+      "per_class": [
+        {
+          "label": "bass_spawning_splash",
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 24
+        },
+        {
+          "label": "sturgeon_thunder",
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 24
+        },
+        {
+          "label": "drum_knock",
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 24
+        },
+        {
+          "label": "toadfish_boatwhistle",
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 24
+        },
+        {
+          "label": "boat",
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 24
+        },
+        {
+          "label": "train",
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 24
+        },
+        {
+          "label": "rain",
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 24
+        },
+        {
+          "label": "wave_slap",
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 24
+        },
+        {
+          "label": "background",
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 24
+        }
+      ],
+      "macro_f1": 1.0,
+      "accuracy": 1.0,
+      "confusion_matrix": [
+        [
+          24,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          24,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          24,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          24,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          24,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          24,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          24,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          24,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          24
+        ]
+      ],
+      "n": 216,
+      "n_train": 432,
+      "n_features": 1562,
+      "mean_abs_coef_perch": 0.008574262986152457,
+      "mean_abs_coef_lowband": 0.02208765005149257
+    }
+  },
+  "deployed_embedder": "perch_v2_backbone",
+  "external_center_window_transfer": [
+    {
+      "path": "data/external/fishsounds/200686.wav",
+      "source": "fishsounds",
+      "reference_label": "drum_knock",
+      "predicted_train_label": "toadfish_boatwhistle",
+      "confidence": 0.5809898026845156
+    },
+    {
+      "path": "data/external/fishsounds/200719.wav",
+      "source": "fishsounds",
+      "reference_label": "drum_knock",
+      "predicted_train_label": "drum_knock",
+      "confidence": 0.585888166628606
+    },
+    {
+      "path": "data/external/fishsounds/200764.wav",
+      "source": "fishsounds",
+      "reference_label": "drum_knock",
+      "predicted_train_label": "drum_knock",
+      "confidence": 0.6981988723515292
+    },
+    {
+      "path": "data/external/fishsounds/200676.wav",
+      "source": "fishsounds",
+      "reference_label": "drum_knock",
+      "predicted_train_label": "sturgeon_thunder",
+      "confidence": 0.9569133064094119
+    },
+    {
+      "path": "data/external/fishsounds/843171.wav",
+      "source": "fishsounds",
+      "reference_label": "toadfish_boatwhistle",
+      "predicted_train_label": "toadfish_boatwhistle",
+      "confidence": 0.9619283783633621
+    },
+    {
+      "path": "data/external/fishsounds/843165.wav",
+      "source": "fishsounds",
+      "reference_label": "unscored",
+      "predicted_train_label": "bass_spawning_splash",
+      "confidence": 0.32402978699493
+    },
+    {
+      "path": "data/external/fishsounds/200588.wav",
+      "source": "fishsounds",
+      "reference_label": "toadfish_boatwhistle",
+      "predicted_train_label": "toadfish_boatwhistle",
+      "confidence": 0.9632820608264043
+    },
+    {
+      "path": "data/external/esr01429/n058p001_AS1.mp3",
+      "source": "esr01429",
+      "reference_label": "sturgeon_thunder",
+      "predicted_train_label": "sturgeon_thunder",
+      "confidence": 0.9503344403674922
+    },
+    {
+      "path": "data/external/esr01429/n058p001_AS2.mp3",
+      "source": "esr01429",
+      "reference_label": "sturgeon_thunder",
+      "predicted_train_label": "sturgeon_thunder",
+      "confidence": 0.9936381472555736
+    },
+    {
+      "path": "data/external/noaa_hudson/144488Hudson_024K_AS02_ST300-5683_20210424_090503Zm0400_excerpt.wav",
+      "source": "noaa_ncei",
+      "reference_label": "background",
+      "predicted_train_label": "boat",
+      "confidence": 0.294481188630405
+    },
+    {
+      "path": "data/external/noaa_hudson/144488Hudson_024K_AS05_ST300-5683_20210701_203738Zm0400_excerpt.wav",
+      "source": "noaa_ncei",
+      "reference_label": "background",
+      "predicted_train_label": "boat",
+      "confidence": 0.7158858731274125
+    }
+  ],
+  "external_center_window_by_probe": {
+    "perch_v2_backbone": [
+      {
+        "path": "data/external/fishsounds/200686.wav",
+        "source": "fishsounds",
+        "reference_label": "drum_knock",
+        "predicted_train_label": "toadfish_boatwhistle",
+        "confidence": 0.5809898026845156
+      },
+      {
+        "path": "data/external/fishsounds/200719.wav",
+        "source": "fishsounds",
+        "reference_label": "drum_knock",
+        "predicted_train_label": "drum_knock",
+        "confidence": 0.585888166628606
+      },
+      {
+        "path": "data/external/fishsounds/200764.wav",
+        "source": "fishsounds",
+        "reference_label": "drum_knock",
+        "predicted_train_label": "drum_knock",
+        "confidence": 0.6981988723515292
+      },
+      {
+        "path": "data/external/fishsounds/200676.wav",
+        "source": "fishsounds",
+        "reference_label": "drum_knock",
+        "predicted_train_label": "sturgeon_thunder",
+        "confidence": 0.9569133064094119
+      },
+      {
+        "path": "data/external/fishsounds/843171.wav",
+        "source": "fishsounds",
+        "reference_label": "toadfish_boatwhistle",
+        "predicted_train_label": "toadfish_boatwhistle",
+        "confidence": 0.9619283783633621
+      },
+      {
+        "path": "data/external/fishsounds/843165.wav",
+        "source": "fishsounds",
+        "reference_label": "unscored",
+        "predicted_train_label": "bass_spawning_splash",
+        "confidence": 0.32402978699493
+      },
+      {
+        "path": "data/external/fishsounds/200588.wav",
+        "source": "fishsounds",
+        "reference_label": "toadfish_boatwhistle",
+        "predicted_train_label": "toadfish_boatwhistle",
+        "confidence": 0.9632820608264043
+      },
+      {
+        "path": "data/external/esr01429/n058p001_AS1.mp3",
+        "source": "esr01429",
+        "reference_label": "sturgeon_thunder",
+        "predicted_train_label": "sturgeon_thunder",
+        "confidence": 0.9503344403674922
+      },
+      {
+        "path": "data/external/esr01429/n058p001_AS2.mp3",
+        "source": "esr01429",
+        "reference_label": "sturgeon_thunder",
+        "predicted_train_label": "sturgeon_thunder",
+        "confidence": 0.9936381472555736
+      },
+      {
+        "path": "data/external/noaa_hudson/144488Hudson_024K_AS02_ST300-5683_20210424_090503Zm0400_excerpt.wav",
+        "source": "noaa_ncei",
+        "reference_label": "background",
+        "predicted_train_label": "boat",
+        "confidence": 0.294481188630405
+      },
+      {
+        "path": "data/external/noaa_hudson/144488Hudson_024K_AS05_ST300-5683_20210701_203738Zm0400_excerpt.wav",
+        "source": "noaa_ncei",
+        "reference_label": "background",
+        "predicted_train_label": "boat",
+        "confidence": 0.7158858731274125
+      }
+    ],
+    "lowband_v1": [
+      {
+        "path": "data/external/fishsounds/200686.wav",
+        "source": "fishsounds",
+        "reference_label": "drum_knock",
+        "predicted_train_label": "toadfish_boatwhistle",
+        "confidence": 0.5595215948392837
+      },
+      {
+        "path": "data/external/fishsounds/200719.wav",
+        "source": "fishsounds",
+        "reference_label": "drum_knock",
+        "predicted_train_label": "drum_knock",
+        "confidence": 0.975572298763069
+      },
+      {
+        "path": "data/external/fishsounds/200764.wav",
+        "source": "fishsounds",
+        "reference_label": "drum_knock",
+        "predicted_train_label": "drum_knock",
+        "confidence": 0.9891623872825026
+      },
+      {
+        "path": "data/external/fishsounds/200676.wav",
+        "source": "fishsounds",
+        "reference_label": "drum_knock",
+        "predicted_train_label": "toadfish_boatwhistle",
+        "confidence": 0.9348957620084863
+      },
+      {
+        "path": "data/external/fishsounds/843171.wav",
+        "source": "fishsounds",
+        "reference_label": "toadfish_boatwhistle",
+        "predicted_train_label": "bass_spawning_splash",
+        "confidence": 0.6980548452461414
+      },
+      {
+        "path": "data/external/fishsounds/843165.wav",
+        "source": "fishsounds",
+        "reference_label": "unscored",
+        "predicted_train_label": "bass_spawning_splash",
+        "confidence": 0.966022200820361
+      },
+      {
+        "path": "data/external/fishsounds/200588.wav",
+        "source": "fishsounds",
+        "reference_label": "toadfish_boatwhistle",
+        "predicted_train_label": "boat",
+        "confidence": 0.5055961813312124
+      },
+      {
+        "path": "data/external/esr01429/n058p001_AS1.mp3",
+        "source": "esr01429",
+        "reference_label": "sturgeon_thunder",
+        "predicted_train_label": "bass_spawning_splash",
+        "confidence": 0.9905739951316967
+      },
+      {
+        "path": "data/external/esr01429/n058p001_AS2.mp3",
+        "source": "esr01429",
+        "reference_label": "sturgeon_thunder",
+        "predicted_train_label": "bass_spawning_splash",
+        "confidence": 0.9993535193010001
+      },
+      {
+        "path": "data/external/noaa_hudson/144488Hudson_024K_AS02_ST300-5683_20210424_090503Zm0400_excerpt.wav",
+        "source": "noaa_ncei",
+        "reference_label": "background",
+        "predicted_train_label": "bass_spawning_splash",
+        "confidence": 0.9205006252945028
+      },
+      {
+        "path": "data/external/noaa_hudson/144488Hudson_024K_AS05_ST300-5683_20210701_203738Zm0400_excerpt.wav",
+        "source": "noaa_ncei",
+        "reference_label": "background",
+        "predicted_train_label": "bass_spawning_splash",
+        "confidence": 0.9363312348262431
+      }
+    ],
+    "perch_v2_backbone+lowband_v1": [
+      {
+        "path": "data/external/fishsounds/200686.wav",
+        "source": "fishsounds",
+        "reference_label": "drum_knock",
+        "predicted_train_label": "toadfish_boatwhistle",
+        "confidence": 0.6013239518372193
+      },
+      {
+        "path": "data/external/fishsounds/200719.wav",
+        "source": "fishsounds",
+        "reference_label": "drum_knock",
+        "predicted_train_label": "drum_knock",
+        "confidence": 0.7394539485088807
+      },
+      {
+        "path": "data/external/fishsounds/200764.wav",
+        "source": "fishsounds",
+        "reference_label": "drum_knock",
+        "predicted_train_label": "drum_knock",
+        "confidence": 0.7103829724283209
+      },
+      {
+        "path": "data/external/fishsounds/200676.wav",
+        "source": "fishsounds",
+        "reference_label": "drum_knock",
+        "predicted_train_label": "drum_knock",
+        "confidence": 0.4085686847060705
+      },
+      {
+        "path": "data/external/fishsounds/843171.wav",
+        "source": "fishsounds",
+        "reference_label": "toadfish_boatwhistle",
+        "predicted_train_label": "toadfish_boatwhistle",
+        "confidence": 0.9609624807174724
+      },
+      {
+        "path": "data/external/fishsounds/843165.wav",
+        "source": "fishsounds",
+        "reference_label": "unscored",
+        "predicted_train_label": "bass_spawning_splash",
+        "confidence": 0.5610353179760593
+      },
+      {
+        "path": "data/external/fishsounds/200588.wav",
+        "source": "fishsounds",
+        "reference_label": "toadfish_boatwhistle",
+        "predicted_train_label": "toadfish_boatwhistle",
+        "confidence": 0.9565946441317671
+      },
+      {
+        "path": "data/external/esr01429/n058p001_AS1.mp3",
+        "source": "esr01429",
+        "reference_label": "sturgeon_thunder",
+        "predicted_train_label": "sturgeon_thunder",
+        "confidence": 0.24296880904113086
+      },
+      {
+        "path": "data/external/esr01429/n058p001_AS2.mp3",
+        "source": "esr01429",
+        "reference_label": "sturgeon_thunder",
+        "predicted_train_label": "sturgeon_thunder",
+        "confidence": 0.9548585284160216
+      },
+      {
+        "path": "data/external/noaa_hudson/144488Hudson_024K_AS02_ST300-5683_20210424_090503Zm0400_excerpt.wav",
+        "source": "noaa_ncei",
+        "reference_label": "background",
+        "predicted_train_label": "bass_spawning_splash",
+        "confidence": 0.3579337436481477
+      },
+      {
+        "path": "data/external/noaa_hudson/144488Hudson_024K_AS05_ST300-5683_20210701_203738Zm0400_excerpt.wav",
+        "source": "noaa_ncei",
+        "reference_label": "background",
+        "predicted_train_label": "boat",
+        "confidence": 0.5518896946797799
+      }
+    ]
+  },
+  "external_leave_one_file_out": [
+    {
+      "path": "data/external/fishsounds/200686.wav",
+      "source": "fishsounds",
+      "reference_label": "drum_knock",
+      "predicted_train_label": "toadfish_boatwhistle",
+      "confidence": 0.5062363815464574,
+      "correct": false
+    },
+    {
+      "path": "data/external/fishsounds/200719.wav",
+      "source": "fishsounds",
+      "reference_label": "drum_knock",
+      "predicted_train_label": "drum_knock",
+      "confidence": 0.996074931620836,
+      "correct": true
+    },
+    {
+      "path": "data/external/fishsounds/200764.wav",
+      "source": "fishsounds",
+      "reference_label": "drum_knock",
+      "predicted_train_label": "drum_knock",
+      "confidence": 0.9902360584409242,
+      "correct": true
+    },
+    {
+      "path": "data/external/fishsounds/200676.wav",
+      "source": "fishsounds",
+      "reference_label": "drum_knock",
+      "predicted_train_label": "drum_knock",
+      "confidence": 0.7362847762901416,
+      "correct": true
+    },
+    {
+      "path": "data/external/fishsounds/843171.wav",
+      "source": "fishsounds",
+      "reference_label": "toadfish_boatwhistle",
+      "predicted_train_label": "toadfish_boatwhistle",
+      "confidence": 0.7638419669411506,
+      "correct": true
+    },
+    {
+      "path": "data/external/fishsounds/200588.wav",
+      "source": "fishsounds",
+      "reference_label": "toadfish_boatwhistle",
+      "predicted_train_label": "toadfish_boatwhistle",
+      "confidence": 0.8255027902497196,
+      "correct": true
+    },
+    {
+      "path": "data/external/esr01429/n058p001_AS1.mp3",
+      "source": "esr01429",
+      "reference_label": "sturgeon_thunder",
+      "predicted_train_label": "sturgeon_thunder",
+      "confidence": 0.7104836051468838,
+      "correct": true
+    },
+    {
+      "path": "data/external/esr01429/n058p001_AS2.mp3",
+      "source": "esr01429",
+      "reference_label": "sturgeon_thunder",
+      "predicted_train_label": "sturgeon_thunder",
+      "confidence": 0.9980721656937686,
+      "correct": true
+    }
+  ],
+  "synthetic_event_timing": {
+    "note": "A 5 s synthetic clip is added to 15 s of background at a known offset. A hit is a detection of the mapped label whose interval overlaps that 5 s span. Start error is coarse because the model sees 5 s windows on a 1 s hop. These scenes are 15 s, under the 30 s minimum for the splash gate.",
+    "per_class": [
+      {
+        "label": "bass_spawning_splash",
+        "detection_label": "bass_spawning_splash",
+        "scenes": 8,
+        "hits": 8,
+        "hit_rate": 1.0,
+        "median_abs_start_error_s": 3.2860356067003713
+      },
+      {
+        "label": "sturgeon_thunder",
+        "detection_label": "sturgeon_thunder",
+        "scenes": 8,
+        "hits": 5,
+        "hit_rate": 0.625,
+        "median_abs_start_error_s": 2.0887784895894717
+      },
+      {
+        "label": "drum_knock",
+        "detection_label": "drum_knock",
+        "scenes": 8,
+        "hits": 8,
+        "hit_rate": 1.0,
+        "median_abs_start_error_s": 2.8154788378189695
+      },
+      {
+        "label": "toadfish_boatwhistle",
+        "detection_label": "toadfish_boatwhistle",
+        "scenes": 8,
+        "hits": 8,
+        "hit_rate": 1.0,
+        "median_abs_start_error_s": 1.4185612383764024
+      },
+      {
+        "label": "boat",
+        "detection_label": "boat",
+        "scenes": 8,
+        "hits": 8,
+        "hit_rate": 1.0,
+        "median_abs_start_error_s": 1.8380544301661266
+      },
+      {
+        "label": "train",
+        "detection_label": "unknown",
+        "scenes": 8,
+        "hits": 8,
+        "hit_rate": 1.0,
+        "median_abs_start_error_s": 3.524558927238047
+      },
+      {
+        "label": "hum_60hz",
+        "detection_label": "unknown",
+        "scenes": 8,
+        "hits": 8,
+        "hit_rate": 1.0,
+        "median_abs_start_error_s": 2.3815473649000247
+      },
+      {
+        "label": "rain",
+        "detection_label": "unknown",
+        "scenes": 8,
+        "hits": 8,
+        "hit_rate": 1.0,
+        "median_abs_start_error_s": 3.9220561624859167
+      },
+      {
+        "label": "wave_slap",
+        "detection_label": "unknown",
+        "scenes": 8,
+        "hits": 8,
+        "hit_rate": 1.0,
+        "median_abs_start_error_s": 2.6210982697350245
+      }
+    ],
+    "background_only_scenes": 6,
+    "background_only_scenes_with_a_detection": 4,
+    "background_only_labels": [
+      "boat",
+      "boat",
+      "boat",
+      "boat"
+    ]
+  },
+  "synthetic_sequence_gate": {
+    "note": "Each file is 90 s. A file counts if detect() emits that label anywhere in it. temporal_gate=False is the 5 s probe alone. temporal_gate=True relabels bass_spawning_splash to boat when the envelope shows a sustained wash or a stop-start pair of long washes. There is no real striped-bass splash recording in this check.",
+    "stop_start_wake": {
+      "files": 8,
+      "duration_s": 90.0,
+      "files_with_bass_spawning_splash_without_gate": 0,
+      "files_with_bass_spawning_splash_with_gate": 0,
+      "files_with_boat_without_gate": 8,
+      "files_with_boat_with_gate": 8
+    },
+    "splash_bout": {
+      "files": 8,
+      "duration_s": 90.0,
+      "files_with_bass_spawning_splash_without_gate": 8,
+      "files_with_bass_spawning_splash_with_gate": 8,
+      "files_with_boat_without_gate": 0,
+      "files_with_boat_with_gate": 0
+    }
+  },
+  "external_full_file_detections": [
+    {
+      "path": "data/external/fishsounds/200686.wav",
+      "source": "fishsounds",
+      "reference_label": "drum_knock",
+      "note": "Aplodinotus grunniens drum call 1, Rountree 2017",
+      "n_detections": 1,
+      "labels": [
+        "toadfish_boatwhistle"
+      ],
+      "detections": [
+        {
+          "start_time": 0.0,
+          "end_time": 0.74815625,
+          "label": "toadfish_boatwhistle",
+          "species_id": "oyster_toadfish",
+          "confidence": 0.5809898427673514,
+          "freq_low_hz": 252.60000000000002,
+          "freq_high_hz": 330.20000000000005,
+          "model_name": "hrecos-fish-probe",
+          "model_version": "0.2.1"
+        }
+      ]
+    },
+    {
+      "path": "data/external/fishsounds/200719.wav",
+      "source": "fishsounds",
+      "reference_label": "drum_knock",
+      "note": "Aplodinotus grunniens drum call 2, Rountree 2017",
+      "n_detections": 1,
+      "labels": [
+        "drum_knock"
+      ],
+      "detections": [
+        {
+          "start_time": 0.0,
+          "end_time": 1.5913125,
+          "label": "drum_knock",
+          "species_id": "freshwater_drum",
+          "confidence": 0.7310806267497302,
+          "freq_low_hz": 15.600000000000001,
+          "freq_high_hz": 2340.6,
+          "model_name": "hrecos-fish-probe",
+          "model_version": "0.2.1"
+        }
+      ]
+    },
+    {
+      "path": "data/external/fishsounds/200764.wav",
+      "source": "fishsounds",
+      "reference_label": "drum_knock",
+      "note": "Aplodinotus grunniens drum call 3, Rountree 2017",
+      "n_detections": 1,
+      "labels": [
+        "drum_knock"
+      ],
+      "detections": [
+        {
+          "start_time": 0.0,
+          "end_time": 2.453,
+          "label": "drum_knock",
+          "species_id": "freshwater_drum",
+          "confidence": 0.7379524402957814,
+          "freq_low_hz": 16.8,
+          "freq_high_hz": 220.20000000000002,
+          "model_name": "hrecos-fish-probe",
+          "model_version": "0.2.1"
+        }
+      ]
+    },
+    {
+      "path": "data/external/fishsounds/200676.wav",
+      "source": "fishsounds",
+      "reference_label": "drum_knock",
+      "note": "Aplodinotus grunniens drum chorus, Rountree 2017",
+      "n_detections": 0,
+      "labels": [],
+      "detections": []
+    },
+    {
+      "path": "data/external/fishsounds/843171.wav",
+      "source": "fishsounds",
+      "reference_label": "toadfish_boatwhistle",
+      "note": "Opsanus beta complex call, Looby 2022. Gulf toadfish, not oyster toadfish.",
+      "n_detections": 1,
+      "labels": [
+        "toadfish_boatwhistle"
+      ],
+      "detections": [
+        {
+          "start_time": 0.0,
+          "end_time": 1.54009375,
+          "label": "toadfish_boatwhistle",
+          "species_id": "oyster_toadfish",
+          "confidence": 0.996306514369338,
+          "freq_low_hz": 220.60000000000002,
+          "freq_high_hz": 565.8000000000001,
+          "model_name": "hrecos-fish-probe",
+          "model_version": "0.2.1"
+        }
+      ]
+    },
+    {
+      "path": "data/external/fishsounds/843165.wav",
+      "source": "fishsounds",
+      "reference_label": "unscored",
+      "note": "Opsanus beta grunt, Looby 2022. Not a boatwhistle; scored only as a qualitative check.",
+      "n_detections": 0,
+      "labels": [],
+      "detections": []
+    },
+    {
+      "path": "data/external/fishsounds/200588.wav",
+      "source": "fishsounds",
+      "reference_label": "toadfish_boatwhistle",
+      "note": "Halobatrachus didactylus boatwhistle, Amorim 2008. Lusitanian toadfish, not Opsanus tau.",
+      "n_detections": 1,
+      "labels": [
+        "toadfish_boatwhistle"
+      ],
+      "detections": [
+        {
+          "start_time": 0.0,
+          "end_time": 60.05553125,
+          "label": "toadfish_boatwhistle",
+          "species_id": "oyster_toadfish",
+          "confidence": 0.9956464660181156,
+          "freq_low_hz": 262.40000000000003,
+          "freq_high_hz": 627.4000000000001,
+          "model_name": "hrecos-fish-probe",
+          "model_version": "0.2.1"
+        }
+      ]
+    },
+    {
+      "path": "data/external/esr01429/n058p001_AS1.mp3",
+      "source": "esr01429",
+      "reference_label": "sturgeon_thunder",
+      "note": "Cohen et al. 2025 ESR doi:10.3354/esr01429 supplementary audio S1, wild Atlantic sturgeon thunder.",
+      "n_detections": 1,
+      "labels": [
+        "sturgeon_thunder"
+      ],
+      "detections": [
+        {
+          "start_time": 0.0,
+          "end_time": 7.0,
+          "label": "sturgeon_thunder",
+          "species_id": "atlantic_sturgeon",
+          "confidence": 0.9744811055634637,
+          "freq_low_hz": 25.6,
+          "freq_high_hz": 91.4,
+          "model_name": "hrecos-fish-probe",
+          "model_version": "0.2.1"
+        }
+      ]
+    },
+    {
+      "path": "data/external/esr01429/n058p001_AS2.mp3",
+      "source": "esr01429",
+      "reference_label": "sturgeon_thunder",
+      "note": "Cohen et al. 2025 ESR doi:10.3354/esr01429 supplementary audio S2, captive Atlantic sturgeon thunder.",
+      "n_detections": 1,
+      "labels": [
+        "sturgeon_thunder"
+      ],
+      "detections": [
+        {
+          "start_time": 0.0,
+          "end_time": 6.0,
+          "label": "sturgeon_thunder",
+          "species_id": "atlantic_sturgeon",
+          "confidence": 0.9859403724001711,
+          "freq_low_hz": 25.200000000000003,
+          "freq_high_hz": 1260.4,
+          "model_name": "hrecos-fish-probe",
+          "model_version": "0.2.1"
+        }
+      ]
+    },
+    {
+      "path": "data/external/noaa_hudson/144488Hudson_024K_AS02_ST300-5683_20210424_090503Zm0400_excerpt.wav",
+      "source": "noaa_ncei",
+      "reference_label": "background",
+      "note": "Unlabeled. Used only as an external background check, not as a fish label.",
+      "n_detections": 1,
+      "labels": [
+        "boat"
+      ],
+      "detections": [
+        {
+          "start_time": 9.0,
+          "end_time": 19.0,
+          "label": "boat",
+          "species_id": null,
+          "confidence": 0.7755978506632019,
+          "freq_low_hz": 20.400000000000002,
+          "freq_high_hz": 65.8,
+          "model_name": "hrecos-fish-probe",
+          "model_version": "0.2.1"
+        }
+      ]
+    },
+    {
+      "path": "data/external/noaa_hudson/144488Hudson_024K_AS05_ST300-5683_20210701_203738Zm0400_excerpt.wav",
+      "source": "noaa_ncei",
+      "reference_label": "background",
+      "note": "Unlabeled. Used only as an external background check, not as a fish label.",
+      "n_detections": 1,
+      "labels": [
+        "boat"
+      ],
+      "detections": [
+        {
+          "start_time": 0.0,
+          "end_time": 20.0,
+          "label": "boat",
+          "species_id": null,
+          "confidence": 0.9469647234119323,
+          "freq_low_hz": 121.80000000000001,
+          "freq_high_hz": 529.2,
+          "model_name": "hrecos-fish-probe",
+          "model_version": "0.2.1"
+        }
+      ]
+    }
+  ]
+}

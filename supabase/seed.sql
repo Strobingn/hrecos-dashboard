@@ -106,8 +106,8 @@ insert into public.species (
     false,
     null,
     null,
-    'No confirmed species-specific calls. Abundant Hudson predator. Included so detections are not assigned to striped bass by default.',
-    'Resident and migratory in the tidal Hudson; peak angling interest in spring and fall.',
+    'No confirmed species-specific vocalization. The detector label bass_spawning_splash is surface splashing from spawning rock fights (several males bumping a female at the surface), not a call, and is stored with this species_id. No published spectrum of that splash was found (behavior in Setzler et al. 1980, NOAA Tech. Rep. NMFS Circ. 433).',
+    'Hudson spawning is roughly late April through June in water near 14-20 C, on reaches above Kingston and through West Point-Poughkeepsie, often in the evening and at night. Also resident and migratory in the tidal Hudson.',
     'https://fishsounds.net/results-fish.js?query=Morone%20saxatilis',
     'https://upload.wikimedia.org/wikipedia/commons/7/74/Morone_saxatilis_SI2.jpg'
   ),

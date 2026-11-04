@@ -1,0 +1,64 @@
+{
+  "sources": [
+    {
+      "name": "perch_v2_backbone.onnx",
+      "ok": true,
+      "detail": "copied cached download (45123690 bytes)"
+    },
+    {
+      "name": "fishsounds:200686",
+      "ok": true,
+      "detail": "107778 bytes; Aplodinotus grunniens drum call 1, Rountree 2017"
+    },
+    {
+      "name": "fishsounds:200719",
+      "ok": true,
+      "detail": "229190 bytes; Aplodinotus grunniens drum call 2, Rountree 2017"
+    },
+    {
+      "name": "fishsounds:200764",
+      "ok": true,
+      "detail": "54132 bytes; Aplodinotus grunniens drum call 3, Rountree 2017"
+    },
+    {
+      "name": "fishsounds:200676",
+      "ok": true,
+      "detail": "1440048 bytes; Aplodinotus grunniens drum chorus, Rountree 2017"
+    },
+    {
+      "name": "fishsounds:843171",
+      "ok": true,
+      "detail": "135880 bytes; Opsanus beta complex call, Looby 2022. Gulf toadfish, not oyster toadfish."
+    },
+    {
+      "name": "fishsounds:843165",
+      "ok": true,
+      "detail": "59392 bytes; Opsanus beta grunt, Looby 2022. Not a boatwhistle; scored only as a qualitative check."
+    },
+    {
+      "name": "fishsounds:200588",
+      "ok": true,
+      "detail": "5296974 bytes; Halobatrachus didactylus boatwhistle, Amorim 2008. Lusitanian toadfish, not Opsanus tau."
+    },
+    {
+      "name": "n058p001_AS1.mp3",
+      "ok": true,
+      "detail": "28460 bytes"
+    },
+    {
+      "name": "n058p001_AS2.mp3",
+      "ok": true,
+      "detail": "24428 bytes"
+    },
+    {
+      "name": "noaa:144488Hudson_024K_AS02_ST300-5683_20210424_090503Zm0400.flac",
+      "ok": true,
+      "detail": "excerpt 960078 bytes"
+    },
+    {
+      "name": "noaa:144488Hudson_024K_AS05_ST300-5683_20210701_203738Zm0400.flac",
+      "ok": true,
+      "detail": "excerpt 960078 bytes"
+    }
+  ]
+}
