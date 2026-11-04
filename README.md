@@ -23,6 +23,38 @@ Real-time environmental monitoring dashboard for the **Hudson River Environmenta
 - 🔒 **Security First** - Automated security scanning and dependency updates
 - 🚀 **CI/CD Ready** - GitHub Actions for testing, building, and deployment
 
+## GitHub Pages site
+
+The vanilla dashboard (`index.html`, `app.js`, `style.css`) is what [https://strobingn.github.io/hrecos-dashboard/](https://strobingn.github.io/hrecos-dashboard/) serves. Pages is set to build with GitHub Actions. `.github/workflows/pages.yml` publishes those static files on every push to `main`.
+
+The map uses Leaflet and OpenStreetMap (no API key). The **Sounds** tab is the Hudson River fish acoustic network (Tappan Zee through Poughkeepsie, centered on West Point / Cornwall).
+
+### Fish Sounds configuration
+
+Supabase URL and the anon key live in `config.js` next to `index.html`:
+
+```js
+window.HRECOS_CONFIG = {
+  supabaseUrl: "https://YOUR_PROJECT.supabase.co",
+  supabaseAnonKey: "YOUR_ANON_KEY"
+};
+```
+
+Copy both from Supabase → Project Settings → API. The anon key is safe to commit; do not put the service-role key in this file. Leave the strings empty and the tab uses `data/fish-sounds.json` (sample nodes, species, detections, and hourly counts) so it still runs.
+
+Expected tables (shared with the database migrations):
+
+| Relation | Columns used by the page |
+|---|---|
+| `species` | `id`, `common_name`, `scientific_name`, `soniferous`, `freq_low_hz`, `freq_high_hz`, `call_description`, `season`, `fishsounds_url`, `image_url` |
+| `hydrophone_nodes` | `id`, `name`, `lat`, `lon`, `river_mile`, `hardware`, `sample_rate_hz`, `status`, `last_heartbeat` |
+| `detections` | `id`, `node_id`, `segment_id`, `start_time`, `end_time`, `label`, `species_id`, `confidence`, `model_name`, `model_version`, `freq_low_hz`, `freq_high_hz`, `clip_path`, `review_status` |
+| `detection_counts_hourly` (view) | `node_id`, `species_id`, `label`, `hour`, `detections`, `avg_confidence` |
+
+Clips are files in the public Storage bucket `audio`. `clip_path` is the object key. The page subscribes to Realtime inserts and updates on `detections`. Hourly bars are **calls detected per hour** (an activity index), not a count of individual fish.
+
+Sample node ids: `westpoint-cornwall`, `poughkeepsie`, `tappan-zee`.
+
 ## 🏗️ Architecture
 
 ```
@@ -191,6 +223,7 @@ THRESHOLDS = {
 | **Docker Publish** | Push to main | Build and push images to GHCR |
 | **Security Scan** | Schedule/PR | Vulnerability scanning with Trivy, Snyk, GitLeaks |
 | **Deploy** | Tag/Manual | Deploy to production server |
+| **GitHub Pages** | Push to main | Publish the static dashboard (`.github/workflows/pages.yml`) |
 | **Dependabot** | Schedule | Automated dependency updates |
 
 ### GitHub Secrets Required for Deployment
