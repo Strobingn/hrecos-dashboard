@@ -1,411 +1,126 @@
-import React, { useCallback, useEffect, useRef } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  RefreshControl,
-  StyleSheet,
-  TouchableOpacity,
-} from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { View, Text, ScrollView, RefreshControl, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../hooks/useTheme';
+import { usePreferences } from '../context/PreferencesContext';
 import { useDashboard } from '../hooks/useDashboard';
 import { useStations } from '../hooks/useStations';
 import { useTides } from '../hooks/useTides';
-import { useAnomalies } from '../hooks/useAnomalies';
-import { TIDE_PHASES } from '../constants';
-
-import { LoadingSpinner } from '../components/common/LoadingSpinner';
-import { ErrorView } from '../components/common/ErrorView';
-import { SectionHeader } from '../components/common/SectionHeader';
-import { MetricCard } from '../components/cards/MetricCard';
-import { WaterQualityGauge } from '../components/gauges/WaterQualityGauge';
-import { StationCard } from '../components/cards/StationCard';
-import { AlertCard } from '../components/cards/AlertCard';
-import { TideCard } from '../components/cards/TideCard';
-
-const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
+import { useWeather } from '../hooks/useWeather';
+import { formatMeasurement } from '../utils/measurements';
+import StationCard from '../components/cards/StationCard';
+import WeatherPanel from '../components/cards/WeatherPanel';
 
 export default function DashboardScreen() {
   const navigation = useNavigation();
-  const { theme } = useTheme();
-
-  const {
-    data: dashboardData,
-    loading: dashboardLoading,
-    error: dashboardError,
-    refetch: refetchDashboard,
-  } = useDashboard();
-
-  const {
-    stations,
-    loading: stationsLoading,
-    error: stationsError,
-    refetch: refetchStations,
-  } = useStations();
-
-  const {
-    data: tideData,
-    loading: tideLoading,
-    error: tideError,
-    refetch: refetchTides,
-  } = useTides();
-
-  const {
-    anomalies,
-    loading: alertsLoading,
-    refetch: refetchAlerts,
-  } = useAnomalies(3);
-
-  const intervalRef = useRef(null);
-
-  const isLoading = dashboardLoading || stationsLoading || tideLoading || alertsLoading;
-  const hasError = dashboardError || stationsError || tideError;
-
+  const { colors } = useTheme();
+  const { units, setUnits } = usePreferences();
+  const dashboard = useDashboard();
+  const stations = useStations();
+  const tides = useTides();
+  const weather = useWeather();
+  const [refreshing, setRefreshing] = useState(false);
+  const measure = (value, param) => formatMeasurement(value, param, units);
+  const reporting = stations.stations.filter((s) => s.readings && Object.keys(s.readings).length);
   const onRefresh = useCallback(async () => {
-    await Promise.all([
-      refetchDashboard(),
-      refetchStations(),
-      refetchTides(),
-      refetchAlerts(),
-    ]);
-  }, [refetchDashboard, refetchStations, refetchTides, refetchAlerts]);
-
-  // Auto-refresh every 5 minutes
-  useEffect(() => {
-    intervalRef.current = setInterval(() => {
-      onRefresh();
-    }, REFRESH_INTERVAL);
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, [onRefresh]);
-
-  const getCurrentDate = () => {
-    return new Date().toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
+    setRefreshing(true);
+    try { await Promise.all([dashboard.refetch(), stations.refetch(), tides.refetch(), weather.refetch()]); }
+    finally { setRefreshing(false); }
+  }, [dashboard.refetch, stations.refetch, tides.refetch, weather.refetch]);
+  const changeUnits = async (value) => {
+    try { await setUnits(value); }
+    catch { Alert.alert('Could not save units', 'Please try again.'); }
   };
-
-  const getTideSubtitle = () => {
-    if (!tideData?.current) return '--';
-    const phase = TIDE_PHASES[tideData.current.phase];
-    return `${tideData.current.height.toFixed(2)}m ${phase ? phase.label : ''}`;
-  };
-
-  const getLiveStations = () => {
-    return stations.filter(s => s.status === 'live');
-  };
-
-  const handleStationPress = (stationId) => {
-    navigation.navigate('StationDetail', { stationId });
-  };
-
-  const handleViewAllAlerts = () => {
-    navigation.navigate('Alerts');
-  };
-
-  const handleSettings = () => {
-    navigation.navigate('Settings');
-  };
-
-  // Loading state
-  if (isLoading && !dashboardData) {
-    return (
-      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <LoadingSpinner fullScreen message="Loading river data..." />
-      </View>
-    );
-  }
-
-  // Error state
-  if (hasError && !dashboardData) {
-    return (
-      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <View style={styles.headerSpacer} />
-        <ErrorView
-          message={dashboardError || stationsError || 'Failed to load dashboard'}
-          onRetry={onRefresh}
-        />
-      </View>
-    );
-  }
-
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={isLoading}
-            onRefresh={onRefresh}
-            tintColor={theme.colors.primary}
-            colors={[theme.colors.primary]}
-          />
-        }
-      >
-        {/* ===== HEADER ===== */}
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <Text style={[styles.appTitle, { color: theme.colors.text }]}>
-              HRECOS RiverWatch
-            </Text>
-            <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
-              Hudson River Environmental Monitor
-            </Text>
-            <View style={styles.dateRow}>
-              <MaterialCommunityIcons name="calendar-today" size={13} color={theme.colors.textTertiary} />
-              <Text style={[styles.dateText, { color: theme.colors.textTertiary }]}>
-                {getCurrentDate()}
-              </Text>
-            </View>
-          </View>
-          <TouchableOpacity
-            style={[styles.settingsButton, { backgroundColor: theme.colors.surfaceVariant }]}
-            onPress={handleSettings}
-            activeOpacity={0.7}
-          >
-            <MaterialCommunityIcons name="cog" size={22} color={theme.colors.textSecondary} />
-          </TouchableOpacity>
+    <ScrollView style={{ backgroundColor: colors.background }} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}>
+      <View style={styles.header}>
+        <View style={styles.grow}>
+          <Text style={[styles.eyebrow, { color: colors.primary }]}>HUDSON RIVER</Text>
+          <Text style={[styles.heading, { color: colors.text }]}>Your river, at a glance.</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>West Point · Cornwall · Newburgh</Text>
         </View>
-
-        {/* ===== QUICK STATS ROW ===== */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.statsScroll}
-        >
-          <MetricCard
-            icon="broadcast"
-            label="Stations Online"
-            value={`${dashboardData?.stationsOnline ?? '--'}`}
-            subtitle={`/ ${dashboardData?.totalStations ?? '--'} total`}
-            color={theme.colors.success}
-            bgColor={theme.colors.successLight}
-          />
-          <MetricCard
-            icon="thermometer-water"
-            label="Avg Water Temp"
-            value={`${dashboardData?.avgWaterTemp ?? '--'}°C`}
-            subtitle="Live stations"
-            color={theme.colors.chartTemp}
-            bgColor={theme.colors.chartTemp + '20'}
-          />
-          <MetricCard
-            icon="waves-arrow-up"
-            label="Current Tide"
-            value={tideData?.current?.height?.toFixed(2) ?? '--'}
-            subtitle={getTideSubtitle()}
-            color={theme.colors.primary}
-            bgColor={theme.colors.primaryFaded}
-          />
-          <MetricCard
-            icon="water-check"
-            label="Water Quality"
-            value={dashboardData?.waterQualityLevel?.label ?? '--'}
-            subtitle={`WQI: ${dashboardData?.waterQualityIndex ?? '--'}`}
-            color={theme.colors.secondary}
-            bgColor={theme.colors.secondaryFaded}
-          />
-        </ScrollView>
-
-        {/* ===== WATER QUALITY SUMMARY CARD ===== */}
-        <View style={[styles.wqCard, { backgroundColor: theme.colors.card }, theme.shadows.medium]}>
-          <View style={styles.wqHeader}>
-            <MaterialCommunityIcons name="water-check" size={20} color={theme.colors.primary} />
-            <Text style={[styles.wqTitle, { color: theme.colors.text }]}>
-              River Health
-            </Text>
-          </View>
-          <View style={styles.wqBody}>
-            <WaterQualityGauge wqi={dashboardData?.waterQualityIndex || 0} size={150} />
-            <View style={styles.wqDescription}>
-              <Text style={[styles.wqLabel, { color: theme.colors.textSecondary }]}>
-                Water Quality Index
-              </Text>
-              <Text style={[styles.wqText, { color: theme.colors.textSecondary }]}>
-                The Hudson River water quality is currently{' '}
-                <Text style={{ fontWeight: '700', color: dashboardData?.waterQualityLevel?.color || theme.colors.text }}>
-                  {dashboardData?.waterQualityLevel?.label?.toUpperCase() || 'GOOD'}
-                </Text>
-                {' '}based on turbidity, dissolved oxygen, and pH readings from active monitoring stations.
-              </Text>
-            </View>
+        <TouchableOpacity style={[styles.settings, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => navigation.navigate('Settings')} accessibilityLabel="Open settings" accessibilityRole="button">
+          <MaterialCommunityIcons name="tune-variant" size={22} color={colors.text} />
+        </TouchableOpacity>
+      </View>
+      <View style={styles.hero}>
+        <View style={styles.heroTop}>
+          <Text style={styles.heroLabel}>AVERAGE WATER TEMPERATURE</Text>
+          <View style={styles.unitToggle}>
+            {['imperial', 'metric'].map((option) => <TouchableOpacity key={option} onPress={() => changeUnits(option)} accessibilityRole="button" accessibilityLabel={option === 'imperial' ? 'Use Fahrenheit and imperial units' : 'Use Celsius and metric units'} accessibilityState={{ selected: units === option }} style={[styles.unitButton, units === option && styles.unitSelected]}>
+              <Text style={[styles.unitText, { color: units === option ? '#123D3B' : '#C4DEDA' }]}>{option === 'imperial' ? '°F' : '°C'}</Text>
+            </TouchableOpacity>)}
           </View>
         </View>
-
-        {/* ===== LIVE STATIONS SECTION ===== */}
-        <SectionHeader
-          title="Live Monitoring Stations"
-          icon="radar"
-        />
-        <View style={styles.stationsList}>
-          {getLiveStations().map(station => (
-            <StationCard
-              key={station.id}
-              station={station}
-              onPress={() => handleStationPress(station.id)}
-              compact
-            />
-          ))}
-          {getLiveStations().length === 0 && (
-            <View style={[styles.emptyState, { backgroundColor: theme.colors.card }]}>
-              <MaterialCommunityIcons name="broadcast-off" size={32} color={theme.colors.textTertiary} />
-              <Text style={[styles.emptyText, { color: theme.colors.textTertiary }]}>
-                No live stations currently
-              </Text>
-            </View>
-          )}
+        <Text style={styles.heroValue}>{measure(dashboard.data?.avgWaterTemp, 'temp')}</Text>
+        <Text style={styles.heroNote}>{dashboard.error ? 'River readings unavailable · pull to retry' : dashboard.loading && !dashboard.data ? 'Getting river readings…' : 'From available HRECOS stations'}</Text>
+        <View style={styles.heroBottom}>
+          <View style={styles.grow}>
+            <Text style={styles.heroLabel}>CURRENT TIDE</Text>
+            <Text style={styles.heroMetric}>{measure(tides.data?.current?.height, 'tide')}</Text>
+            <Text style={styles.heroNote}>{tides.data?.source === 'simulated' ? 'Simulated · NOAA unavailable' : 'NOAA · Newburgh'}</Text>
+          </View>
+          <View style={styles.heroDivider} />
+          <View style={styles.grow}>
+            <Text style={styles.heroLabel}>RIVER STATIONS</Text>
+            <Text style={styles.heroMetric}>{reporting.length} reporting</Text>
+            <Text style={styles.heroNote}>{dashboard.data?.lastUpdated ? `Updated ${new Date(dashboard.data.lastUpdated).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}` : 'Waiting for observations'}</Text>
+          </View>
         </View>
-
-        {/* ===== RECENT ALERTS PREVIEW ===== */}
-        <SectionHeader
-          title="Recent Alerts"
-          icon="alert-outline"
-          actionLabel="View All"
-          onAction={handleViewAllAlerts}
-        />
-        <View style={styles.alertsList}>
-          {anomalies.length > 0 ? (
-            anomalies.slice(0, 3).map(alert => (
-              <AlertCard key={alert.id} alert={alert} />
-            ))
-          ) : (
-            <View style={[styles.emptyState, { backgroundColor: theme.colors.card }]}>
-              <MaterialCommunityIcons name="check-circle-outline" size={32} color={theme.colors.success} />
-              <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
-                No recent alerts. All systems nominal.
-              </Text>
-            </View>
-          )}
+      </View>
+      <WeatherPanel onConfigure={() => navigation.navigate('Settings')} />
+      <View style={styles.sectionHead}>
+        <View style={styles.grow}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Along the river</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Your nearest monitoring stations</Text>
         </View>
-
-        {/* ===== NEXT TIDE CARD ===== */}
-        <SectionHeader
-          title="Tides"
-          icon="waves"
-        />
-        <TideCard tideData={tideData} />
-
-        {/* Footer spacing */}
-        <View style={styles.footer} />
-      </ScrollView>
-    </View>
+        <TouchableOpacity style={styles.linkButton} accessibilityRole="button" onPress={() => navigation.navigate('Stations')}>
+          <Text style={{ color: colors.primary, fontWeight: '600' }}>View all ↗</Text>
+        </TouchableOpacity>
+      </View>
+      <View style={styles.stationList}>
+        {reporting.slice(0, 3).map((station) => <StationCard key={station.id} station={station} onPress={() => navigation.navigate('StationDetail', { stationId: station.id, stationName: station.name })} />)}
+        {!reporting.length && <Text style={[styles.emptyText, { color: colors.textSecondary }]}>{stations.loading ? 'Getting station readings…' : 'No current station readings. Pull to refresh.'}</Text>}
+      </View>
+      <TouchableOpacity style={[styles.alertLink, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => navigation.navigate('Alerts')} accessibilityRole="button">
+        <MaterialCommunityIcons name="bell-outline" size={22} color={colors.primary} />
+        <View style={styles.grow}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Conditions & alerts</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Weather warnings and river anomalies</Text>
+        </View>
+        <MaterialCommunityIcons name="chevron-right" size={22} color={colors.textSecondary} />
+      </TouchableOpacity>
+      <Text style={[styles.footer, { color: colors.textSecondary }]}>HRECOS RIVERWATCH · TAPPAN ZEE TO POUGHKEEPSIE</Text>
+    </ScrollView>
   );
 }
-
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingTop: 12,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 12,
-  },
-  headerLeft: {
-    flex: 1,
-  },
-  appTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    letterSpacing: -0.5,
-  },
-  subtitle: {
-    fontSize: 13,
-    marginTop: 2,
-  },
-  dateRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 6,
-  },
-  dateText: {
-    fontSize: 12,
-    marginLeft: 4,
-  },
-  settingsButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: 12,
-    marginTop: 2,
-  },
-  headerSpacer: {
-    height: 100,
-  },
-  statsScroll: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
-  wqCard: {
-    marginHorizontal: 16,
-    marginVertical: 12,
-    borderRadius: 16,
-    padding: 16,
-  },
-  wqHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  wqTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    marginLeft: 8,
-  },
-  wqBody: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  wqDescription: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  wqLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    marginBottom: 6,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  wqText: {
-    fontSize: 12,
-    lineHeight: 18,
-  },
-  stationsList: {
-    marginBottom: 4,
-  },
-  alertsList: {
-    marginBottom: 4,
-  },
-  emptyState: {
-    marginHorizontal: 16,
-    marginBottom: 10,
-    borderRadius: 12,
-    padding: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyText: {
-    marginTop: 8,
-    fontSize: 13,
-    textAlign: 'center',
-  },
-  footer: {
-    height: 30,
-  },
+  content: { paddingTop: 16, paddingBottom: 32 },
+  header: { paddingHorizontal: 20, paddingBottom: 24, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  eyebrow: { fontSize: 10, fontWeight: '700', letterSpacing: 2, marginBottom: 8 },
+  heading: { fontSize: 25, fontWeight: '700', letterSpacing: -1 },
+  subtitle: { fontSize: 12, lineHeight: 18, marginTop: 4 },
+  settings: { borderRadius: 14, borderWidth: 1, padding: 12 },
+  hero: { marginHorizontal: 20, padding: 22, borderRadius: 24, backgroundColor: '#153E3C' },
+  heroTop: { gap: 14, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center' },
+  heroLabel: { color: '#B2CFCA', fontSize: 9, fontWeight: '600', letterSpacing: 1 },
+  heroValue: { fontSize: 57, letterSpacing: -2.5, fontWeight: '500', color: '#FAFCF7', marginTop: 16 },
+  heroNote: { color: '#B2CFCA', fontSize: 11, lineHeight: 17, marginTop: 4 },
+  heroBottom: { flexDirection: 'row', marginTop: 25, paddingTop: 20, borderTopWidth: 1, borderTopColor: '#365A56', gap: 16 },
+  heroMetric: { fontSize: 19, fontWeight: '600', color: '#FAFCF7', marginTop: 8 },
+  heroDivider: { width: 1, backgroundColor: '#365A56' },
+  grow: { flex: 1 },
+  unitToggle: { flexDirection: 'row', backgroundColor: '#2F5350', padding: 3, borderRadius: 12 },
+  unitButton: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 9 },
+  unitSelected: { backgroundColor: '#E9F3E8' },
+  unitText: { fontSize: 13, fontWeight: '700' },
+  sectionHead: { marginHorizontal: 20, marginTop: 16, marginBottom: 14, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  sectionTitle: { fontSize: 18, fontWeight: '700', letterSpacing: -0.4 },
+  linkButton: { minHeight: 44, justifyContent: 'center' },
+  stationList: { marginHorizontal: 20 },
+  emptyText: { fontSize: 13, lineHeight: 20, textAlign: 'center', padding: 24 },
+  alertLink: { marginHorizontal: 20, marginTop: 18, padding: 18, borderRadius: 20, borderWidth: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  footer: { fontSize: 8, letterSpacing: 1.3, textAlign: 'center', paddingHorizontal: 20, marginTop: 30 },
 });

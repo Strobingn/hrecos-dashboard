@@ -49,6 +49,9 @@ jobs:
       working-directory: ./backend
       run: |
         black --check --diff app || true
+
+    - name: Test backend
+      run: python -m pytest -q
         
     - name: Check import sorting with isort
       working-directory: ./backend
@@ -67,6 +70,27 @@ jobs:
       with:
         name: bandit-security-report
         path: backend/bandit-report.json
+
+  mobile-checks:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: Set up Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: 24
+    - name: Install mobile dependencies
+      working-directory: ./mobile
+      run: npm install --legacy-peer-deps --include=dev --ignore-scripts
+    - name: Test units, weather alerts and module imports
+      working-directory: ./mobile
+      run: npm test
+    - name: Export Android bundle
+      working-directory: ./mobile
+      env:
+        CI: '1'
+      run: npx expo export --platform android --output-dir /tmp/riverwatch-android
 
   edge-tests:
     runs-on: ubuntu-latest

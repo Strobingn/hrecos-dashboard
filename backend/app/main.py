@@ -264,17 +264,17 @@ async def get_station_stats(
             "period_hours": hours,
             "readings_count": row.count,
             "temperature": {
-                "avg": round(row.avg_temp, 2) if row.avg_temp else None,
-                "min": round(row.min_temp, 2) if row.min_temp else None,
-                "max": round(row.max_temp, 2) if row.max_temp else None,
+                "avg": round(row.avg_temp, 2) if row.avg_temp is not None else None,
+                "min": round(row.min_temp, 2) if row.min_temp is not None else None,
+                "max": round(row.max_temp, 2) if row.max_temp is not None else None,
             },
             "flow": {
-                "avg": round(row.avg_flow, 2) if row.avg_flow else None,
-                "min": round(row.min_flow, 2) if row.min_flow else None,
-                "max": round(row.max_flow, 2) if row.max_flow else None,
+                "avg": round(row.avg_flow, 2) if row.avg_flow is not None else None,
+                "min": round(row.min_flow, 2) if row.min_flow is not None else None,
+                "max": round(row.max_flow, 2) if row.max_flow is not None else None,
             },
             "turbidity": {
-                "avg": round(row.avg_turbidity, 2) if row.avg_turbidity else None,
+                "avg": round(row.avg_turbidity, 2) if row.avg_turbidity is not None else None,
             }
         }
         
@@ -459,7 +459,7 @@ async def get_tides(
                     "height": t["height"],
                     "type": t["type"],
                 }
-                for t in tides[:48]
+                for t in tides
             ],
         }
     except HTTPException:

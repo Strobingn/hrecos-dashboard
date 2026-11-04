@@ -1,5 +1,5 @@
 // HRECOS RiverWatch - Constants & Parameter Metadata
-// Station list: data/stations.json (linked from mobile/src/data/stations.json)
+// Station list: data/stations.json (copied to mobile/src/data/stations.json)
 
 import registry from '../data/stations.json';
 
@@ -12,11 +12,11 @@ export const PARAM_INFO = {
   temp: {
     key: 'temp',
     label: 'Water Temp',
-    unit: '°C',
+    unit: '°F',
     icon: 'thermometer',
     chartColor: '#E74C3C',
-    description: 'Water temperature in degrees Celsius',
-    thresholds: { good: [0, 30], caution: [30, 35], concern: 35 },
+    description: 'Water temperature in degrees Fahrenheit',
+    thresholds: { good: [32, 86], caution: [86, 95], concern: 95 },
   },
   turbidity: {
     key: 'turbidity',
@@ -93,11 +93,11 @@ export const PARAM_INFO = {
   wind_speed: {
     key: 'wind_speed',
     label: 'Wind Speed',
-    unit: 'm/s',
+    unit: 'mph',
     icon: 'weather-windy',
     chartColor: '#00BCD4',
     description: 'Wind speed at station',
-    thresholds: { good: [0, 10], caution: [10, 20], concern: 20 },
+    thresholds: { good: [0, 22.37], caution: [22.37, 44.74], concern: 44.74 },
   },
   wind_dir: {
     key: 'wind_dir',
@@ -111,11 +111,11 @@ export const PARAM_INFO = {
   air_temp: {
     key: 'air_temp',
     label: 'Air Temp',
-    unit: '°C',
+    unit: '°F',
     icon: 'thermometer-lines',
     chartColor: '#FF5722',
     description: 'Air temperature',
-    thresholds: { good: [-20, 40], caution: [40, 50], concern: 50 },
+    thresholds: { good: [-4, 104], caution: [104, 122], concern: 122 },
   },
   humidity: {
     key: 'humidity',
@@ -129,16 +129,16 @@ export const PARAM_INFO = {
   pressure: {
     key: 'pressure',
     label: 'Pressure',
-    unit: 'hPa',
+    unit: 'inHg',
     icon: 'gauge',
     chartColor: '#795548',
     description: 'Barometric pressure',
-    thresholds: { good: [980, 1040], caution: [960, 980], concern: 960 },
+    thresholds: { good: [28.94, 30.71], caution: [28.35, 28.94], concern: 28.35 },
   },
   tide: {
     key: 'tide',
     label: 'Tide Height',
-    unit: 'm',
+    unit: 'ft',
     icon: 'waves-arrow-up',
     chartColor: '#1A6BAA',
     description: 'Tide height relative to mean sea level',

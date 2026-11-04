@@ -9,6 +9,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
+import { usePreferences } from '../../context/PreferencesContext';
+import { formatMeasurement } from '../../utils/measurements';
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
@@ -64,6 +66,7 @@ export default function TemperatureGauge({
   max = 120,
 }) {
   const theme = useTheme();
+  const { units } = usePreferences();
 
   const safeTemp = temp != null ? temp : (min + max) / 2;
   const clampedTemp = Math.min(max, Math.max(min, safeTemp));
@@ -145,7 +148,7 @@ export default function TemperatureGauge({
               { color: theme.colors.text, fontSize: size * 0.22 },
             ]}
           >
-            {safeTemp != null ? `${Math.round(safeTemp)}°` : '--'}
+            {formatMeasurement(temp, 'temp', units, 0)}
           </Text>
           <Text
             style={[
@@ -153,7 +156,7 @@ export default function TemperatureGauge({
               { color: theme.colors.textSecondary, fontSize: size * 0.08 },
             ]}
           >
-            Fahrenheit
+            {units === 'metric' ? 'Celsius' : 'Fahrenheit'}
           </Text>
         </View>
       </View>
@@ -161,10 +164,10 @@ export default function TemperatureGauge({
       {/* Min/Max labels */}
       <View style={[styles.labelsRow, { width: size }]}>
         <Text style={[styles.rangeLabel, { color: theme.colors.textTertiary }]}>
-          {min}°
+          {formatMeasurement(min, 'temp', units, 0)}
         </Text>
         <Text style={[styles.rangeLabel, { color: theme.colors.textTertiary }]}>
-          {max}°
+          {formatMeasurement(max, 'temp', units, 0)}
         </Text>
       </View>
     </View>

@@ -1,1 +1,414 @@
-../../../data/stations.json
+{
+  "meta": {
+    "verified_at": "2026-11-03T15:16:00Z",
+    "freshness_hours": 6,
+    "river_mile_datum": "NYS DEC Hudson River miles, The Battery = 0. Cornwall-on-Hudson is river mile ~56 and has no public sensor; the West Point sonde (about river mile 52) is the nearest live water-quality station. Labeled miles follow the DEC/Cary Hudson River mile map (Piermont 25, Haverstraw 35, Peekskill 45, Newburgh 60, Poughkeepsie 75, Staatsburg 85, Tivoli 100, Coxsackie 125, Albany 145). Unlabeled sites are interpolated on that scale.",
+    "focus": "Main-stem Hudson from Tappan Zee / Piermont (south) through Poughkeepsie (north).",
+    "hrecos": {
+      "note": "HRECOS left USGS NWIS in 2026. Current values are the NYS Mesonet CSV API, not waterservices.usgs.gov. USGS pages for these sites point at https://hrecos.org/live-data/.",
+      "export_url": "https://nysm.hrecos.org/api/data/dynserv/hrecos/exportsite/csv/{sites}/{start}/{end}",
+      "docs": "https://nysm.hrecos.org/api/data/dynserv/hrecos/docs"
+    },
+    "not_stations": [
+      {
+        "id": "8518490",
+        "name": "New Rochelle",
+        "note": "NOAA 8518490 is New Rochelle on Long Island Sound, not Newburgh. The static site label is wrong. Newburgh tide predictions are 8518935."
+      },
+      {
+        "name": "Cornwall-on-Hudson",
+        "note": "No public real-time station at the village (river mile ~56)."
+      },
+      {
+        "name": "Cold Spring",
+        "note": "No public real-time station."
+      },
+      {
+        "name": "Marlboro",
+        "note": "No public real-time station. NOAA has no Marlboro ID."
+      },
+      {
+        "name": "Croton-on-Hudson",
+        "note": "No public real-time main-stem station. Nearby USGS sites are tributary gages (Croton and tributaries), not the Hudson."
+      },
+      {
+        "id": "01374019",
+        "name": "USGS Hudson River at South Dock at West Point",
+        "note": "Last real instantaneous values 2014-09-11. Replaced by HRECOS HWEST at the same dock."
+      },
+      {
+        "id": "01376269",
+        "name": "USGS Hudson River at Piermont",
+        "note": "Instantaneous values are the discontinued sentinel -999999 (April 2026). Replaced by HRECOS HPMNT."
+      },
+      {
+        "id": "01372043",
+        "name": "USGS Hudson River near Poughkeepsie",
+        "note": "USGS directs users to hrecos.org for data after 2026-03-31. Replaced by HRECOS HPOUG."
+      },
+      {
+        "id": "01372058",
+        "name": "USGS Hudson River below Poughkeepsie",
+        "note": "Last instantaneous water temperature 2019-11-06. Not a live station."
+      },
+      {
+        "id": "0135980207",
+        "name": "USGS Hudson River near Schodack Landing",
+        "note": "All instantaneous values are -999999 since 2026-04-29. The colocated HRECOS site HSCHO also has no sensor values."
+      },
+      {
+        "id": "HBMN6",
+        "name": "Bear Mountain, Hudson River Reserve",
+        "note": "NDBC activestations lists hbmn6, but https://www.ndbc.noaa.gov/data/realtime2/HBMN6.txt returns HTTP 404. NERRS CDMO station hudbmwq (the SWMP sonde at Iona Island / Bear Mountain, river mile 45) rejects unregistered client IPs, so there is no anonymous live feed."
+      }
+    ]
+  },
+  "stations": [
+    {
+      "key": "piermont",
+      "name": "Piermont",
+      "place": "Piermont, NY",
+      "provider": "hrecos",
+      "id": "HPMNT",
+      "lat": 41.04318,
+      "lon": -73.89615,
+      "river_mile": 25,
+      "focus": true,
+      "live": true,
+      "kind": "observation",
+      "parameters": [
+        {"field": "temp", "code": "wtmp", "label": "Water temperature"},
+        {"field": "conductance", "code": "spco", "label": "Specific conductance"},
+        {"field": "salinity", "code": "salt", "label": "Salinity"},
+        {"field": "ph", "code": "ph", "label": "pH"},
+        {"field": "turbidity", "code": "turb", "label": "Turbidity"},
+        {"field": "dissolved_oxygen_saturation", "code": "dopc", "label": "Dissolved oxygen saturation"},
+        {"field": "depth", "code": "depth", "label": "Sensor depth"}
+      ],
+      "note": "HRECOS sonde at Piermont Pier, south end of Tappan Zee. Dissolved oxygen is reported as percent saturation only; concentration is empty. USGS 01376269 is not current."
+    },
+    {
+      "key": "tarrytown",
+      "name": "Tarrytown",
+      "place": "Tarrytown, NY",
+      "provider": "noaa",
+      "id": "8518919",
+      "lat": 41.0783,
+      "lon": -73.87,
+      "river_mile": 28,
+      "focus": true,
+      "live": true,
+      "kind": "prediction",
+      "tide_type": "subordinate",
+      "reference_id": "8518750",
+      "parameters": [
+        {"field": "tide_prediction", "code": "predictions", "label": "Predicted tide height"}
+      ],
+      "note": "NOAA subordinate tide station at Tappan Zee (reference The Battery 8518750). No water-level sensor and no water-quality feed."
+    },
+    {
+      "key": "haverstraw",
+      "name": "Haverstraw",
+      "place": "Haverstraw, NY",
+      "provider": "noaa",
+      "id": "8518924",
+      "lat": 41.2183,
+      "lon": -73.9633,
+      "river_mile": 35,
+      "focus": true,
+      "live": true,
+      "kind": "prediction",
+      "tide_type": "harmonic",
+      "parameters": [
+        {"field": "tide_prediction", "code": "predictions", "label": "Predicted tide height"}
+      ],
+      "note": "NOAA harmonic tide predictions only. No observed water level or water quality."
+    },
+    {
+      "key": "peekskill",
+      "name": "Peekskill",
+      "place": "Peekskill, NY",
+      "provider": "noaa",
+      "id": "8518949",
+      "lat": 41.2883,
+      "lon": -73.9317,
+      "river_mile": 45,
+      "focus": true,
+      "live": true,
+      "kind": "prediction",
+      "tide_type": "subordinate",
+      "reference_id": "8518750",
+      "parameters": [
+        {"field": "tide_prediction", "code": "predictions", "label": "Predicted tide height"}
+      ],
+      "note": "NOAA subordinate tide station (reference The Battery 8518750). Direct predictions requests return no data; apply tidepredoffsets to the reference station."
+    },
+    {
+      "key": "bear_mountain",
+      "name": "Bear Mountain",
+      "place": "Bear Mountain / Iona Island, NY",
+      "provider": "ndbc",
+      "id": "HBMN6",
+      "lat": 41.314,
+      "lon": -73.985,
+      "river_mile": 46,
+      "focus": true,
+      "live": false,
+      "kind": "observation",
+      "parameters": [],
+      "note": "HRNERR SWMP sonde near Iona Island (CDMO hudbmwq, about river mile 45). NDBC realtime2/HBMN6.txt is HTTP 404 and CDMO web services reject anonymous IPs, so this station is not a public live endpoint."
+    },
+    {
+      "key": "west_point",
+      "name": "West Point",
+      "place": "West Point, NY",
+      "provider": "hrecos",
+      "id": "HWEST",
+      "lat": 41.38607,
+      "lon": -73.95496,
+      "river_mile": 52,
+      "focus": true,
+      "live": true,
+      "kind": "observation",
+      "parameters": [
+        {"field": "temp", "code": "wtmp", "label": "Water temperature"},
+        {"field": "conductance", "code": "spco", "label": "Specific conductance"},
+        {"field": "salinity", "code": "salt", "label": "Salinity"},
+        {"field": "ph", "code": "ph", "label": "pH"},
+        {"field": "turbidity", "code": "turb", "label": "Turbidity"},
+        {"field": "dissolved_oxygen_saturation", "code": "dopc", "label": "Dissolved oxygen saturation"},
+        {"field": "dissolved_oxygen", "code": "doconc", "label": "Dissolved oxygen"},
+        {"field": "depth", "code": "depth", "label": "Sensor depth"}
+      ],
+      "note": "HRECOS sonde at South Dock, the live water-quality station for the West Point / Cornwall-on-Hudson reach (Cornwall village is about river mile 56 and has no sensor). USGS 01374019 ended in 2014."
+    },
+    {
+      "key": "newburgh",
+      "name": "Newburgh",
+      "place": "Newburgh, NY",
+      "provider": "noaa",
+      "id": "8518935",
+      "lat": 41.5,
+      "lon": -74.0067,
+      "river_mile": 60,
+      "focus": true,
+      "live": true,
+      "kind": "prediction",
+      "tide_type": "subordinate",
+      "reference_id": "8518750",
+      "parameters": [
+        {"field": "tide_prediction", "code": "predictions", "label": "Predicted tide height"}
+      ],
+      "note": "Primary tide station for Cornwall-on-Hudson, about 3 miles downstream. Subordinate to The Battery 8518750 (time offsets about +226/+243 minutes, height ratio 0.62). No observed water level, temperature, or water quality. Not NOAA 8518490."
+    },
+    {
+      "key": "beacon",
+      "name": "Beacon",
+      "place": "Beacon, NY",
+      "provider": "noaa",
+      "id": "8518934",
+      "lat": 41.5,
+      "lon": -73.9833,
+      "river_mile": 61,
+      "focus": true,
+      "live": true,
+      "kind": "prediction",
+      "tide_type": "harmonic",
+      "parameters": [
+        {"field": "tide_prediction", "code": "predictions", "label": "Predicted tide height"}
+      ],
+      "note": "NOAA harmonic tide predictions (Beacon, Flushkill). No water-temperature or water-quality sensor. Fallback when Newburgh subordinate predictions are unavailable."
+    },
+    {
+      "key": "new_hamburg",
+      "name": "New Hamburg",
+      "place": "New Hamburg, NY",
+      "provider": "noaa",
+      "id": "8518939",
+      "lat": 41.5833,
+      "lon": -73.95,
+      "river_mile": 66,
+      "focus": true,
+      "live": true,
+      "kind": "prediction",
+      "tide_type": "subordinate",
+      "reference_id": "8518750",
+      "parameters": [
+        {"field": "tide_prediction", "code": "predictions", "label": "Predicted tide height"}
+      ],
+      "note": "NOAA subordinate tide station between Beacon and Poughkeepsie. Predictions only."
+    },
+    {
+      "key": "poughkeepsie",
+      "name": "Poughkeepsie",
+      "place": "Poughkeepsie, NY",
+      "provider": "hrecos",
+      "id": "HPOUG",
+      "lat": 41.72059,
+      "lon": -73.93883,
+      "river_mile": 75,
+      "focus": true,
+      "live": true,
+      "kind": "observation",
+      "parameters": [
+        {"field": "temp", "code": "wtmp", "label": "Water temperature"},
+        {"field": "conductance", "code": "spco", "label": "Specific conductance"},
+        {"field": "salinity", "code": "salt", "label": "Salinity"},
+        {"field": "ph", "code": "ph", "label": "pH"},
+        {"field": "turbidity", "code": "turb", "label": "Turbidity"},
+        {"field": "dissolved_oxygen_saturation", "code": "dopc", "label": "Dissolved oxygen saturation"},
+        {"field": "dissolved_oxygen", "code": "doconc", "label": "Dissolved oxygen"},
+        {"field": "depth", "code": "depth", "label": "Sensor depth"},
+        {"field": "chlorophyll", "code": "chla", "label": "Chlorophyll fluorescence"},
+        {"field": "phycocyanin", "code": "phyco", "label": "Phycocyanin fluorescence"}
+      ],
+      "note": "HRECOS sonde at Poughkeepsie, north end of the focus reach. USGS 01372043 is not the current feed."
+    },
+    {
+      "key": "poughkeepsie_tide",
+      "name": "Poughkeepsie tide",
+      "place": "Poughkeepsie, NY",
+      "provider": "noaa",
+      "id": "8518945",
+      "lat": 41.7,
+      "lon": -73.9333,
+      "river_mile": 75,
+      "focus": true,
+      "live": true,
+      "kind": "prediction",
+      "tide_type": "subordinate",
+      "reference_id": "8518750",
+      "parameters": [
+        {"field": "tide_prediction", "code": "predictions", "label": "Predicted tide height"}
+      ],
+      "note": "NOAA subordinate tide predictions. Observed water level is not published here; water quality is HRECOS HPOUG."
+    },
+    {
+      "key": "norrie_point",
+      "name": "Norrie Point",
+      "place": "Staatsburg, NY",
+      "provider": "ndbc",
+      "id": "NPXN6",
+      "lat": 41.831,
+      "lon": -73.942,
+      "river_mile": 85,
+      "focus": false,
+      "live": true,
+      "kind": "observation",
+      "parameters": [
+        {"field": "wind_direction", "code": "WDIR", "label": "Wind direction"},
+        {"field": "wind_speed", "code": "WSPD", "label": "Wind speed"},
+        {"field": "pressure", "code": "PRES", "label": "Barometric pressure"},
+        {"field": "air_temp", "code": "ATMP", "label": "Air temperature"},
+        {"field": "dewpoint", "code": "DEWP", "label": "Dew point"}
+      ],
+      "note": "HRNERR meteorological station upstream of Poughkeepsie. Water temperature and gusts are missing (MM) in the realtime file. Water-quality buoy NPQN6 has no realtime2 file."
+    },
+    {
+      "key": "turkey_point",
+      "name": "Turkey Point",
+      "place": "Turkey Point, NY",
+      "provider": "noaa",
+      "id": "8518962",
+      "lat": 42.0139,
+      "lon": -73.9392,
+      "river_mile": 98,
+      "focus": false,
+      "live": true,
+      "kind": "observation",
+      "parameters": [
+        {"field": "water_level", "code": "water_level", "label": "Water level"},
+        {"field": "temp", "code": "water_temperature", "label": "Water temperature"},
+        {"field": "conductance", "code": "conductivity", "label": "Conductivity"},
+        {"field": "salinity", "code": "salinity", "label": "Salinity"},
+        {"field": "air_temp", "code": "air_temperature", "label": "Air temperature"},
+        {"field": "wind_speed", "code": "wind", "label": "Wind speed"},
+        {"field": "wind_direction", "code": "wind", "label": "Wind direction"},
+        {"field": "wind_gust", "code": "wind", "label": "Wind gust"}
+      ],
+      "note": "NOAA CO-OPS / Hudson River NERRS PORTS station upstream of Poughkeepsie. Same physical station as NDBC TKPN6; CO-OPS is the feed used here because it includes water level and conductivity."
+    },
+    {
+      "key": "coxsackie",
+      "name": "Coxsackie",
+      "place": "Coxsackie, NY",
+      "provider": "noaa",
+      "id": "8518979",
+      "lat": 42.35264,
+      "lon": -73.79486,
+      "river_mile": 125,
+      "focus": false,
+      "live": true,
+      "kind": "observation",
+      "parameters": [
+        {"field": "water_level", "code": "water_level", "label": "Water level"},
+        {"field": "temp", "code": "water_temperature", "label": "Water temperature"},
+        {"field": "conductance", "code": "conductivity", "label": "Conductivity"},
+        {"field": "salinity", "code": "salinity", "label": "Salinity"},
+        {"field": "air_temp", "code": "air_temperature", "label": "Air temperature"},
+        {"field": "wind_speed", "code": "wind", "label": "Wind speed"},
+        {"field": "wind_direction", "code": "wind", "label": "Wind direction"},
+        {"field": "wind_gust", "code": "wind", "label": "Wind gust"}
+      ],
+      "note": "NOAA CO-OPS station well upstream of the focus reach. Same physical station as NDBC CXHN6; CO-OPS is the feed used here."
+    },
+    {
+      "key": "schodack",
+      "name": "Schodack Landing",
+      "place": "Schodack Landing, NY",
+      "provider": "hrecos",
+      "id": "HSCHO",
+      "lat": 42.49961,
+      "lon": -73.77688,
+      "river_mile": 135,
+      "focus": false,
+      "live": false,
+      "kind": "observation",
+      "parameters": [],
+      "note": "Out of focus. Kept because older builds polled it. HRECOS HSCHO currently publishes coordinates only, and USGS 0135980207 instantaneous values are -999999 since 2026-04-29."
+    },
+    {
+      "key": "port_albany",
+      "name": "Port of Albany",
+      "place": "Albany, NY",
+      "provider": "hrecos",
+      "id": "HPORT",
+      "lat": 42.61951,
+      "lon": -73.75891,
+      "river_mile": 142,
+      "focus": false,
+      "live": true,
+      "kind": "observation",
+      "parameters": [
+        {"field": "temp", "code": "wtmp", "label": "Water temperature"},
+        {"field": "conductance", "code": "spco", "label": "Specific conductance"},
+        {"field": "salinity", "code": "salt", "label": "Salinity"},
+        {"field": "ph", "code": "ph", "label": "pH"},
+        {"field": "turbidity", "code": "turb", "label": "Turbidity"},
+        {"field": "dissolved_oxygen_saturation", "code": "dopc", "label": "Dissolved oxygen saturation"},
+        {"field": "dissolved_oxygen", "code": "doconc", "label": "Dissolved oxygen"},
+        {"field": "depth", "code": "depth", "label": "Sensor depth"},
+        {"field": "chlorophyll", "code": "chla", "label": "Chlorophyll fluorescence"},
+        {"field": "phycocyanin", "code": "phyco", "label": "Phycocyanin fluorescence"}
+      ],
+      "note": "Out of focus. Live HRECOS water-quality station at the Port of Albany, about 3 km south of USGS 01359139."
+    },
+    {
+      "key": "albany",
+      "name": "Albany",
+      "place": "Albany, NY",
+      "provider": "usgs",
+      "id": "01359139",
+      "lat": 42.64788889,
+      "lon": -73.7475,
+      "river_mile": 145,
+      "focus": false,
+      "live": true,
+      "kind": "observation",
+      "parameters": [
+        {"field": "temp", "code": "00010", "label": "Water temperature"}
+      ],
+      "note": "Out of focus. USGS NWIS instantaneous water temperature is still updating. Not the same instrument as HRECOS HPORT."
+    }
+  ]
+}

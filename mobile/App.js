@@ -10,6 +10,7 @@ import * as Notifications from 'expo-notifications';
 
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import AppNavigator from './src/navigation/AppNavigator';
+import { PreferencesProvider } from './src/context/PreferencesContext';
 import { ensureApiConfigured } from './src/utils/initApi';
 
 // =============================================================================
@@ -181,7 +182,9 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <AppContent />
+        <PreferencesProvider>
+          <AppContent />
+        </PreferencesProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

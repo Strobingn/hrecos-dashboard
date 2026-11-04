@@ -15,6 +15,8 @@ import {
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../hooks/useTheme';
+import { usePreferences } from '../context/PreferencesContext';
+import { formatMeasurement } from '../utils/measurements';
 import { useStations } from '../hooks/useStations';
 import { useStationData } from '../hooks/useStationData';
 import { useTides } from '../hooks/useTides';
@@ -30,7 +32,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 // Fishing Score Calculation Helpers
 // ============================================================================
 
-function calculateFishingScore(stationData, tidesData) {
+function calculateFishingScore(stationData, tidesData, units) {
   let totalScore = 0;
   let factorCount = 0;
 
@@ -50,20 +52,19 @@ function calculateFishingScore(stationData, tidesData) {
 
   // Water Temperature Score (ideal: 55-75 F / 13-24 C)
   if (readings.temp) {
-    const tempC = parseFloat(readings.temp.value);
-    const tempF = (tempC * 9) / 5 + 32;
+    const tempF = parseFloat(readings.temp.value);
     if (tempF >= 60 && tempF <= 75) {
       breakdown.temperature.score = 95;
-      breakdown.temperature.label = `${Math.round(tempF)}°F - Ideal`;
+      breakdown.temperature.label = `${formatMeasurement(tempF, 'temp', units, 0)} - Ideal`;
     } else if (tempF >= 55 && tempF <= 80) {
       breakdown.temperature.score = 80;
-      breakdown.temperature.label = `${Math.round(tempF)}°F - Good`;
+      breakdown.temperature.label = `${formatMeasurement(tempF, 'temp', units, 0)} - Good`;
     } else if (tempF >= 50 && tempF <= 85) {
       breakdown.temperature.score = 60;
-      breakdown.temperature.label = `${Math.round(tempF)}°F - Fair`;
+      breakdown.temperature.label = `${formatMeasurement(tempF, 'temp', units, 0)} - Fair`;
     } else {
       breakdown.temperature.score = 30;
-      breakdown.temperature.label = `${Math.round(tempF)}°F - Poor`;
+      breakdown.temperature.label = `${formatMeasurement(tempF, 'temp', units, 0)} - Poor`;
     }
     totalScore += breakdown.temperature.score;
     factorCount++;
@@ -288,7 +289,8 @@ function MetricGridItem({ icon, label, value, color }) {
 
 export default function FishingScreen() {
   const theme = useTheme();
-  const FISHING_STATION = 'turkey_point';
+  const { units } = usePreferences();
+  const FISHING_STATION = 'west_point';
   const { data: stationData, loading: stationLoading, error: stationError, refetch: refetchStation } = useStationData(FISHING_STATION);
   const { data: tidesData, loading: tidesLoading, error: tidesError, refetch: refetchTides } = useTides();
   const { stations } = useStations();
@@ -302,8 +304,8 @@ export default function FishingScreen() {
 
   // Calculate fishing score
   const fishingResult = useMemo(() => {
-    return calculateFishingScore(stationData, tidesData);
-  }, [stationData, tidesData]);
+    return calculateFishingScore(stationData, tidesData, units);
+  }, [stationData, tidesData, units]);
 
   // Best fishing windows (mock data - in real app would calculate from conditions)
   const bestTimes = useMemo(() => {
@@ -326,12 +328,11 @@ export default function FishingScreen() {
   const currentConditions = useMemo(() => {
     const conditions = [];
     if (stationData?.readings?.temp) {
-      const tempC = parseFloat(stationData.readings.temp.value);
-      const tempF = (tempC * 9) / 5 + 32;
+      const tempF = parseFloat(stationData.readings.temp.value);
       conditions.push({
         icon: 'thermometer',
         label: 'Water Temp',
-        value: `${Math.round(tempF)}°F`,
+        value: `${formatMeasurement(tempF, 'temp', units, 0)}`,
         color: '#E74C3C',
       });
     }
@@ -369,20 +370,19 @@ export default function FishingScreen() {
       conditions.push({
         icon: 'waves-arrow-up',
         label: 'Tide',
-        value: `${phaseLabel} (${tidesData.current.height.toFixed(1)} ft)`,
+        value: `${phaseLabel} (${formatMeasurement(tidesData.current.height, 'tide', units)})`,
         color: '#9B59B6',
       });
     }
     return conditions;
-  }, [stationData, tidesData]);
+  }, [stationData, tidesData, units]);
 
   // Dynamic fishing tips
   const tips = useMemo(() => {
     const tipsList = [];
 
     if (stationData?.readings?.temp) {
-      const tempC = parseFloat(stationData.readings.temp.value);
-      const tempF = (tempC * 9) / 5 + 32;
+      const tempF = parseFloat(stationData.readings.temp.value);
       if (tempF >= 60 && tempF <= 75) {
         tipsList.push({
           icon: 'thermometer',

@@ -73,10 +73,10 @@ function MainTabNavigator() {
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,
         tabBarStyle: {
-          backgroundColor: isDark ? colors.card : colors.background,
+          backgroundColor: colors.card,
           borderTopColor: colors.border,
           borderTopWidth: 1,
-          elevation: 8,
+          elevation: 0,
           shadowColor: '#000',
           shadowOffset: { width: 0, height: -2 },
           shadowOpacity: 0.05,
@@ -140,14 +140,14 @@ export default function AppNavigator() {
       <Stack.Navigator
         screenOptions={{
           headerStyle: {
-            backgroundColor: isDark ? colors.card : colors.background,
+            backgroundColor: colors.card,
           },
           headerTintColor: colors.primary,
           headerTitleStyle: {
-            fontWeight: '600',
+            fontWeight: '700',
             color: colors.textPrimary || colors.text,
           },
-          headerShadowVisible: true,
+          headerShadowVisible: false,
           animation: 'slide_from_right',
           animationDuration: 250,
           contentStyle: {
@@ -160,7 +160,7 @@ export default function AppNavigator() {
           component={MainTabNavigator}
           options={({ navigation }) => ({
             headerShown: true,
-            title: 'HRECOS RiverWatch',
+            title: 'RiverWatch',
             headerRight: () => (
               <SettingsButton
                 navigation={navigation}

@@ -1,10 +1,10 @@
 # HRECOS RiverWatch
 
-A rockstar Android app for monitoring Hudson River environmental conditions in real-time. Built with React Native and Expo.
+An Android app for monitoring Hudson River environmental conditions in real-time. Built with React Native and Expo.
 
 ![HRECOS RiverWatch](https://img.shields.io/badge/HRECOS-RiverWatch-0A7EA4?style=for-the-badge)
-![React Native](https://img.shields.io/badge/React_Native-0.72+-61DAFB?style=for-the-badge&logo=react)
-![Expo](https://img.shields.io/badge/Expo-SDK_52-000020?style=for-the-badge&logo=expo)
+![React Native](https://img.shields.io/badge/React_Native-0.85-61DAFB?style=for-the-badge&logo=react)
+![Expo](https://img.shields.io/badge/Expo-SDK_56-000020?style=for-the-badge&logo=expo)
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 
 ## Features
@@ -21,7 +21,7 @@ A rockstar Android app for monitoring Hudson River environmental conditions in r
 - **48-Hour Tide Charts** with high/low predictions
 - **Current Tide Status** - rising or falling with countdown to next tide
 - **Moon Phase** with illumination percentage
-- Data from NOAA Station 8518490 (Newburgh)
+- Data from NOAA Station 8518935 (Newburgh)
 
 ### Water Quality Assessment
 - **Water Quality Index (WQI)** - overall river health score 0-100
@@ -60,8 +60,8 @@ A rockstar Android app for monitoring Hudson River environmental conditions in r
 
 ## Tech Stack
 
-- **Framework**: React Native with Expo SDK 52
-- **Navigation**: React Navigation v6 (Stack + Bottom Tabs)
+- **Framework**: React Native with Expo SDK 56
+- **Navigation**: React Navigation v7 (Stack + Bottom Tabs)
 - **State Management**: TanStack Query (React Query) for server state
 - **Charts**: react-native-chart-kit
 - **Styling**: StyleSheet with custom theme system
@@ -84,7 +84,7 @@ cd hrecos-riverwatch
 
 2. **Install dependencies**:
 ```bash
-npm install
+npm install --legacy-peer-deps
 ```
 
 3. **Start the development server**:
@@ -98,7 +98,11 @@ npx expo start
 
 ### Building for Production
 
-**APK Build (easiest)**:
+**GitHub APK build**:
+
+[Build Android APK](https://github.com/Strobingn/hrecos-dashboard/actions/workflows/build.yml) runs on mobile changes pushed to `main` or `codex`. It can also be started with **Run workflow**. It runs the mobile tests, generates Android files, builds the release APK, verifies its signature and uploads `hrecos-riverwatch-apk` as a downloadable artifact. The artifact contains `hrecos-riverwatch.apk` and its SHA-256 checksum.
+
+**EAS APK build**:
 ```bash
 npx eas build -p android --profile preview
 ```
@@ -242,7 +246,7 @@ cd android && ./gradlew clean && cd .. && npx expo run:android
 ### Dependency issues
 ```bash
 rm -rf node_modules package-lock.json
-npm install
+npm install --legacy-peer-deps
 ```
 
 ## License
@@ -252,3 +256,23 @@ MIT License - feel free to use, modify, and distribute!
 ---
 
 Built with passion for the Hudson River community. Data provided by HRECOS, USGS, NOAA, and NDBC.
+
+## Units, weather and alert limits
+
+The API publishes temperatures in Fahrenheit. The app converts readings only for display. Choose Imperial or Metric in Settings, or use the °F / °C control on Home. The shared preference persists across restarts and updates station readings, historical values, fishing temperatures and tide heights.
+
+Home and Alerts show weather for the West Point location in the shared station registry. The forecast is from [Open-Meteo](https://open-meteo.com/en/docs) and refreshes every five minutes while the app is in use. Weather also works when the configured HRECOS API is unavailable.
+
+Settings → Weather alerts lets you enable or disable warnings, set sustained-wind, gust and hourly-rain limits, and choose a 3, 6, 12 or 24-hour window. Wind limits use mph or km/h; rain limits use inches or millimeters per hour. Limits are stored on this device. Changing display units preserves their physical values.
+
+Warnings appear inside the app when current wind or an hourly forecast crosses a limit. They are not official weather warnings or background push notifications. Alerts pause when the last successful forecast is more than 30 minutes old. Missing weather values stay unavailable. Hourly rain is the total for the hour ending at the provider's timestamp.
+
+Run the checks after installing dependencies:
+
+```bash
+cd mobile
+npm test
+npx expo export --platform android --output-dir /tmp/riverwatch-android
+```
+
+Tests cover temperature conversion, zero and missing values, weather thresholds, forecast windows, stale data and unit changes. The source check parses JSX and verifies local imports. CI also exports an Android JavaScript bundle with [Expo CLI](https://docs.expo.dev/more/expo-cli/); device testing is still needed.
