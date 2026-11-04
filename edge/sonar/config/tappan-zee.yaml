@@ -1,0 +1,18 @@
+# Later site. Not seeded by the migration. A live upload upserts the node.
+node:
+  id: tappan-zee
+  status: simulated
+source:
+  kind: synth
+  seed: 7
+  start: "2026-05-15T12:00:00Z"
+  hours: 6
+  rate: 1.0
+classifier:
+  name: rules
+replay_speed: 0
+output_dir: out
+supabase:
+  url: ${SUPABASE_URL}
+  service_role_key: ${SUPABASE_SERVICE_ROLE_KEY}
+  sonar_bucket: sonar

@@ -1,0 +1,29 @@
+[project]
+name = "sonar-node"
+version = "0.1.0"
+description = "Synthetic Hudson River imaging-sonar node (ARIS-class track simulator)"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "numpy>=1.26",
+    "PyYAML>=6",
+    "requests>=2.31",
+    "supabase>=2.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.scripts]
+sonar-node = "sonar_node.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

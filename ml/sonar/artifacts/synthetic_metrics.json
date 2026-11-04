@@ -1,0 +1,178 @@
+{
+  "data": "synthetic",
+  "not_field_performance": true,
+  "generator": "sonar_node.simulate.generate_tracks",
+  "node_id": "westpoint-cornwall",
+  "window_start": "2026-03-01T00:00:00+00:00",
+  "window_end": "2026-08-01T00:00:00+00:00",
+  "split": "start < 2026-06-01 train, otherwise test",
+  "seed": 20260311,
+  "rate": 0.35,
+  "n_generated": 62798,
+  "n_train": 59990,
+  "n_test": 2808,
+  "softmax": {
+    "model_name": "synthetic_softmax",
+    "model_version": "0.1.0",
+    "steps": 400,
+    "fit_seed": 0,
+    "abstain_below": 0.45,
+    "class_weight": "balanced",
+    "n": 2808,
+    "accuracy": 0.9643874643874644,
+    "macro_f1": 0.9468797491306531,
+    "confusion_columns": [
+      "atlantic_sturgeon",
+      "striped_bass",
+      "river_herring",
+      "american_shad",
+      "abstain"
+    ],
+    "confusion_rows": [
+      "atlantic_sturgeon",
+      "striped_bass",
+      "river_herring",
+      "american_shad"
+    ],
+    "confusion": [
+      [
+        97,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        23,
+        758,
+        0,
+        20,
+        1
+      ],
+      [
+        0,
+        0,
+        519,
+        49,
+        1
+      ],
+      [
+        0,
+        1,
+        5,
+        1334,
+        0
+      ]
+    ],
+    "per_class": [
+      {
+        "species_id": "atlantic_sturgeon",
+        "support": 97,
+        "precision": 0.8083333333333333,
+        "recall": 1.0,
+        "f1": 0.8940092165898618
+      },
+      {
+        "species_id": "striped_bass",
+        "support": 802,
+        "precision": 0.9986824769433466,
+        "recall": 0.9451371571072319,
+        "f1": 0.9711723254324152
+      },
+      {
+        "species_id": "river_herring",
+        "support": 569,
+        "precision": 0.9904580152671756,
+        "recall": 0.9121265377855887,
+        "f1": 0.94967978042086
+      },
+      {
+        "species_id": "american_shad",
+        "support": 1340,
+        "precision": 0.9508196721311475,
+        "recall": 0.9955223880597015,
+        "f1": 0.972657674079475
+      }
+    ]
+  },
+  "length_behavior_rules": {
+    "model_name": "length_behavior_rules",
+    "model_version": "0.1.0",
+    "n": 2808,
+    "accuracy": 0.9173789173789174,
+    "macro_f1": 0.9415503240608283,
+    "confusion_columns": [
+      "atlantic_sturgeon",
+      "striped_bass",
+      "river_herring",
+      "american_shad",
+      "abstain"
+    ],
+    "confusion_rows": [
+      "atlantic_sturgeon",
+      "striped_bass",
+      "river_herring",
+      "american_shad"
+    ],
+    "confusion": [
+      [
+        97,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        2,
+        775,
+        19,
+        0,
+        6
+      ],
+      [
+        0,
+        0,
+        533,
+        5,
+        31
+      ],
+      [
+        0,
+        103,
+        34,
+        1171,
+        32
+      ]
+    ],
+    "per_class": [
+      {
+        "species_id": "atlantic_sturgeon",
+        "support": 97,
+        "precision": 0.9797979797979798,
+        "recall": 1.0,
+        "f1": 0.989795918367347
+      },
+      {
+        "species_id": "striped_bass",
+        "support": 802,
+        "precision": 0.8826879271070615,
+        "recall": 0.9663341645885287,
+        "f1": 0.9226190476190476
+      },
+      {
+        "species_id": "river_herring",
+        "support": 569,
+        "precision": 0.909556313993174,
+        "recall": 0.9367311072056239,
+        "f1": 0.922943722943723
+      },
+      {
+        "species_id": "american_shad",
+        "support": 1340,
+        "precision": 0.9957482993197279,
+        "recall": 0.8738805970149254,
+        "f1": 0.9308426073131956
+      }
+    ]
+  }
+}
