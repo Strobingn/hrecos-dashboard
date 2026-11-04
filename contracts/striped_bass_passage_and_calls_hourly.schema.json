@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hrecos.local/contracts/striped_bass_passage_and_calls_hourly.schema.json",
+  "title": "striped_bass_passage_and_calls_hourly",
+  "description": "One row of public.striped_bass_passage_and_calls_hourly. Joins striped bass rows of fish_passage_hourly to detection_counts_hourly on node_id and UTC hour. fish_count is sonar tracks and is per direction. splash_detections is the hour total of hydrophone events labeled bass_spawning_splash. striped_bass_detections is the hour total of detections with species_id striped_bass. Those two detection totals repeat on every direction row for the hour; do not sum them across directions. A hydrophone-only hour has null direction and null fish_count. A sonar-only hour has zero detection totals.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "node_id",
+    "hour",
+    "direction",
+    "fish_count",
+    "mean_length_cm",
+    "splash_detections",
+    "striped_bass_detections"
+  ],
+  "properties": {
+    "node_id": { "type": "string", "minLength": 1 },
+    "hour": { "type": "string", "format": "date-time" },
+    "direction": {
+      "type": ["string", "null"],
+      "enum": ["upstream", "downstream", "milling", null]
+    },
+    "fish_count": { "type": ["integer", "null"], "minimum": 0 },
+    "mean_length_cm": { "type": ["number", "null"], "exclusiveMinimum": 0 },
+    "splash_detections": { "type": "integer", "minimum": 0 },
+    "striped_bass_detections": { "type": "integer", "minimum": 0 }
+  }
+}

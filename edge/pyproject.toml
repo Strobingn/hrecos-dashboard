@@ -1,0 +1,32 @@
+[project]
+name = "hydrophone-node"
+version = "0.1.0"
+description = "Virtual Hudson River hydrophone node (Aquarian H2a / Raspberry Pi compatible)"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "numpy>=1.26",
+    "scipy>=1.11",
+    "PyYAML>=6",
+    "requests>=2.31",
+    "supabase>=2.0",
+    "soundfile>=0.12",
+]
+
+[project.optional-dependencies]
+pi = ["sounddevice>=0.4"]
+dev = ["pytest>=8"]
+
+[project.scripts]
+hydrophone-node = "hydrophone_node.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

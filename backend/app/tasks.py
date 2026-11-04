@@ -129,7 +129,7 @@ class HRECOSScheduler:
                 await self._save_reading(station_key, record)
                 
                 # Buffer data for anomaly detection
-                self._data_buffer[station_key].append(record)
+                self._data_buffer.setdefault(station_key, []).append(record)
                 # Keep only last 100 readings per station
                 if len(self._data_buffer[station_key]) > 100:
                     self._data_buffer[station_key].pop(0)

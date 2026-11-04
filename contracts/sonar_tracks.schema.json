@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hrecos.local/contracts/sonar_tracks.schema.json",
+  "title": "sonar_tracks",
+  "description": "One tracked target in public.sonar_tracks. A row is one passage through the beam, not a sound event and not a confirmed fish until review_status is confirmed. direction is upstream, downstream, milling, or unknown. species_id is null when the classifier abstains or when the row is a Lowrance import that only has a size class. species_confidence is a 0-1 score, not a calibrated probability unless the model card says so, and is null when no species model ran. source is synthetic, lowrance_log, aris, or split_beam. clip_path, when set, is an object key in the Storage bucket sonar. features is a track summary, not an ARIS frame. review_status defaults to unreviewed. Realtime is enabled on this table. Inserts use the service role.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["node_id", "start_time", "end_time", "direction"],
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "node_id": { "type": "string", "minLength": 1 },
+    "start_time": { "type": "string", "format": "date-time" },
+    "end_time": { "type": "string", "format": "date-time" },
+    "direction": {
+      "type": "string",
+      "enum": ["upstream", "downstream", "milling", "unknown"]
+    },
+    "length_cm": { "type": ["number", "null"], "exclusiveMinimum": 0 },
+    "depth_m": { "type": ["number", "null"], "minimum": 0 },
+    "range_m": { "type": ["number", "null"], "minimum": 0 },
+    "speed_mps": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "description": "Track speed in metres per second."
+    },
+    "species_id": { "type": ["string", "null"], "minLength": 1 },
+    "species_confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+    "model_name": { "type": ["string", "null"] },
+    "model_version": { "type": ["string", "null"] },
+    "review_status": {
+      "type": "string",
+      "enum": ["unreviewed", "confirmed", "rejected"],
+      "default": "unreviewed"
+    },
+    "clip_path": {
+      "type": ["string", "null"],
+      "description": "Object key in bucket sonar, or null."
+    },
+    "features": {
+      "type": ["object", "null"],
+      "description": "Track summary. Synthetic rows set synthetic=true and behavior to surface_cluster, school, solitary, or unknown. Lowrance imports set detector, detection_confidence (not a species probability), size_class, bass_candidate, and channel.",
+      "additionalProperties": true,
+      "properties": {
+        "synthetic": { "type": "boolean" },
+        "behavior": {
+          "type": "string",
+          "enum": ["surface_cluster", "school", "solitary", "unknown"]
+        },
+        "cluster_size": { "type": "integer", "minimum": 1 },
+        "near_surface": { "type": "boolean" },
+        "cluster_id": { "type": ["string", "null"] },
+        "detector": { "type": "string" },
+        "detection_confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "size_class": { "type": "string" },
+        "bass_candidate": { "type": "boolean" },
+        "channel": { "type": "string" }
+      }
+    },
+    "source": {
+      "type": "string",
+      "enum": ["synthetic", "lowrance_log", "aris", "split_beam"],
+      "default": "synthetic",
+      "description": "synthetic rows come from the simulator. lowrance_log rows come from a .sl2 or .sl3 import and keep species_id null unless a later step assigns it."
+    },
+    "created_at": { "type": "string", "format": "date-time" }
+  }
+}

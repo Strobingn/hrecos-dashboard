@@ -1,93 +1,58 @@
-import requests
-import httpx
-from datetime import datetime, timedelta
+import csv
+import io
+from datetime import datetime, timedelta, timezone
 from typing import Dict, Optional, List
 
+import httpx
+import requests
+
+from app.registry import FOCUS_STATIONS, REGIONS, STATIONS
+
 # ─────────────────────────────────────────────────────────────────────────────
-# Data sources — USGS NWIS + NOAA CO-OPS + NOAA NDBC
-# Verified April 2, 2026
+# Data sources — HRECOS (NYS Mesonet) + USGS NWIS + NOAA CO-OPS + NOAA NDBC
+# Station list: data/stations.json
 # ─────────────────────────────────────────────────────────────────────────────
 
-USGS_IV_URL  = "https://waterservices.usgs.gov/nwis/iv/"
+USGS_IV_URL = "https://waterservices.usgs.gov/nwis/iv/"
 NOAA_API_URL = "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter"
-NDBC_URL     = "https://www.ndbc.noaa.gov/data/realtime2/{station}.txt"
+NDBC_URL = "https://www.ndbc.noaa.gov/data/realtime2/{station}.txt"
+HRECOS_URL = (
+    "https://nysm.hrecos.org/api/data/dynserv/hrecos/exportsite/csv/{sites}/{start}/{end}"
+)
 
-# USGS parameter codes
-PARAM_TEMP        = "00010"
-PARAM_DO          = "00300"
-PARAM_PH          = "00400"
-PARAM_CONDUCTANCE = "00095"
-PARAM_TURBIDITY   = "63680"
-PARAM_GAGE_HEIGHT = "00065"
-PARAM_DISCHARGE   = "00060"
-PARAM_SALINITY    = "00480"
-
-ALL_PARAMS = ",".join([
-    PARAM_TEMP, PARAM_DO, PARAM_PH,
-    PARAM_CONDUCTANCE, PARAM_TURBIDITY,
-    PARAM_GAGE_HEIGHT, PARAM_DISCHARGE, PARAM_SALINITY,
-])
-
-PARAM_MAP = {
-    PARAM_TEMP:        "temp",
-    PARAM_DO:          "dissolved_oxygen",
-    PARAM_PH:          "ph",
-    PARAM_CONDUCTANCE: "conductance",
-    PARAM_TURBIDITY:   "turbidity",
-    PARAM_GAGE_HEIGHT: "gage_height",
-    PARAM_DISCHARGE:   "flow",
-    PARAM_SALINITY:    "salinity",
-}
-
-# NDBC column → internal field
-NDBC_COL_MAP = {
-    "WDIR": "wind_direction",
-    "WSPD": "wind_speed",
-    "GST":  "wind_gust",
-    "PRES": "pressure",
-    "ATMP": "air_temp",
-    "WTMP": "temp",
-    "DEWP": "dewpoint",
-}
+TEMP_FIELDS = {"temp", "air_temp", "dewpoint"}
+WIND_FIELDS = {"wind_speed", "wind_gust"}
+PRESS_FIELDS = {"pressure"}
+DEPTH_FIELDS = {"depth"}
+SENTINEL = -999999.0
 
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Unit conversions — all output in US Imperial
-#
-# USGS:     temp °C → °F (no unit option for param 00010)
-#           gage_height ft³, discharge ft³/s already imperial
-# NOAA:     requested in metric → converted here
-# NDBC:     temp °C → °F, wind m/s → mph, pressure hPa → inHg
-# ─────────────────────────────────────────────────────────────────────────────
-
-TEMP_FIELDS  = {"temp", "air_temp", "dewpoint"}
-WIND_FIELDS  = {"wind_speed", "wind_gust"}   # m/s → mph
-PRESS_FIELDS = {"pressure"}                   # hPa → inHg
-
-
-def _c_to_f(c) -> Optional[float]:
-    if c is None:
+def _c_to_f(celsius) -> Optional[float]:
+    if celsius is None:
         return None
-    return round(c * 9 / 5 + 32, 2)
+    return round(celsius * 9 / 5 + 32, 2)
 
 
-def _ms_to_mph(ms) -> Optional[float]:
-    """Meters per second → miles per hour."""
-    if ms is None:
+def _ms_to_mph(meters_per_second) -> Optional[float]:
+    if meters_per_second is None:
         return None
-    return round(ms * 2.23694, 2)
+    return round(meters_per_second * 2.23694, 2)
 
 
-def _hpa_to_inhg(hpa) -> Optional[float]:
-    """Hectopascals → inches of mercury."""
-    if hpa is None:
+def _hpa_to_inhg(hectopascals) -> Optional[float]:
+    if hectopascals is None:
         return None
-    return round(hpa * 0.02953, 3)
+    return round(hectopascals * 0.02953, 3)
+
+
+def _m_to_ft(meters) -> Optional[float]:
+    if meters is None:
+        return None
+    return round(meters * 3.28084, 3)
 
 
 def _to_imperial(reading: Dict) -> Dict:
-    """Convert all metric values to US Imperial in-place."""
+    """Convert metric sensor values to the imperial units the API already publishes."""
     for field in TEMP_FIELDS:
         if field in reading:
             reading[field] = _c_to_f(reading[field])
@@ -97,267 +62,349 @@ def _to_imperial(reading: Dict) -> Dict:
     for field in PRESS_FIELDS:
         if field in reading:
             reading[field] = _hpa_to_inhg(reading[field])
+    for field in DEPTH_FIELDS:
+        if field in reading:
+            reading[field] = _m_to_ft(reading[field])
     return reading
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Station registry — Cornwall-on-Hudson at West Point (RM ~50–60)
-# No live main-stem water-quality sensors between Piermont (RM 25) and
-# Turkey Point (RM 84). Newburgh tide is closest; Norrie/Turkey nearest live.
-# ─────────────────────────────────────────────────────────────────────────────
-STATIONS = {
-    # ── Cornwall-on-Hudson / West Point / Newburgh corridor ─────────────────
-    "newburgh": {
-        "source": "noaa", "id": "8518935", "name": "Newburgh",
-        "lat": 41.500, "lon": -74.007, "river_mile": 60,
-        "region": "cornwall_on_hudson",
-        "params": ["tide"], "live": False,
-        "note": "Primary tide station — ~3 mi south of Cornwall-on-Hudson; see /api/tides",
-    },
-    "west_point": {
-        "source": "usgs", "id": "01374019", "name": "West Point",
-        "lat": 41.386, "lon": -73.955, "river_mile": 50,
-        "region": "cornwall_on_hudson",
-        "params": ["temp", "dissolved_oxygen", "ph", "conductance", "turbidity"], "live": False,
-        "note": "USMA / Cornwall-on-Hudson area — decommissioned Sep 2014",
-    },
-    "bear_mountain": {
-        "source": "ndbc", "id": "HBMN6", "name": "Bear Mountain (HRNERR)",
-        "lat": 41.314, "lon": -73.985, "river_mile": 46,
-        "region": "cornwall_on_hudson",
-        "params": ["air_temp", "wind_speed", "pressure"], "live": False,
-        "note": "Nearest met station when online — offline Apr 2026",
-    },
-    "beacon": {
-        "source": "noaa", "id": "8518934", "name": "Beacon",
-        "lat": 41.504, "lon": -73.985, "river_mile": 61,
-        "region": "cornwall_on_hudson",
-        "params": ["tide"], "live": False,
-        "note": "Backup harmonic tide station (~9 km from Cornwall-on-Hudson)",
-    },
-    "norrie_point": {
-        "source": "ndbc", "id": "NPXN6", "name": "Norrie Point (HRNERR)",
-        "lat": 41.831, "lon": -73.942, "river_mile": 88,
-        "region": "cornwall_on_hudson",
-        "params": ["air_temp", "wind_speed", "wind_direction", "pressure", "dewpoint"], "live": True,
-        "note": "Nearest live met upstream — air/wind only",
-    },
-    "turkey_point": {
-        "source": "noaa", "id": "8518962", "name": "Turkey Point (NERRS)",
-        "lat": 42.014, "lon": -73.939, "river_mile": 84,
-        "region": "cornwall_on_hudson",
-        "params": ["temp", "conductance"], "live": True,
-        "note": "Nearest live water temp upstream of West Point gap",
-    },
-    # ── Extended Hudson corridor (not default for Cornwall-on-Hudson) ───────
-    "coxsackie": {
-        "source": "noaa", "id": "8518979", "name": "Coxsackie",
-        "lat": 42.353, "lon": -73.795, "river_mile": 108,
-        "region": "upstream",
-        "params": ["temp"], "live": True,
-    },
-    "schodack": {
-        "source": "usgs", "id": "0135980207", "name": "Schodack Landing",
-        "lat": 42.500, "lon": -73.777, "river_mile": 120,
-        "region": "upstream",
-        "params": ["temp", "conductance", "dissolved_oxygen", "turbidity"], "live": True,
-    },
-    # ── Extended corridor (not in default dashboard) ────────────────────────
-    "piermont": {
-        "source": "usgs", "id": "01376269", "name": "Piermont",
-        "lat": 41.043, "lon": -73.896, "river_mile": 25,
-        "region": "south",
-        "params": ["temp", "conductance", "dissolved_oxygen", "ph", "turbidity"], "live": False,
-        "note": "All sensors returning -999999 as of Apr 2026",
-    },
-    "poughkeepsie": {
-        "source": "usgs", "id": "01372043", "name": "Poughkeepsie",
-        "lat": 41.721, "lon": -73.939, "river_mile": 75,
-        "region": "south",
-        "params": ["temp", "conductance", "turbidity"], "live": False,
-        "note": "Decommissioned Jan 2021",
-    },
-    "albany": {
-        "source": "usgs", "id": "01359139", "name": "Albany",
-        "lat": 42.648, "lon": -73.748, "river_mile": 143,
-        "region": "north",
-        "params": ["temp"], "live": True,
-    },
-}
 
-REGIONS = {
-    "cornwall_on_hudson": {
-        "name": "Cornwall-on-Hudson, NY",
-        "center": {"lat": 41.435, "lon": -74.036},
-        "stations": [
-            "newburgh", "west_point", "bear_mountain", "beacon",
-            "norrie_point", "turkey_point",
-        ],
-        "tide_station": "newburgh",
-        "description": "Hudson River at West Point — Newburgh tide, striped bass corridor",
-    },
-}
-# Backward-compatible alias
-REGIONS["cornwall"] = REGIONS["cornwall_on_hudson"]
+def _codes(station_config: Dict) -> List[str]:
+    seen = []
+    for param in station_config.get("parameters") or []:
+        code = param["code"]
+        if code not in seen:
+            seen.append(code)
+    return seen
 
-FOCUS_STATIONS = [
-    "norrie_point", "turkey_point",   # nearest live sensors upstream of West Point gap
-]
 
-LIVE_STATIONS = {k: v for k, v in STATIONS.items() if v.get("live", False)}
-FOCUS_LIVE_STATIONS = {k: STATIONS[k] for k in FOCUS_STATIONS if k in STATIONS}
+def _fields_for_code(station_config: Dict, code: str) -> List[str]:
+    return [
+        param["field"]
+        for param in station_config.get("parameters") or []
+        if param["code"] == code
+    ]
 
 
 def stations_for_region(region: Optional[str] = None) -> Dict:
-    """Return station configs, optionally filtered to a focus region."""
-    if not region:
-        return FOCUS_LIVE_STATIONS
+    """Live observation stations, optionally limited to a named region."""
+    def live_obs(keys):
+        return {
+            key: STATIONS[key]
+            for key in keys
+            if key in STATIONS
+            and STATIONS[key].get("live")
+            and STATIONS[key].get("kind") == "observation"
+        }
+
+    if not region or region == "all":
+        return live_obs(FOCUS_STATIONS)
     info = REGIONS.get(region)
     if not info:
-        return FOCUS_LIVE_STATIONS
-    return {k: STATIONS[k] for k in info["stations"] if k in STATIONS and STATIONS[k].get("live")}
+        return live_obs(FOCUS_STATIONS)
+    return live_obs(info["stations"])
 
-# ─────────────────────────────────────────────────────────────────────────────
-# USGS fetch
-# ─────────────────────────────────────────────────────────────────────────────
 
-def _parse_usgs_response(data: dict) -> Optional[Dict]:
-    ts_list = data.get("value", {}).get("timeSeries", [])
-    if not ts_list:
+def _float_or_none(raw) -> Optional[float]:
+    if raw in (None, "", "MM"):
         return None
-    reading = {"timestamp": datetime.utcnow()}
-    for ts in ts_list:
-        param_code = ts["variable"]["variableCode"][0]["value"]
-        field = PARAM_MAP.get(param_code)
-        if not field:
-            continue
-        values = ts["values"][0]["value"]
-        if not values:
-            continue
-        latest = values[-1]
-        try:
-            reading["timestamp"] = datetime.fromisoformat(
-                latest["dateTime"].replace("Z", "+00:00")
-            )
-        except Exception:
-            pass
-        try:
-            val = float(latest["value"])
-            reading[field] = None if val == -999999.0 else round(val, 3)
-        except (TypeError, ValueError):
-            reading[field] = None
+    try:
+        value = float(raw)
+    except (TypeError, ValueError):
+        return None
+    if value == SENTINEL:
+        return None
+    return value
+
+
+def _naive_utc(value: datetime) -> datetime:
+    if value.tzinfo is not None:
+        value = value.astimezone(timezone.utc).replace(tzinfo=None)
+    return value
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# HRECOS (NYS Mesonet CSV)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _hrecos_stamp(value: datetime) -> str:
+    return value.strftime("%Y%m%dT%H%M")
+
+
+def _parse_hrecos_time(value: str) -> datetime:
+    return datetime.strptime(value[:15], "%Y%m%dT%H%M%S")
+
+
+def _hrecos_code(header: str) -> str:
+    return header.split()[0].strip().lower()
+
+
+def _parse_hrecos_csv(text: str) -> Dict[str, List[Dict]]:
+    grouped: Dict[str, List[Dict]] = {}
+    reader = csv.DictReader(io.StringIO(text))
+    for row in reader:
+        normalized = {_hrecos_code(key): value for key, value in row.items() if key}
+        grouped.setdefault(normalized.get("station", ""), []).append(normalized)
+    return grouped
+
+
+def _reading_from_hrecos_rows(station_config: Dict, rows: List[Dict]) -> Optional[Dict]:
+    reading: Dict = {}
+    latest_time = None
+    for param in station_config.get("parameters") or []:
+        code = param["code"].lower()
+        field = param["field"]
+        for row in reversed(rows):
+            value = _float_or_none(row.get(code))
+            if value is None:
+                continue
+            stamp = row.get("datetime")
+            if stamp:
+                parsed = _parse_hrecos_time(stamp)
+                if latest_time is None or parsed > latest_time:
+                    latest_time = parsed
+            reading[field] = round(value, 3)
+            break
+    if not reading:
+        return None
+    reading["timestamp"] = latest_time or datetime.utcnow()
     return _to_imperial(reading)
 
 
-def _fetch_usgs_sync(site_id: str) -> Optional[Dict]:
+def _fetch_hrecos_sync(stations: Dict[str, Dict], hours: int = 3) -> Dict[str, Dict]:
+    if not stations:
+        return {}
+    end = datetime.utcnow()
+    start = end - timedelta(hours=hours)
+    codes = sorted({code for config in stations.values() for code in _codes(config)})
+    url = HRECOS_URL.format(
+        sites=",".join(config["id"] for config in stations.values()),
+        start=_hrecos_stamp(start),
+        end=_hrecos_stamp(end),
+    )
     try:
-        resp = requests.get(USGS_IV_URL, params={
-            "format": "json", "sites": site_id,
-            "parameterCd": ALL_PARAMS, "siteStatus": "active",
+        response = requests.get(
+            url,
+            params={"timezone": "UTC", "variables": ",".join(codes)},
+            timeout=60,
+        )
+    except requests.RequestException as exc:
+        print(f"HRECOS fetch failed: {exc}")
+        return {}
+    if response.status_code != 200:
+        print(f"HRECOS fetch HTTP {response.status_code}")
+        return {}
+    grouped = _parse_hrecos_csv(response.text)
+    results = {}
+    for key, config in stations.items():
+        reading = _reading_from_hrecos_rows(config, grouped.get(config["id"], []))
+        if reading:
+            results[key] = reading
+    return results
+
+
+async def _fetch_hrecos_async(stations: Dict[str, Dict], hours: int = 3) -> Dict[str, Dict]:
+    if not stations:
+        return {}
+    end = datetime.utcnow()
+    start = end - timedelta(hours=hours)
+    codes = sorted({code for config in stations.values() for code in _codes(config)})
+    url = HRECOS_URL.format(
+        sites=",".join(config["id"] for config in stations.values()),
+        start=_hrecos_stamp(start),
+        end=_hrecos_stamp(end),
+    )
+    try:
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            response = await client.get(
+                url, params={"timezone": "UTC", "variables": ",".join(codes)}
+            )
+    except httpx.HTTPError as exc:
+        print(f"HRECOS async fetch failed: {exc}")
+        return {}
+    if response.status_code != 200:
+        print(f"HRECOS async fetch HTTP {response.status_code}")
+        return {}
+    grouped = _parse_hrecos_csv(response.text)
+    results = {}
+    for key, config in stations.items():
+        reading = _reading_from_hrecos_rows(config, grouped.get(config["id"], []))
+        if reading:
+            results[key] = reading
+    return results
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# USGS
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _parse_usgs_response(data: dict, wanted: Dict[str, str]) -> Optional[Dict]:
+    series = data.get("value", {}).get("timeSeries", [])
+    if not series:
+        return None
+    reading: Dict = {}
+    latest_time = None
+    for item in series:
+        code = item["variable"]["variableCode"][0]["value"]
+        field = wanted.get(code)
+        if not field:
+            continue
+        values = item["values"][0]["value"]
+        if not values:
+            continue
+        latest = values[-1]
+        value = _float_or_none(latest.get("value"))
+        if value is None:
+            continue
+        try:
+            parsed = datetime.fromisoformat(latest["dateTime"].replace("Z", "+00:00"))
+            parsed = _naive_utc(parsed)
+            if latest_time is None or parsed > latest_time:
+                latest_time = parsed
+        except (TypeError, ValueError):
+            pass
+        reading[field] = round(value, 3)
+    if not reading:
+        return None
+    reading["timestamp"] = latest_time or datetime.utcnow()
+    return _to_imperial(reading)
+
+
+def _usgs_wanted(station_config: Dict) -> Dict[str, str]:
+    wanted = {}
+    for param in station_config.get("parameters") or []:
+        wanted[param["code"]] = param["field"]
+    return wanted
+
+
+def _fetch_usgs_sync(station_config: Dict) -> Optional[Dict]:
+    wanted = _usgs_wanted(station_config)
+    if not wanted:
+        return None
+    try:
+        response = requests.get(USGS_IV_URL, params={
+            "format": "json",
+            "sites": station_config["id"],
+            "parameterCd": ",".join(wanted),
+            "siteStatus": "all",
         }, timeout=30)
-        if resp.status_code == 200:
-            return _parse_usgs_response(resp.json())
-    except Exception as e:
-        print(f"USGS sync fetch failed ({site_id}): {e}")
+        if response.status_code == 200:
+            return _parse_usgs_response(response.json(), wanted)
+    except requests.RequestException as exc:
+        print(f"USGS sync fetch failed ({station_config['id']}): {exc}")
     return None
 
 
-async def _fetch_usgs_async(site_id: str) -> Optional[Dict]:
+async def _fetch_usgs_async(station_config: Dict) -> Optional[Dict]:
+    wanted = _usgs_wanted(station_config)
+    if not wanted:
+        return None
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
-            resp = await client.get(USGS_IV_URL, params={
-                "format": "json", "sites": site_id,
-                "parameterCd": ALL_PARAMS, "siteStatus": "active",
+            response = await client.get(USGS_IV_URL, params={
+                "format": "json",
+                "sites": station_config["id"],
+                "parameterCd": ",".join(wanted),
+                "siteStatus": "all",
             })
-            if resp.status_code == 200:
-                return _parse_usgs_response(resp.json())
-    except Exception as e:
-        print(f"USGS async fetch failed ({site_id}): {e}")
+            if response.status_code == 200:
+                return _parse_usgs_response(response.json(), wanted)
+    except httpx.HTTPError as exc:
+        print(f"USGS async fetch failed ({station_config['id']}): {exc}")
     return None
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# NOAA CO-OPS fetch
+# NOAA CO-OPS observations
 # ─────────────────────────────────────────────────────────────────────────────
 
-NOAA_PRODUCTS = ["water_temperature", "conductivity", "salinity"]
+def _apply_noaa_row(reading: Dict, product: str, fields: List[str], row: Dict) -> None:
+    try:
+        reading["timestamp"] = datetime.strptime(row["t"], "%Y-%m-%d %H:%M")
+    except (KeyError, ValueError):
+        pass
+    if product == "wind":
+        mapping = {"wind_speed": "s", "wind_direction": "d", "wind_gust": "g"}
+        for field in fields:
+            reading[field] = _float_or_none(row.get(mapping.get(field, "s")))
+        return
+    if product == "salinity":
+        raw = row.get("s", row.get("v"))
+    else:
+        raw = row.get("v")
+    value = _float_or_none(raw)
+    if product == "conductivity" and value is not None:
+        # CO-OPS metric conductivity is millisiemens/cm. The rest of the API uses µS/cm.
+        value = round(value * 1000, 3)
+    if product == "water_level" and value is not None:
+        value = _m_to_ft(value)
+    for field in fields:
+        reading[field] = value
 
-NOAA_FIELD_MAP = {
-    "water_temperature": "temp",
-    "conductivity":      "conductance",
-    "salinity":          "salinity",
-}
 
-
-def _fetch_noaa_sync(station_id: str) -> Optional[Dict]:
-    reading = {"timestamp": datetime.utcnow()}
-    for product in NOAA_PRODUCTS:
+def _fetch_noaa_sync(station_config: Dict) -> Optional[Dict]:
+    reading: Dict = {}
+    for code in _codes(station_config):
         try:
-            resp = requests.get(NOAA_API_URL, params={
-                "station": station_id, "product": product,
-                "date": "latest", "units": "metric",
-                "time_zone": "gmt", "format": "json",
-            }, timeout=15)
-            if resp.status_code != 200:
+            response = requests.get(NOAA_API_URL, params={
+                "station": station_config["id"],
+                "product": code,
+                "date": "latest",
+                "datum": "MLLW",
+                "units": "metric",
+                "time_zone": "gmt",
+                "format": "json",
+            }, timeout=20)
+        except requests.RequestException:
+            continue
+        if response.status_code != 200:
+            continue
+        payload = response.json()
+        if payload.get("error"):
+            continue
+        data = payload.get("data") or []
+        if not data:
+            continue
+        _apply_noaa_row(reading, code, _fields_for_code(station_config, code), data[0])
+    if len(reading) <= (1 if "timestamp" in reading else 0):
+        return None
+    return _to_imperial(reading)
+
+
+async def _fetch_noaa_async(station_config: Dict) -> Optional[Dict]:
+    reading: Dict = {}
+    async with httpx.AsyncClient(timeout=20.0) as client:
+        for code in _codes(station_config):
+            try:
+                response = await client.get(NOAA_API_URL, params={
+                    "station": station_config["id"],
+                    "product": code,
+                    "date": "latest",
+                    "datum": "MLLW",
+                    "units": "metric",
+                    "time_zone": "gmt",
+                    "format": "json",
+                })
+            except httpx.HTTPError:
                 continue
-            d = resp.json()
-            if "error" in d:
+            if response.status_code != 200:
                 continue
-            data = d.get("data", [])
+            payload = response.json()
+            if payload.get("error"):
+                continue
+            data = payload.get("data") or []
             if not data:
                 continue
-            try:
-                reading["timestamp"] = datetime.strptime(data[0]["t"], "%Y-%m-%d %H:%M")
-            except Exception:
-                pass
-            field = NOAA_FIELD_MAP.get(product)
-            if field:
-                try:
-                    reading[field] = round(float(data[0]["v"]), 3)
-                except (TypeError, ValueError):
-                    reading[field] = None
-        except Exception:
-            continue
-    return _to_imperial(reading) if len(reading) > 1 else None
-
-
-async def _fetch_noaa_async(station_id: str) -> Optional[Dict]:
-    reading = {"timestamp": datetime.utcnow()}
-    async with httpx.AsyncClient(timeout=15.0) as client:
-        for product in NOAA_PRODUCTS:
-            try:
-                resp = await client.get(NOAA_API_URL, params={
-                    "station": station_id, "product": product,
-                    "date": "latest", "units": "metric",
-                    "time_zone": "gmt", "format": "json",
-                })
-                if resp.status_code != 200:
-                    continue
-                d = resp.json()
-                if "error" in d:
-                    continue
-                data = d.get("data", [])
-                if not data:
-                    continue
-                try:
-                    reading["timestamp"] = datetime.strptime(data[0]["t"], "%Y-%m-%d %H:%M")
-                except Exception:
-                    pass
-                field = NOAA_FIELD_MAP.get(product)
-                if field:
-                    try:
-                        reading[field] = round(float(data[0]["v"]), 3)
-                    except (TypeError, ValueError):
-                        reading[field] = None
-            except Exception:
-                continue
-    return _to_imperial(reading) if len(reading) > 1 else None
+            _apply_noaa_row(reading, code, _fields_for_code(station_config, code), data[0])
+    if len(reading) <= (1 if "timestamp" in reading else 0):
+        return None
+    return _to_imperial(reading)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# NDBC fetch (HRNERR met stations)
+# NDBC
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _parse_ndbc_text(text: str) -> Optional[Dict]:
+def _parse_ndbc_text(text: str, station_config: Dict) -> Optional[Dict]:
     lines = text.strip().splitlines()
     if len(lines) < 3:
         return None
@@ -367,165 +414,266 @@ def _parse_ndbc_text(text: str) -> Optional[Dict]:
         return None
     row = dict(zip(headers, latest))
     try:
-        ts = datetime(int(row["YY"]), int(row["MM"]), int(row["DD"]),
-                      int(row["hh"]), int(row["mm"]))
-    except Exception:
-        ts = datetime.utcnow()
-    reading = {"timestamp": ts}
-    for col, field in NDBC_COL_MAP.items():
-        val = row.get(col, "MM")
-        reading[field] = None if val == "MM" else float(val) if _is_float(val) else None
+        timestamp = datetime(
+            int(row["YY"]), int(row["MM"]), int(row["DD"]), int(row["hh"]), int(row["mm"])
+        )
+    except (KeyError, ValueError):
+        timestamp = datetime.utcnow()
+    wanted = {param["code"]: param["field"] for param in station_config.get("parameters") or []}
+    reading = {"timestamp": timestamp}
+    for code, field in wanted.items():
+        reading[field] = _float_or_none(row.get(code))
+    if all(reading.get(field) is None for field in wanted.values()):
+        return None
     return _to_imperial(reading)
 
 
-def _is_float(v: str) -> bool:
+def _fetch_ndbc_sync(station_config: Dict) -> Optional[Dict]:
     try:
-        float(v)
-        return True
-    except ValueError:
-        return False
-
-
-def _fetch_ndbc_sync(station_id: str) -> Optional[Dict]:
-    try:
-        url = NDBC_URL.format(station=station_id.upper())
-        resp = requests.get(url, timeout=20)
-        if resp.status_code == 200:
-            return _parse_ndbc_text(resp.text)
-    except Exception as e:
-        print(f"NDBC sync fetch failed ({station_id}): {e}")
+        response = requests.get(NDBC_URL.format(station=station_config["id"].upper()), timeout=20)
+        if response.status_code == 200:
+            return _parse_ndbc_text(response.text, station_config)
+    except requests.RequestException as exc:
+        print(f"NDBC sync fetch failed ({station_config['id']}): {exc}")
     return None
 
 
-async def _fetch_ndbc_async(station_id: str) -> Optional[Dict]:
+async def _fetch_ndbc_async(station_config: Dict) -> Optional[Dict]:
     try:
-        url = NDBC_URL.format(station=station_id.upper())
         async with httpx.AsyncClient(timeout=20.0) as client:
-            resp = await client.get(url)
-            if resp.status_code == 200:
-                return _parse_ndbc_text(resp.text)
-    except Exception as e:
-        print(f"NDBC async fetch failed ({station_id}): {e}")
+            response = await client.get(NDBC_URL.format(station=station_config["id"].upper()))
+            if response.status_code == 200:
+                return _parse_ndbc_text(response.text, station_config)
+    except httpx.HTTPError as exc:
+        print(f"NDBC async fetch failed ({station_config['id']}): {exc}")
     return None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Tide predictions (delegates to app.tides)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _prediction_reading(station_key: str, station_config: Dict) -> Optional[Dict]:
+    from app.tides import get_tide_predictions
+
+    predictions = get_tide_predictions(hours=18, station_key=station_key)
+    if not predictions:
+        return None
+    now = datetime.utcnow()
+    chosen = predictions[0]
+    for item in predictions:
+        if item["time"] >= now:
+            chosen = item
+            break
+    return {
+        "timestamp": chosen["time"],
+        "tide_prediction": chosen["height"],
+        "tide_type": chosen.get("type"),
+        "station_id": station_config["id"],
+    }
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Public interface
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _route_sync(station_config: Dict) -> Optional[Dict]:
-    src = station_config["source"]
-    sid = station_config["id"]
-    if src == "noaa":
-        return _fetch_noaa_sync(sid)
-    if src == "ndbc":
-        return _fetch_ndbc_sync(sid)
-    return _fetch_usgs_sync(sid)
+def _route_sync(station_key: str, station_config: Dict) -> Optional[Dict]:
+    if station_config.get("kind") == "prediction":
+        return _prediction_reading(station_key, station_config)
+    source = station_config["source"]
+    if source == "hrecos":
+        return _fetch_hrecos_sync({station_key: station_config}).get(station_key)
+    if source == "noaa":
+        return _fetch_noaa_sync(station_config)
+    if source == "ndbc":
+        return _fetch_ndbc_sync(station_config)
+    if source == "usgs":
+        return _fetch_usgs_sync(station_config)
+    return None
 
 
-async def _route_async(station_config: Dict) -> Optional[Dict]:
-    src = station_config["source"]
-    sid = station_config["id"]
-    if src == "noaa":
-        return await _fetch_noaa_async(sid)
-    if src == "ndbc":
-        return await _fetch_ndbc_async(sid)
-    return await _fetch_usgs_async(sid)
+async def _route_async(station_key: str, station_config: Dict) -> Optional[Dict]:
+    if station_config.get("kind") == "prediction":
+        return _prediction_reading(station_key, station_config)
+    source = station_config["source"]
+    if source == "hrecos":
+        fetched = await _fetch_hrecos_async({station_key: station_config})
+        return fetched.get(station_key)
+    if source == "noaa":
+        return await _fetch_noaa_async(station_config)
+    if source == "ndbc":
+        return await _fetch_ndbc_async(station_config)
+    if source == "usgs":
+        return await _fetch_usgs_async(station_config)
+    return None
 
 
 async def fetch_station_async(station_key: str, station_config: Dict) -> Optional[Dict]:
     try:
-        data = await _route_async(station_config)
-        if data:
-            return data
-    except Exception as e:
-        print(f"fetch_station_async failed for {station_key}: {e}")
-    mock = generate_mock_data(station_config["id"])
-    mock["timestamp"] = datetime.fromisoformat(mock["timestamp"])
-    return mock
+        return await _route_async(station_key, station_config)
+    except Exception as exc:
+        print(f"fetch_station_async failed for {station_key}: {exc}")
+        return None
 
 
 def fetch_station_sync(station_key: str, station_config: Dict) -> Optional[Dict]:
     try:
-        data = _route_sync(station_config)
-        if data:
-            return data
-    except Exception as e:
-        print(f"fetch_station_sync failed for {station_key}: {e}")
-    mock = generate_mock_data(station_config["id"])
-    mock["timestamp"] = datetime.fromisoformat(mock["timestamp"])
-    return mock
+        return _route_sync(station_key, station_config)
+    except Exception as exc:
+        print(f"fetch_station_sync failed for {station_key}: {exc}")
+        return None
 
 
 async def fetch_all_stations(region: Optional[str] = None) -> Dict[str, Dict]:
-    results = {}
-    for key, config in stations_for_region(region).items():
+    pool = stations_for_region(region)
+    results: Dict[str, Dict] = {}
+    hrecos = {key: config for key, config in pool.items() if config["source"] == "hrecos"}
+    if hrecos:
+        results.update(await _fetch_hrecos_async(hrecos))
+    for key, config in pool.items():
+        if key in hrecos:
+            continue
         data = await fetch_station_async(key, config)
         if data:
             results[key] = data
     return results
 
 
+def _historical_hrecos(station_key: str, config: Dict, hours: int) -> List[Dict]:
+    end = datetime.utcnow()
+    start = end - timedelta(hours=hours)
+    codes = _codes(config)
+    url = HRECOS_URL.format(
+        sites=config["id"],
+        start=_hrecos_stamp(start),
+        end=_hrecos_stamp(end),
+    )
+    try:
+        response = requests.get(
+            url,
+            params={"timezone": "UTC", "variables": ",".join(codes)},
+            timeout=60,
+        )
+    except requests.RequestException as exc:
+        print(f"HRECOS history failed ({station_key}): {exc}")
+        return []
+    if response.status_code != 200:
+        return []
+    rows = _parse_hrecos_csv(response.text).get(config["id"], [])
+    series = []
+    for row in rows:
+        reading = _reading_from_hrecos_rows(config, [row])
+        if not reading:
+            continue
+        reading["timestamp"] = reading["timestamp"].isoformat()
+        series.append(reading)
+    series.sort(key=lambda item: item["timestamp"], reverse=True)
+    return series
+
+
+def _historical_usgs(station_key: str, config: Dict, hours: int) -> List[Dict]:
+    wanted = _usgs_wanted(config)
+    end = datetime.utcnow()
+    start = end - timedelta(hours=hours)
+    try:
+        response = requests.get(USGS_IV_URL, params={
+            "format": "json",
+            "sites": config["id"],
+            "parameterCd": ",".join(wanted),
+            "startDT": start.strftime("%Y-%m-%dT%H:%M+00:00"),
+            "endDT": end.strftime("%Y-%m-%dT%H:%M+00:00"),
+        }, timeout=30)
+    except requests.RequestException as exc:
+        print(f"Historical fetch failed for {station_key}: {exc}")
+        return []
+    if response.status_code != 200:
+        return []
+    merged: Dict[str, Dict] = {}
+    for item in response.json().get("value", {}).get("timeSeries", []):
+        code = item["variable"]["variableCode"][0]["value"]
+        field = wanted.get(code)
+        if not field:
+            continue
+        for value in item["values"][0]["value"]:
+            stamp = value["dateTime"]
+            merged.setdefault(stamp, {"timestamp": stamp})
+            number = _float_or_none(value.get("value"))
+            merged[stamp][field] = None if number is None else round(number, 3)
+    rows = []
+    for row in merged.values():
+        _to_imperial(row)
+        rows.append(row)
+    return sorted(rows, key=lambda item: item["timestamp"], reverse=True)
+
+
+def _historical_noaa(config: Dict, hours: int) -> List[Dict]:
+    end = datetime.utcnow()
+    start = end - timedelta(hours=hours)
+    merged: Dict[str, Dict] = {}
+    for code in _codes(config):
+        try:
+            response = requests.get(NOAA_API_URL, params={
+                "station": config["id"],
+                "product": code,
+                "begin_date": start.strftime("%Y%m%d %H:%M"),
+                "end_date": end.strftime("%Y%m%d %H:%M"),
+                "datum": "MLLW",
+                "units": "metric",
+                "time_zone": "gmt",
+                "format": "json",
+            }, timeout=30)
+        except requests.RequestException:
+            continue
+        if response.status_code != 200:
+            continue
+        payload = response.json()
+        if payload.get("error"):
+            continue
+        for row in payload.get("data") or []:
+            stamp = row.get("t")
+            if not stamp:
+                continue
+            bucket = merged.setdefault(stamp, {"timestamp": stamp})
+            _apply_noaa_row(bucket, code, _fields_for_code(config, code), row)
+            bucket["timestamp"] = stamp
+    rows = []
+    for row in merged.values():
+        _to_imperial(row)
+        rows.append(row)
+    return sorted(rows, key=lambda item: item["timestamp"], reverse=True)
+
+
 def fetch_historical_data(station_key: str, hours: int = 24) -> List[Dict]:
     config = STATIONS.get(station_key)
-    if not config or config["source"] != "usgs":
-        return _generate_mock_historical(hours)
-    site_id = config["id"]
-    end_time = datetime.utcnow()
-    start_time = end_time - timedelta(hours=hours)
-    try:
-        resp = requests.get(USGS_IV_URL, params={
-            "format": "json", "sites": site_id,
-            "parameterCd": ALL_PARAMS,
-            "startDT": start_time.strftime("%Y-%m-%dT%H:%M+00:00"),
-            "endDT":   end_time.strftime("%Y-%m-%dT%H:%M+00:00"),
-        }, timeout=30)
-        if resp.status_code == 200:
-            ts_list = resp.json().get("value", {}).get("timeSeries", [])
-            if ts_list:
-                merged: Dict[str, Dict] = {}
-                for ts in ts_list:
-                    code = ts["variable"]["variableCode"][0]["value"]
-                    field = PARAM_MAP.get(code)
-                    if not field:
-                        continue
-                    for v in ts["values"][0]["value"]:
-                        dt = v["dateTime"]
-                        merged.setdefault(dt, {"timestamp": dt})
-                        try:
-                            val = float(v["value"])
-                            merged[dt][field] = None if val == -999999.0 else round(val, 3)
-                        except (TypeError, ValueError):
-                            merged[dt][field] = None
-                return sorted(merged.values(), key=lambda x: x["timestamp"], reverse=True)
-    except Exception as e:
-        print(f"Historical fetch failed for {station_key}: {e}")
-    return _generate_mock_historical(hours)
+    if not config or not config.get("live") or config.get("kind") != "observation":
+        return []
+    source = config["source"]
+    if source == "hrecos":
+        return _historical_hrecos(station_key, config, hours)
+    if source == "usgs":
+        return _historical_usgs(station_key, config, hours)
+    if source == "noaa":
+        return _historical_noaa(config, hours)
+    if source == "ndbc":
+        reading = _fetch_ndbc_sync(config)
+        if not reading:
+            return []
+        reading["timestamp"] = reading["timestamp"].isoformat()
+        return [reading]
+    return []
 
 
 def generate_mock_data(station_id: str) -> Dict:
+    """Kept so older callers import. Live fetches do not use it."""
     import random
     return {
         "timestamp": datetime.utcnow().isoformat(),
-        "temp":             round((10.0 + random.gauss(0, 2)) * 9/5 + 32, 2),  # °F
-        "flow":             round(max(0, 500 + random.gauss(0, 100)), 2),
-        "turbidity":        round(max(0, 10 + random.gauss(0, 3)), 2),
+        "temp": round((10.0 + random.gauss(0, 2)) * 9 / 5 + 32, 2),
+        "flow": round(max(0, 500 + random.gauss(0, 100)), 2),
+        "turbidity": round(max(0, 10 + random.gauss(0, 3)), 2),
         "dissolved_oxygen": round(random.uniform(7.0, 12.0), 2),
-        "ph":               round(random.uniform(6.8, 8.2), 2),
-        "conductance":      round(random.uniform(150, 300), 1),
-        "salinity":         round(random.uniform(0.0, 1.5), 3),
+        "ph": round(random.uniform(6.8, 8.2), 2),
+        "conductance": round(random.uniform(150, 300), 1),
+        "salinity": round(random.uniform(0.0, 1.5), 3),
+        "station_id": station_id,
     }
-
-
-def _generate_mock_historical(hours: int) -> List[Dict]:
-    import random
-    end_time = datetime.utcnow()
-    return [
-        {
-            "timestamp": (end_time - timedelta(minutes=15 * i)).isoformat(),
-            "temp":      round((10.0 + random.gauss(0, 1)) * 9/5 + 32, 2),
-            "flow":      round(500 + random.gauss(0, 50), 2),
-            "turbidity": round(10 + random.gauss(0, 2), 2),
-        }
-        for i in range(hours * 4)
-    ]

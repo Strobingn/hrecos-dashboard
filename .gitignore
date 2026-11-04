@@ -61,3 +61,5 @@ ml/data/**
 !ml/data/.gitkeep
 ml/artifacts/cache/
 
+# Virtual hydrophone dry-run output
+edge/out/

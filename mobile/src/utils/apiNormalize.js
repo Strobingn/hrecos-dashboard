@@ -28,6 +28,8 @@ const SOURCE_FROM_KEY = {
   albany: 'USGS',
 };
 
+const PROVIDER_LABEL = { usgs: 'USGS', noaa: 'NOAA', ndbc: 'NDBC', hrecos: 'HRECOS' };
+
 function mapParamList(params = []) {
   return params
     .map((p) => {
@@ -44,15 +46,17 @@ export function normalizeStationMeta(apiStation) {
   const key = apiStation.key || apiStation.id;
   const local = STATIONS_BY_ID[key] || {};
   const parameters = mapParamList(apiStation.parameters || apiStation.params || local.parameters || []);
+  const provider = String(apiStation.provider || apiStation.source || '').toLowerCase();
+  const source = PROVIDER_LABEL[provider] || SOURCE_FROM_KEY[key] || local.source || 'HRECOS';
 
   return {
     id: key,
     name: apiStation.name || local.name || key,
-    mile: local.mile ?? apiStation.river_mile ?? null,
+    mile: apiStation.river_mile ?? local.mile ?? null,
     lat: apiStation.location?.lat ?? apiStation.lat ?? local.lat,
     lon: apiStation.location?.lon ?? apiStation.lon ?? local.lon,
-    source: SOURCE_FROM_KEY[key] || local.source || 'HRECOS',
-    sourceLabel: SOURCE_FROM_KEY[key] || local.sourceLabel || 'HRECOS',
+    source,
+    sourceLabel: source,
     status: apiStation.live ? 'live' : (local.status || 'offline'),
     parameters,
     description: apiStation.note || local.description || '',

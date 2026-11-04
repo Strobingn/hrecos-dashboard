@@ -233,3 +233,34 @@ on conflict (id) do update set
 -- tappan-zee sits in the Tappan Zee between the Piermont USGS gauge
 -- (41.043, -73.896, river mile 25) and the Mario M. Cuomo Bridge (about
 -- river mile 27), rather than on Piermont Pier.
+
+-- Simulated imaging sonar at the focus site. Same id and coordinates as the
+-- hydrophone so striped_bass_passage_and_calls_hourly can join on node id.
+-- Poughkeepsie and Tappan Zee are later sonar sites and are not seeded.
+insert into public.sonar_nodes (
+  id,
+  name,
+  lat,
+  lon,
+  river_mile,
+  hardware,
+  status,
+  last_heartbeat
+) values (
+  'westpoint-cornwall',
+  'West Point / Cornwall',
+  41.4150,
+  -73.9600,
+  54.0,
+  'Simulated ARIS Explorer-class imaging sonar (no instrument connected)',
+  'simulated',
+  now()
+)
+on conflict (id) do update set
+  name = excluded.name,
+  lat = excluded.lat,
+  lon = excluded.lon,
+  river_mile = excluded.river_mile,
+  hardware = excluded.hardware,
+  status = excluded.status,
+  last_heartbeat = excluded.last_heartbeat;

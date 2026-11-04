@@ -23,6 +23,38 @@ Real-time environmental monitoring dashboard for the **Hudson River Environmenta
 - 🔒 **Security First** - Automated security scanning and dependency updates
 - 🚀 **CI/CD Ready** - GitHub Actions for testing, building, and deployment
 
+## GitHub Pages site
+
+The vanilla dashboard (`index.html`, `app.js`, `style.css`) is what [https://strobingn.github.io/hrecos-dashboard/](https://strobingn.github.io/hrecos-dashboard/) serves. Pages is set to build with GitHub Actions. `.github/workflows/pages.yml` publishes those static files on every push to `main`.
+
+The map uses Leaflet and OpenStreetMap (no API key). The **Sounds** tab is the Hudson River fish acoustic network (Tappan Zee through Poughkeepsie, centered on West Point / Cornwall).
+
+### Fish Sounds configuration
+
+Supabase URL and the anon key live in `config.js` next to `index.html`:
+
+```js
+window.HRECOS_CONFIG = {
+  supabaseUrl: "https://YOUR_PROJECT.supabase.co",
+  supabaseAnonKey: "YOUR_ANON_KEY"
+};
+```
+
+Copy both from Supabase → Project Settings → API. The anon key is safe to commit; do not put the service-role key in this file. Leave the strings empty and the tab uses `data/fish-sounds.json` (sample nodes, species, detections, and hourly counts) so it still runs.
+
+Expected tables (shared with the database migrations):
+
+| Relation | Columns used by the page |
+|---|---|
+| `species` | `id`, `common_name`, `scientific_name`, `soniferous`, `freq_low_hz`, `freq_high_hz`, `call_description`, `season`, `fishsounds_url`, `image_url` |
+| `hydrophone_nodes` | `id`, `name`, `lat`, `lon`, `river_mile`, `hardware`, `sample_rate_hz`, `status`, `last_heartbeat` |
+| `detections` | `id`, `node_id`, `segment_id`, `start_time`, `end_time`, `label`, `species_id`, `confidence`, `model_name`, `model_version`, `freq_low_hz`, `freq_high_hz`, `clip_path`, `review_status` |
+| `detection_counts_hourly` (view) | `node_id`, `species_id`, `label`, `hour`, `detections`, `avg_confidence` |
+
+Clips are files in the public Storage bucket `audio`. `clip_path` is the object key. The page subscribes to Realtime inserts and updates on `detections`. Hourly bars are **calls detected per hour** (an activity index), not a count of individual fish.
+
+Sample node ids: `westpoint-cornwall`, `poughkeepsie`, `tappan-zee`.
+
 ## 🏗️ Architecture
 
 ```
@@ -191,6 +223,7 @@ THRESHOLDS = {
 | **Docker Publish** | Push to main | Build and push images to GHCR |
 | **Security Scan** | Schedule/PR | Vulnerability scanning with Trivy, Snyk, GitLeaks |
 | **Deploy** | Tag/Manual | Deploy to production server |
+| **GitHub Pages** | Push to main | Publish the static dashboard (`.github/workflows/pages.yml`) |
 | **Dependabot** | Schedule | Automated dependency updates |
 
 ### GitHub Secrets Required for Deployment
@@ -253,13 +286,18 @@ Anomalies are classified by severity:
 
 ## 📊 Monitored Stations
 
-| Station | Location | Parameters |
-|---------|----------|------------|
-| Newburgh | Hudson Valley | Temp, Flow, Turbidity, Salinity, DO, pH |
-| Beacon | Hudson Valley | Temp, Flow, Turbidity, Salinity, DO, pH |
-| West Point | Hudson Valley | Temp, Flow, Turbidity, Salinity, DO, pH |
-| Poughkeepsie | Hudson Valley | Temp, Flow, Turbidity, Salinity, DO, pH |
-| Albany | Capital Region | Temp, Flow, Turbidity |
+The station list lives in [`data/stations.json`](data/stations.json). The backend and the mobile app load that file. The static GitHub Pages site can fetch `/data/stations.json` (it is not wired up in `app.js` here). Every live id below was checked against HRECOS, USGS, NOAA CO-OPS, or NDBC.
+
+Focus reach: Tappan Zee / Piermont (river mile 25) through Poughkeepsie (river mile 75), with West Point / Cornwall-on-Hudson (river mile ~56) in the middle. Cornwall itself has no public sensor. Water quality in the reach is HRECOS, which moved off USGS NWIS in 2026:
+
+| Station | Provider id | What it reports |
+|---------|-------------|-----------------|
+| Piermont | HRECOS `HPMNT` | Temperature, conductance, salinity, pH, turbidity, DO saturation, depth |
+| West Point | HRECOS `HWEST` | Those, plus dissolved oxygen concentration |
+| Poughkeepsie | HRECOS `HPOUG` | Those, plus chlorophyll and phycocyanin |
+| Tarrytown, Haverstraw, Peekskill, Newburgh, Beacon, New Hamburg, Poughkeepsie tide | NOAA CO-OPS | Tide predictions only |
+
+Albany (`USGS 01359139` and HRECOS `HPORT`), Turkey Point, Coxsackie, and Norrie Point stay in the registry flagged out of focus. Schodack and Bear Mountain are listed but not live. `scripts/check_endpoints.py` rechecks every live parameter.
 
 ## 🗄️ Database Backup & Restore
 
