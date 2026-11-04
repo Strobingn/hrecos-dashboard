@@ -27,11 +27,13 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
 
       - name: Install dependencies
         run: |
           cd mobile
-          npm install --legacy-peer-deps
+          npm install --legacy-peer-deps --include=dev
 
       - name: Prebuild Android
         run: |

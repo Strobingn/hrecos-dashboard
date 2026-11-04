@@ -49,6 +49,9 @@ jobs:
       working-directory: ./backend
       run: |
         black --check --diff app || true
+
+    - name: Test backend
+      run: python -m pytest -q
         
     - name: Check import sorting with isort
       working-directory: ./backend
