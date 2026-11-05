@@ -299,6 +299,8 @@ Focus reach: Tappan Zee / Piermont (river mile 25) through Poughkeepsie (river m
 
 Albany (`USGS 01359139` and HRECOS `HPORT`), Turkey Point, Coxsackie, and Norrie Point stay in the registry flagged out of focus. Schodack and Bear Mountain are listed but not live. `scripts/check_endpoints.py` rechecks every live parameter.
 
+The HRECOS export API returns at most 60 days per request. The backend's history endpoints stop at 30 days (`hours` up to 720), so they stay under that limit. If that cap is raised past 1440 hours, `_historical_hrecos` in `backend/app/hr_data.py` will need to request the range in 60-day chunks.
+
 ## 🗄️ Database Backup & Restore
 
 ### Automated Backup
