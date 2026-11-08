@@ -16,7 +16,6 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../hooks/useTheme';
 import { useStations } from '../hooks/useStations';
-import { useStationData } from '../hooks/useStationData';
 import { useTides } from '../hooks/useTides';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import ErrorView from '../components/common/ErrorView';
@@ -30,7 +29,13 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 // Fishing Score Calculation Helpers
 // ============================================================================
 
-function calculateFishingScore(stationData, tidesData) {
+function average(values) {
+  const nums = values.map((value) => parseFloat(value)).filter((value) => Number.isFinite(value));
+  if (!nums.length) return null;
+  return nums.reduce((sum, value) => sum + value, 0) / nums.length;
+}
+
+function calculateFishingScore({ tempF, turbidity, tidesData }) {
   let totalScore = 0;
   let factorCount = 0;
 
@@ -42,27 +47,20 @@ function calculateFishingScore(stationData, tidesData) {
     timeOfDay: { score: 0, label: '', max: 100 },
   };
 
-  if (!stationData?.readings) {
-    return { totalScore: null, breakdown, rating: 'No Data' };
-  }
-
-  const readings = stationData.readings;
-
-  // Water Temperature Score (ideal: 55-75 F / 13-24 C)
-  if (readings.temp) {
-    const tempF = parseFloat(readings.temp.value);
+  // Water Temperature Score from the live HRECOS sondes (Fahrenheit)
+  if (tempF != null && Number.isFinite(tempF)) {
     if (tempF >= 60 && tempF <= 75) {
       breakdown.temperature.score = 95;
-      breakdown.temperature.label = `${Math.round(tempF)}°F - Ideal`;
-    } else if (tempF >= 55 && tempF <= 80) {
+      breakdown.temperature.label = `${tempF.toFixed(1)}°F - Ideal`;
+    } else if (tempF >= 50 && tempF <= 80) {
       breakdown.temperature.score = 80;
-      breakdown.temperature.label = `${Math.round(tempF)}°F - Good`;
-    } else if (tempF >= 50 && tempF <= 85) {
+      breakdown.temperature.label = `${tempF.toFixed(1)}°F - Good`;
+    } else if (tempF >= 40 && tempF <= 85) {
       breakdown.temperature.score = 60;
-      breakdown.temperature.label = `${Math.round(tempF)}°F - Fair`;
+      breakdown.temperature.label = `${tempF.toFixed(1)}°F - Fair`;
     } else {
       breakdown.temperature.score = 30;
-      breakdown.temperature.label = `${Math.round(tempF)}°F - Poor`;
+      breakdown.temperature.label = `${tempF.toFixed(1)}°F - Poor`;
     }
     totalScore += breakdown.temperature.score;
     factorCount++;
@@ -70,9 +68,9 @@ function calculateFishingScore(stationData, tidesData) {
     breakdown.temperature.label = 'No data';
   }
 
-  // Water Clarity Score (based on turbidity - lower is better)
-  if (readings.turbidity) {
-    const turb = parseFloat(readings.turbidity.value);
+  // Water Clarity Score from live turbidity
+  if (turbidity != null && Number.isFinite(turbidity)) {
+    const turb = turbidity;
     if (turb < 5) {
       breakdown.clarity.score = 90;
       breakdown.clarity.label = `${turb.toFixed(1)} NTU - Excellent Visibility`;
@@ -95,31 +93,11 @@ function calculateFishingScore(stationData, tidesData) {
     breakdown.clarity.label = 'No data';
   }
 
-  // Flow/Speed Score (ideal: 0.5-1.5 m/s)
-  if (readings.speed) {
-    const speed = parseFloat(readings.speed.value);
-    if (speed >= 0.5 && speed <= 1.5) {
-      breakdown.flow.score = 95;
-      breakdown.flow.label = `${speed.toFixed(1)} m/s - Optimal`;
-    } else if (speed >= 0.3 && speed <= 2.0) {
-      breakdown.flow.score = 75;
-      breakdown.flow.label = `${speed.toFixed(1)} m/s - Good`;
-    } else if (speed < 0.3) {
-      breakdown.flow.score = 55;
-      breakdown.flow.label = `${speed.toFixed(1)} m/s - Slow`;
-    } else {
-      breakdown.flow.score = 40;
-      breakdown.flow.label = `${speed.toFixed(1)} m/s - Fast`;
-    }
-    totalScore += breakdown.flow.score;
-    factorCount++;
-  } else {
-    // Estimate from depth changes if no speed
-    breakdown.flow.score = 70;
-    breakdown.flow.label = 'Moderate - Estimated';
-    totalScore += 70;
-    factorCount++;
-  }
+  // The live sondes do not publish river discharge.
+  breakdown.flow.score = 70;
+  breakdown.flow.label = 'No flow sensor';
+  totalScore += 70;
+  factorCount++;
 
   // Tide Phase Score
   if (tidesData?.current?.phase) {
@@ -287,10 +265,8 @@ function MetricGridItem({ icon, label, value, color }) {
 
 export default function FishingScreen() {
   const theme = useTheme();
-  const FISHING_STATION = 'turkey_point';
-  const { data: stationData, loading: stationLoading, error: stationError, refetch: refetchStation } = useStationData(FISHING_STATION);
+  const { stations, loading: stationLoading, error: stationError, refetch: refetchStation } = useStations();
   const { data: tidesData, loading: tidesLoading, error: tidesError, refetch: refetchTides } = useTides();
-  const { stations } = useStations();
   const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = useCallback(async () => {
@@ -300,9 +276,22 @@ export default function FishingScreen() {
   }, [refetchStation, refetchTides]);
 
   // Calculate fishing score
+  const sondeStations = useMemo(
+    () => (stations || []).filter((station) => station.readings?.turbidity?.value != null),
+    [stations]
+  );
+  const liveTemp = useMemo(
+    () => average(sondeStations.map((station) => station.readings?.temp?.value)),
+    [sondeStations]
+  );
+  const liveTurbidity = useMemo(
+    () => average(sondeStations.map((station) => station.readings?.turbidity?.value)),
+    [sondeStations]
+  );
+
   const fishingResult = useMemo(() => {
-    return calculateFishingScore(stationData, tidesData);
-  }, [stationData, tidesData]);
+    return calculateFishingScore({ tempF: liveTemp, turbidity: liveTurbidity, tidesData });
+  }, [liveTemp, liveTurbidity, tidesData]);
 
   // Best fishing windows (mock data - in real app would calculate from conditions)
   const bestTimes = useMemo(() => {
@@ -324,36 +313,25 @@ export default function FishingScreen() {
   // Current conditions
   const currentConditions = useMemo(() => {
     const conditions = [];
-    if (stationData?.readings?.temp) {
-      const tempF = parseFloat(stationData.readings.temp.value);
+    if (liveTemp != null) {
       conditions.push({
         icon: 'thermometer',
         label: 'Water Temp',
-        value: `${Math.round(tempF)}°F`,
+        value: `${liveTemp.toFixed(1)}°F`,
         color: '#E74C3C',
       });
     }
-    if (stationData?.readings?.turbidity) {
-      const turb = parseFloat(stationData.readings.turbidity.value);
+    if (liveTurbidity != null) {
       let clarityLabel = 'Clear';
-      if (turb < 5) clarityLabel = 'Crystal Clear';
-      else if (turb < 15) clarityLabel = 'Clear';
-      else if (turb < 25) clarityLabel = 'Cloudy';
-      else clarityLabel = 'Murky';
+      if (liveTurbidity < 10) clarityLabel = 'Clear';
+      else if (liveTurbidity <= 25) clarityLabel = 'Typical';
+      else if (liveTurbidity <= 50) clarityLabel = 'Elevated';
+      else clarityLabel = 'High';
       conditions.push({
         icon: 'water-opacity',
         label: 'Clarity',
-        value: `${clarityLabel} (${turb.toFixed(0)} NTU)`,
+        value: `${clarityLabel} (${liveTurbidity.toFixed(1)} NTU)`,
         color: '#3498DB',
-      });
-    }
-    if (stationData?.readings?.speed) {
-      const speed = parseFloat(stationData.readings.speed.value);
-      conditions.push({
-        icon: 'waves',
-        label: 'Flow',
-        value: `${speed.toFixed(1)} m/s`,
-        color: '#2ECC71',
       });
     }
     if (tidesData?.current) {
@@ -372,15 +350,15 @@ export default function FishingScreen() {
       });
     }
     return conditions;
-  }, [stationData, tidesData]);
+  }, [liveTemp, liveTurbidity, tidesData]);
 
   // Dynamic fishing tips
   const tips = useMemo(() => {
     const tipsList = [];
 
-    if (stationData?.readings?.temp) {
-      const tempF = parseFloat(stationData.readings.temp.value);
-      if (tempF >= 60 && tempF <= 75) {
+    if (liveTemp != null) {
+      const tempF = liveTemp;
+      if (tempF >= 50 && tempF <= 75) {
         tipsList.push({
           icon: 'thermometer',
           text: 'Water temperature is in the ideal range for bass fishing. Target areas with structure.',
@@ -395,25 +373,8 @@ export default function FishingScreen() {
       }
     }
 
-    if (stationData?.readings?.speed) {
-      const speed = parseFloat(stationData.readings.speed.value);
-      if (speed > 1.5) {
-        tipsList.push({
-          icon: 'waves',
-          text: 'High water flow - try fishing near eddies and calmer areas behind structures.',
-          color: '#E53935',
-        });
-      } else if (speed < 0.3) {
-        tipsList.push({
-          icon: 'waves',
-          text: 'Low flow - fish may be lethargic. Use slow presentations.',
-          color: '#FFB300',
-        });
-      }
-    }
-
-    if (stationData?.readings?.turbidity) {
-      const turb = parseFloat(stationData.readings.turbidity.value);
+    if (liveTurbidity != null) {
+      const turb = liveTurbidity;
       if (turb > 25) {
         tipsList.push({
           icon: 'water-opacity',
@@ -446,12 +407,12 @@ export default function FishingScreen() {
     }
 
     return tipsList;
-  }, [stationData, tidesData, theme.colors.primary]);
+  }, [liveTemp, liveTurbidity, tidesData, theme.colors.primary]);
 
   const loading = stationLoading && tidesLoading;
-  const hasDataError = stationError && !stationData;
+  const hasDataError = stationError && !stations?.length;
 
-  if (loading && !stationData) {
+  if (loading && !stations?.length) {
     return (
       <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <LoadingSpinner message="Loading fishing conditions..." />

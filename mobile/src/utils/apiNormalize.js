@@ -1,5 +1,33 @@
 import { PARAM_INFO, STATIONS, STATIONS_BY_ID, getWQILevel } from '../constants';
 
+function displayStationName(stationId) {
+  if (!stationId) return 'Unknown station';
+  const known = STATIONS_BY_ID[stationId];
+  if (known?.name) return known.name;
+  return String(stationId)
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function displayParameter(type) {
+  const labels = {
+    temp: 'Temperature',
+    turbidity: 'Turbidity',
+    dissolved_oxygen: 'Dissolved oxygen',
+    ph: 'pH',
+    salinity: 'Salinity',
+    conductance: 'Conductivity',
+    conductivity: 'Conductivity',
+    chlorophyll: 'Chlorophyll',
+    phycocyanin: 'Phycocyanin',
+    depth: 'Depth',
+  };
+  if (labels[type]) return labels[type];
+  return String(type || 'Reading')
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
 const PARAM_KEY_MAP = {
   temp: 'temp',
   dissolved_oxygen: 'do',
@@ -178,15 +206,20 @@ function computeSimpleWQI(turbidityVals, doVals, tempVals) {
 
 export function normalizeAnomalies(apiPayload) {
   const list = apiPayload?.anomalies || [];
-  return list.map((a) => ({
-    id: String(a.id ?? `${a.station}-${a.timestamp}`),
-    type: a.type || a.anomaly_type || 'anomaly',
-    severity: a.severity || 'info',
-    message: a.message || `${a.type || 'Anomaly'} at ${a.station}`,
-    station: a.station,
-    timestamp: a.timestamp,
-    value: a.value,
-  }));
+  return list.map((a) => {
+    const station = displayStationName(a.station);
+    const type = a.type || a.anomaly_type || 'anomaly';
+    return {
+      id: String(a.id ?? `${a.station}-${a.timestamp}`),
+      type: displayParameter(type),
+      severity: a.severity || 'info',
+      message: `${displayParameter(type)} at ${station}`,
+      station,
+      stationId: a.station,
+      timestamp: a.timestamp,
+      value: a.value,
+    };
+  });
 }
 
 export function normalizeStats(apiPayload, parameters = []) {

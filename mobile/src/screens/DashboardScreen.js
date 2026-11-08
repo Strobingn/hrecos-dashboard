@@ -367,6 +367,7 @@ const styles = StyleSheet.create({
     marginVertical: 12,
     borderRadius: 16,
     padding: 16,
+    overflow: 'hidden',
   },
   wqHeader: {
     flexDirection: 'row',
@@ -381,6 +382,7 @@ const styles = StyleSheet.create({
   wqBody: {
     flexDirection: 'row',
     alignItems: 'center',
+    overflow: 'hidden',
   },
   wqDescription: {
     flex: 1,

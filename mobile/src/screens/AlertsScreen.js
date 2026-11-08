@@ -100,7 +100,7 @@ function AlertCard({ anomaly }) {
                 {anomaly.station}
               </Text>
               <Text style={[styles.alertType, { color: theme.colors.textSecondary }]}>
-                {anomaly.message}
+                {anomaly.message || anomaly.type}
               </Text>
               <Text style={[styles.alertTime, { color: theme.colors.textSecondary }]}>
                 {formatTimestamp(anomaly.timestamp)}

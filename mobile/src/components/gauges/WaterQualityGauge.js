@@ -1,72 +1,60 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 import { useTheme } from '../../hooks/useTheme';
 import { getWQILevel } from '../../constants';
 
-export const WaterQualityGauge = ({ wqi, size = 160 }) => {
+function arcPoint(cx, cy, radius, t) {
+  const angle = Math.PI * (1 - t);
+  return {
+    x: cx + radius * Math.cos(angle),
+    y: cy - radius * Math.sin(angle),
+  };
+}
+
+function arcPath(cx, cy, radius, from, to) {
+  const start = arcPoint(cx, cy, radius, from);
+  const end = arcPoint(cx, cy, radius, Math.max(from + 0.001, to));
+  const large = to - from > 0.5 ? 1 : 0;
+  return `M ${start.x} ${start.y} A ${radius} ${radius} 0 ${large} 1 ${end.x} ${end.y}`;
+}
+
+export const WaterQualityGauge = ({ wqi, size = 148 }) => {
   const { theme } = useTheme();
   const level = getWQILevel(wqi);
-
-  // SVG gauge calculations
-  const strokeWidth = 14;
-  const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const halfCircumference = circumference / 2;
-  const progress = Math.min(Math.max(wqi, 0), 100);
-  const dashOffset = halfCircumference - (progress / 100) * halfCircumference;
-
-  const center = size / 2;
+  const progress = Math.min(100, Math.max(0, Number(wqi) || 0));
+  const stroke = 12;
+  const width = size;
+  const radius = (width - stroke) / 2 - 2;
+  const cx = width / 2;
+  const cy = radius + stroke / 2 + 2;
+  const svgHeight = cy + 18;
 
   return (
-    <View style={[styles.container, { width: size, height: size * 0.7 }]}>
-      <View style={{ position: 'relative' }}>
-        {/* Background arc */}
-        <View style={{ width: size, height: size }}>
-          <Text> </Text>
-        </View>
-
-        {/* We use a simpler approach with styled View arcs */}
-        <View style={[styles.gaugeContainer, { width: size, height: size * 0.65 }]}>
-          {/* Background track */}
-          <View style={[
-            styles.track,
-            {
-              width: size,
-              height: size,
-              borderWidth: strokeWidth,
-              borderColor: theme.colors.border,
-            },
-          ]} />
-          {/* Colored progress - using a clip approach */}
-          <View style={[
-            styles.progressOverlay,
-            {
-              width: size,
-              height: size,
-              borderWidth: strokeWidth,
-              borderColor: level.color,
-            },
-          ]} />
-
-          {/* Center content */}
-          <View style={[styles.center, { width: size - strokeWidth * 4, height: (size - strokeWidth * 4) * 0.7 }]}>
-            <Text style={[styles.wqiValue, { color: level.color, fontSize: size * 0.2 }]}>
-              {wqi}
-            </Text>
-            <Text style={[styles.wqiLabel, { color: theme.colors.textSecondary, fontSize: size * 0.075 }]}>
-              WQI
-            </Text>
-            <View style={[styles.levelBadge, { backgroundColor: level.color + '25' }]}>
-              <Text style={[styles.levelText, { color: level.color, fontSize: size * 0.065 }]}>
-                {level.label}
-              </Text>
-            </View>
-          </View>
-        </View>
+    <View style={[styles.container, { width, height: svgHeight + 4 }]}>
+      <Svg width={width} height={svgHeight}>
+        <Path
+          d={arcPath(cx, cy, radius, 0, 1)}
+          stroke={theme.colors.border || theme.colors.divider}
+          strokeWidth={stroke}
+          fill="none"
+          strokeLinecap="round"
+        />
+        {progress > 0 && (
+          <Path
+            d={arcPath(cx, cy, radius, 0, progress / 100)}
+            stroke={level.color}
+            strokeWidth={stroke}
+            fill="none"
+            strokeLinecap="round"
+          />
+        )}
+      </Svg>
+      <View style={[styles.center, { top: cy - radius * 0.78 }]}>
+        <Text style={[styles.value, { color: level.color }]}>{Math.round(progress)}</Text>
+        <Text style={[styles.level, { color: level.color }]}>{level.label}</Text>
       </View>
-
-      {/* Scale labels */}
-      <View style={[styles.scaleLabels, { width: size }]}>
+      <View style={[styles.scale, { top: cy + 2, width }]}>
         <Text style={[styles.scaleText, { color: theme.colors.textTertiary }]}>0</Text>
         <Text style={[styles.scaleText, { color: theme.colors.textTertiary }]}>50</Text>
         <Text style={[styles.scaleText, { color: theme.colors.textTertiary }]}>100</Text>
@@ -78,60 +66,33 @@ export const WaterQualityGauge = ({ wqi, size = 160 }) => {
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    justifyContent: 'center',
-  },
-  gaugeContainer: {
-    position: 'relative',
-    alignItems: 'center',
-    justifyContent: 'center',
     overflow: 'hidden',
-  },
-  track: {
-    position: 'absolute',
-    borderRadius: 999,
-    borderBottomColor: 'transparent',
-    borderLeftColor: 'transparent',
-    transform: [{ rotate: '-90deg' }],
-  },
-  progressOverlay: {
-    position: 'absolute',
-    borderRadius: 999,
-    borderBottomColor: 'transparent',
-    borderLeftColor: 'transparent',
-    transform: [{ rotate: '-90deg' }],
   },
   center: {
     position: 'absolute',
-    bottom: 0,
+    left: 0,
+    right: 0,
     alignItems: 'center',
-    justifyContent: 'center',
   },
-  wqiValue: {
+  value: {
+    fontSize: 28,
     fontWeight: '800',
-    lineHeight: undefined,
+    lineHeight: 32,
   },
-  wqiLabel: {
-    fontWeight: '500',
-    marginTop: 2,
-  },
-  levelBadge: {
-    marginTop: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  levelText: {
+  level: {
+    fontSize: 12,
     fontWeight: '700',
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.4,
   },
-  scaleLabels: {
+  scale: {
+    position: 'absolute',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 8,
-    marginTop: 4,
+    paddingHorizontal: 2,
   },
   scaleText: {
     fontSize: 10,
+    fontWeight: '600',
   },
 });

@@ -2,6 +2,7 @@
 // Station list: data/stations.json (linked from mobile/src/data/stations.json)
 
 import registry from '../data/stations.json';
+import { getWQILevel as classifyWqi } from '../utils/parameterStatus';
 
 // Fishing ideal ranges (used by calculations.js)
 export const FISHING_IDEAL_TEMPS = { min: 55, max: 75 };
@@ -230,18 +231,16 @@ export const TIDE_PHASES = {
   slack: { label: 'Slack', icon: 'minus', color: '#8A96A5' },
 };
 
-// WQI (Water Quality Index) thresholds
-export const WQI_LEVELS = [
-  { max: 25, label: 'Excellent', color: '#28A745', description: 'Water quality is excellent.' },
-  { max: 50, label: 'Good', color: '#8BC34A', description: 'Water quality is good.' },
-  { max: 75, label: 'Moderate', color: '#FFC107', description: 'Water quality is moderate - some parameters show slight concern.' },
-  { max: 100, label: 'Poor', color: '#FF9800', description: 'Water quality is poor - several parameters exceed guidelines.' },
-  { max: 999, label: 'Bad', color: '#DC3545', description: 'Water quality is very poor - immediate attention needed.' },
-];
+// Higher scores are better. 80 is Good, not Poor.
+export const getWQILevel = classifyWqi;
 
-export const getWQILevel = (wqi) => {
-  return WQI_LEVELS.find(l => wqi <= l.max) || WQI_LEVELS[WQI_LEVELS.length - 1];
-};
+export const WQI_LEVELS = [
+  { min: 90, label: 'Excellent', color: '#28A745' },
+  { min: 75, label: 'Good', color: '#43A047' },
+  { min: 55, label: 'Fair', color: '#F9A825' },
+  { min: 35, label: 'Poor', color: '#FB8C00' },
+  { min: 0, label: 'Bad', color: '#E53935' },
+];
 
 // Tide chart location — Cornwall-on-Hudson at West Point
 export const TIDE_LOCATION = {
