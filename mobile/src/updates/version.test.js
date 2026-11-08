@@ -68,7 +68,7 @@ test('pickUpdate skips drafts, tags without an apk, and versions that are not ne
   assert.equal(pickUpdate(releases, '9.0.0'), null);
 });
 
-test('live GitHub releases: 0.1.0 is offered v0.3.0-live, 1.0.1 is not', async () => {
+test('live GitHub releases offer the newest tagged apk and skip the installed version', async () => {
   const response = await fetch(
     'https://api.github.com/repos/Strobingn/hrecos-dashboard/releases?per_page=20',
     {
@@ -82,8 +82,9 @@ test('live GitHub releases: 0.1.0 is offered v0.3.0-live, 1.0.1 is not', async (
   const releases = await response.json();
   const older = pickUpdate(releases, '0.1.0');
   assert.ok(older);
-  assert.equal(older.tag, 'v0.3.0-live');
+  assert.equal(older.tag, 'v1.0.1');
+  assert.equal(older.version, '1.0.1');
   assert.ok(older.apkUrl.endsWith('.apk'));
-  assert.equal(pickUpdate(releases, '1.0.0'), null);
+  assert.equal(pickUpdate(releases, '1.0.0').tag, 'v1.0.1');
   assert.equal(pickUpdate(releases, '1.0.1'), null);
 });
