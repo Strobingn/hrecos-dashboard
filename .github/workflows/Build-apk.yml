@@ -82,8 +82,23 @@ jobs:
       - name: Build release APK
         working-directory: mobile/android
         run: |
-          # The wrapper's default 10s download timeout fails when services.gradle.org is slow.
+          # services.gradle.org redirects to a GitHub release that currently
+          # answers 504. Download the distribution ourselves, then point the
+          # wrapper at the local file so assembleRelease does not fetch it.
           sed -i 's/networkTimeout=10000/networkTimeout=120000/' gradle/wrapper/gradle-wrapper.properties
+          zip="$RUNNER_TEMP/gradle-9.3.1-bin.zip"
+          urls="https://services.gradle.org/distributions/gradle-9.3.1-bin.zip https://downloads.gradle.org/distributions/gradle-9.3.1-bin.zip https://mirrors.cloud.tencent.com/gradle/gradle-9.3.1-bin.zip https://repo.huaweicloud.com/gradle/gradle-9.3.1-bin.zip"
+          ok=0
+          for url in $urls; do
+            echo "fetch $url"
+            if curl -fL --retry 4 --retry-all-errors --retry-delay 10 --connect-timeout 20 --max-time 180 -o "$zip" "$url"; then
+              ok=1
+              break
+            fi
+          done
+          test "$ok" = 1
+          unzip -t "$zip" >/dev/null
+          sed -i "s|distributionUrl=.*|distributionUrl=file\\\\://$zip|" gradle/wrapper/gradle-wrapper.properties
           ./gradlew assembleRelease --no-daemon --stacktrace
 
       - name: Upload APK
