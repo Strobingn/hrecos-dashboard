@@ -50,7 +50,7 @@
       "expo-system-ui"
     ],
     "extra": {
-      "apiUrl": "http://192.168.1.100:8000",
+      "apiUrl": "https://129-213-163-221.sslip.io",
       "eas": {
         "projectId": "hrecos-riverwatch"
       }

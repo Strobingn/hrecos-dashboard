@@ -50,8 +50,7 @@ function calculateFishingScore(stationData, tidesData) {
 
   // Water Temperature Score (ideal: 55-75 F / 13-24 C)
   if (readings.temp) {
-    const tempC = parseFloat(readings.temp.value);
-    const tempF = (tempC * 9) / 5 + 32;
+    const tempF = parseFloat(readings.temp.value);
     if (tempF >= 60 && tempF <= 75) {
       breakdown.temperature.score = 95;
       breakdown.temperature.label = `${Math.round(tempF)}°F - Ideal`;
@@ -326,8 +325,7 @@ export default function FishingScreen() {
   const currentConditions = useMemo(() => {
     const conditions = [];
     if (stationData?.readings?.temp) {
-      const tempC = parseFloat(stationData.readings.temp.value);
-      const tempF = (tempC * 9) / 5 + 32;
+      const tempF = parseFloat(stationData.readings.temp.value);
       conditions.push({
         icon: 'thermometer',
         label: 'Water Temp',
@@ -381,8 +379,7 @@ export default function FishingScreen() {
     const tipsList = [];
 
     if (stationData?.readings?.temp) {
-      const tempC = parseFloat(stationData.readings.temp.value);
-      const tempF = (tempC * 9) / 5 + 32;
+      const tempF = parseFloat(stationData.readings.temp.value);
       if (tempF >= 60 && tempF <= 75) {
         tipsList.push({
           icon: 'thermometer',

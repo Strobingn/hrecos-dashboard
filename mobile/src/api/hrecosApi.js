@@ -10,7 +10,7 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
-import { API_BASE_URL, API_STORAGE_KEY, API_REGION } from '../config/api';
+import { API_BASE_URL, API_STORAGE_KEY, API_REGION, resolveApiBaseUrl } from '../config/api';
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -50,11 +50,7 @@ apiClient.interceptors.request.use(
 
     try {
       const storedBaseUrl = await AsyncStorage.getItem(BASE_URL_KEY);
-      if (storedBaseUrl) {
-        config.baseURL = storedBaseUrl;
-      } else {
-        config.baseURL = DEFAULT_BASE_URL;
-      }
+      config.baseURL = resolveApiBaseUrl(storedBaseUrl);
     } catch (storageError) {
       // If AsyncStorage fails, use the default base URL
       config.baseURL = DEFAULT_BASE_URL;
@@ -199,7 +195,7 @@ export const isOnline = async () => {
 export const getBaseUrl = async () => {
   try {
     const stored = await AsyncStorage.getItem(BASE_URL_KEY);
-    return stored || DEFAULT_BASE_URL;
+    return resolveApiBaseUrl(stored);
   } catch {
     return DEFAULT_BASE_URL;
   }

@@ -20,7 +20,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../hooks/useTheme';
 import SectionHeader from '../components/common/SectionHeader';
 import Card from '../components/common/Card';
-import { API_BASE_URL } from '../config/api';
+import { API_BASE_URL, isIgnoredApiOverride } from '../config/api';
 
 // Storage keys
 const STORAGE_KEYS = {
@@ -181,7 +181,7 @@ export default function SettingsScreen() {
           AsyncStorage.getItem(STORAGE_KEYS.dailySummary),
         ]);
 
-        if (savedUrl) setApiUrl(savedUrl);
+        if (savedUrl && !isIgnoredApiOverride(savedUrl)) setApiUrl(savedUrl);
         if (savedInterval) setRefreshInterval(parseInt(savedInterval, 10));
         if (savedUnits) setUnits(savedUnits);
         if (savedPush !== null) setPushNotifications(savedPush === 'true');
@@ -205,6 +205,13 @@ export default function SettingsScreen() {
   }, []);
 
   const handleUrlSave = useCallback(async () => {
+    if (isIgnoredApiOverride(apiUrl)) {
+      await AsyncStorage.removeItem(STORAGE_KEYS.apiBaseUrl);
+      setApiUrl(DEFAULT_API_URL);
+      setUrlEdited(false);
+      Alert.alert('Using live server', 'Localhost and 192.168 addresses are ignored. The app uses the live HRECOS server.');
+      return;
+    }
     await persistSetting(STORAGE_KEYS.apiBaseUrl, apiUrl);
     setUrlEdited(false);
     Alert.alert('Saved', 'API Base URL has been updated.');

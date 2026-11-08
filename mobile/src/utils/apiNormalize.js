@@ -3,11 +3,15 @@ import { PARAM_INFO, STATIONS, STATIONS_BY_ID, getWQILevel } from '../constants'
 const PARAM_KEY_MAP = {
   temp: 'temp',
   dissolved_oxygen: 'do',
+  dissolved_oxygen_saturation: 'do_sat',
   conductance: 'conductivity',
   conductivity: 'conductivity',
   turbidity: 'turbidity',
   ph: 'ph',
   salinity: 'salinity',
+  depth: 'depth',
+  chlorophyll: 'chlorophyll',
+  phycocyanin: 'phycocyanin',
   air_temp: 'air_temp',
   wind_speed: 'wind_speed',
   wind_direction: 'wind_dir',
@@ -15,6 +19,11 @@ const PARAM_KEY_MAP = {
   pressure: 'pressure',
   flow: 'speed',
 };
+
+function paramName(param) {
+  if (param && typeof param === 'object') return param.field || param.key || '';
+  return param;
+}
 
 const SOURCE_FROM_KEY = {
   norrie_point: 'NDBC',
@@ -32,11 +41,15 @@ const PROVIDER_LABEL = { usgs: 'USGS', noaa: 'NOAA', ndbc: 'NDBC', hrecos: 'HREC
 
 function mapParamList(params = []) {
   return params
-    .map((p) => {
+    .map((entry) => {
+      const p = paramName(entry);
       if (p === 'dissolved_oxygen') return 'do';
+      if (p === 'dissolved_oxygen_saturation') return 'do_sat';
       if (p === 'conductance') return 'conductivity';
       if (p === 'wind_direction') return 'wind_dir';
-      if (p === 'tide') return null;
+      if (p === 'tide' || p === 'tide_prediction') return 'tide';
+      if (p === 'chlorophyll') return 'chlorophyll';
+      if (p === 'phycocyanin') return 'phycocyanin';
       return p;
     })
     .filter(Boolean);
@@ -49,12 +62,16 @@ export function normalizeStationMeta(apiStation) {
   const provider = String(apiStation.provider || apiStation.source || '').toLowerCase();
   const source = PROVIDER_LABEL[provider] || SOURCE_FROM_KEY[key] || local.source || 'HRECOS';
 
+  const mile = apiStation.river_mile ?? local.mile ?? null;
+
   return {
     id: key,
     name: apiStation.name || local.name || key,
-    mile: apiStation.river_mile ?? local.mile ?? null,
+    mile,
     lat: apiStation.location?.lat ?? apiStation.lat ?? local.lat,
     lon: apiStation.location?.lon ?? apiStation.lon ?? local.lon,
+    location: mile != null ? `River mile ${mile}` : (local.location || 'Hudson River'),
+    kind: apiStation.kind || local.kind || null,
     source,
     sourceLabel: source,
     status: apiStation.live ? 'live' : (local.status || 'offline'),
@@ -79,7 +96,10 @@ export function buildReadings(raw = {}, parameters = []) {
     if (param === 'temp') value = raw.temp ?? raw.air_temp ?? null;
     else if (param === 'air_temp') value = raw.air_temp ?? null;
     else if (param === 'do') value = raw.dissolved_oxygen ?? raw.do ?? null;
+    else if (param === 'do_sat') value = raw.dissolved_oxygen_saturation ?? raw.do_sat ?? null;
     else if (param === 'conductivity') value = raw.conductance ?? raw.conductivity ?? null;
+    else if (param === 'chlorophyll') value = raw.chlorophyll ?? null;
+    else if (param === 'phycocyanin') value = raw.phycocyanin ?? null;
     else if (param === 'wind_dir') value = raw.wind_direction ?? raw.wind_dir ?? null;
     else if (param === 'speed') value = raw.flow ?? raw.speed ?? null;
     else value = raw[param] ?? null;
