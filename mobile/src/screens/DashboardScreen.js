@@ -19,11 +19,11 @@ import { TIDE_PHASES } from '../constants';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
 import { ErrorView } from '../components/common/ErrorView';
 import { SectionHeader } from '../components/common/SectionHeader';
-import { MetricCard } from '../components/cards/MetricCard';
+import MetricCard from '../components/cards/MetricCard';
 import { WaterQualityGauge } from '../components/gauges/WaterQualityGauge';
-import { StationCard } from '../components/cards/StationCard';
-import { AlertCard } from '../components/cards/AlertCard';
-import { TideCard } from '../components/cards/TideCard';
+import StationCard from '../components/cards/StationCard';
+import AlertCard from '../components/cards/AlertCard';
+import TideCard from '../components/cards/TideCard';
 
 const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
 
@@ -92,13 +92,24 @@ export default function DashboardScreen() {
   };
 
   const getTideSubtitle = () => {
-    if (!tideData?.current) return '--';
+    if (tideData?.current?.height == null) {
+      return tideData?.source === 'simulated' ? 'Simulated' : '--';
+    }
     const phase = TIDE_PHASES[tideData.current.phase];
-    return `${tideData.current.height.toFixed(2)}m ${phase ? phase.label : ''}`;
+    const origin = tideData.source === 'simulated' ? 'Simulated' : (tideData.stationName || 'Newburgh');
+    return `${tideData.current.height.toFixed(2)} ft ${phase ? phase.label : ''} · ${origin}`;
   };
 
   const getLiveStations = () => {
-    return stations.filter(s => s.status === 'live');
+    return stations
+      .filter(s => s.status === 'live')
+      .slice()
+      .sort((a, b) => {
+        const aHas = a.readings && Object.keys(a.readings).length > 0;
+        const bHas = b.readings && Object.keys(b.readings).length > 0;
+        if (aHas !== bHas) return aHas ? -1 : 1;
+        return (a.mile || 0) - (b.mile || 0);
+      });
   };
 
   const handleStationPress = (stationId) => {
@@ -191,7 +202,7 @@ export default function DashboardScreen() {
           <MetricCard
             icon="thermometer-water"
             label="Avg Water Temp"
-            value={`${dashboardData?.avgWaterTemp ?? '--'}°C`}
+            value={`${dashboardData?.avgWaterTemp ?? '--'}°F`}
             subtitle="Live stations"
             color={theme.colors.chartTemp}
             bgColor={theme.colors.chartTemp + '20'}

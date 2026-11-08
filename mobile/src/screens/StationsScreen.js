@@ -14,7 +14,7 @@ import { useTheme } from '../hooks/useTheme';
 import { useStations } from '../hooks/useStations';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
 import { ErrorView } from '../components/common/ErrorView';
-import { StationCard } from '../components/cards/StationCard';
+import StationCard from '../components/cards/StationCard';
 
 const FILTER_OPTIONS = [
   { key: 'all', label: 'All' },

@@ -61,20 +61,20 @@ function calculateWaterQualityIndex(readings) {
     paramCount++;
   }
 
-  // Temperature (ideal: 10-25 C)
+  // Temperature (ideal: 50-80 F). The API publishes Fahrenheit.
   if (readings.temp) {
     const temp = parseFloat(readings.temp.value);
-    if (temp > 30) score -= 15;
-    else if (temp > 25) score -= 8;
-    else if (temp < 5) score -= 10;
+    if (temp > 85) score -= 15;
+    else if (temp > 80) score -= 8;
+    else if (temp < 40) score -= 10;
     paramCount++;
   }
 
-  // Conductivity (ideal: 50-1500)
+  // Conductance. Tappan Zee is brackish, so the freshwater 1500 µS/cm cap does not apply.
   if (readings.conductivity) {
     const cond = parseFloat(readings.conductivity.value);
-    if (cond > 3000) score -= 10;
-    else if (cond > 1500) score -= 5;
+    if (cond > 40000) score -= 10;
+    else if (cond > 25000) score -= 5;
     paramCount++;
   }
 

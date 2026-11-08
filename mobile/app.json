@@ -2,7 +2,7 @@
   "expo": {
     "name": "HRECOS RiverWatch",
     "slug": "hrecos-riverwatch",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -20,11 +20,13 @@
         "backgroundColor": "#0A7EA4"
       },
       "package": "com.hrecos.riverwatch",
+      "versionCode": 2,
       "usesCleartextTraffic": true,
       "permissions": [
         "RECEIVE_BOOT_COMPLETED",
         "INTERNET",
-        "ACCESS_NETWORK_STATE"
+        "ACCESS_NETWORK_STATE",
+        "REQUEST_INSTALL_PACKAGES"
       ]
     },
     "web": {
@@ -50,7 +52,7 @@
       "expo-system-ui"
     ],
     "extra": {
-      "apiUrl": "http://192.168.1.100:8000",
+      "apiUrl": "https://129-213-163-221.sslip.io",
       "eas": {
         "projectId": "hrecos-riverwatch"
       }

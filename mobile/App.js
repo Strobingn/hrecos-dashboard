@@ -11,6 +11,7 @@ import * as Notifications from 'expo-notifications';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import AppNavigator from './src/navigation/AppNavigator';
 import { ensureApiConfigured } from './src/utils/initApi';
+import { UpdateProvider } from './src/updates/UpdateProvider';
 
 // =============================================================================
 // SUPPRESS WARNINGS
@@ -168,7 +169,9 @@ function AppContent() {
         translucent={false}
       />
       <NotificationManager />
-      <AppNavigator />
+      <UpdateProvider>
+        <AppNavigator />
+      </UpdateProvider>
     </View>
   );
 }

@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
+import { PARAM_INFO } from '../../constants';
 
 function LivePulse({ color }) {
   const pulseAnim = useRef(new RNAnimated.Value(0)).current;
@@ -71,31 +72,33 @@ export default function StationCard({
   const isLive = station.status === 'live';
   const statusColor = isLive ? theme.colors.success : theme.colors.disabled;
   const readings = station.readings || {};
-  const params = station.params || [];
+  const paramKeys = station.parameters || station.params || [];
 
-  const keyParams = params.slice(0, 3);
+  const keyParams = [];
+  const pushReading = (key, fallback) => {
+    const reading = readings[key];
+    const info = PARAM_INFO[key] || {};
+    const rawValue = reading && typeof reading === 'object' ? reading.value : (reading ?? fallback);
+    if (rawValue == null || rawValue === '') return;
+    const numeric = Number(rawValue);
+    keyParams.push({
+      label: (reading && reading.label) || info.label || key,
+      value: Number.isFinite(numeric) ? numeric.toFixed(numeric >= 100 ? 0 : 1) : String(rawValue),
+      unit: (reading && reading.unit) || info.unit || '',
+      icon: info.icon || 'gauge',
+    });
+  };
+
+  const preferred = ['temp', 'do', 'do_sat', 'turbidity', 'salinity', 'ph', 'conductivity'];
+  preferred.forEach((key) => {
+    if (keyParams.length >= 3) return;
+    if (paramKeys.length && !paramKeys.includes(key) && readings[key] == null) return;
+    pushReading(key);
+  });
   if (keyParams.length === 0) {
-    if (readings.temperature != null)
-      keyParams.push({
-        label: 'Temp',
-        value: readings.temperature,
-        unit: '°F',
-        icon: 'thermometer',
-      });
-    if (readings.turbidity != null)
-      keyParams.push({
-        label: 'Turbidity',
-        value: readings.turbidity,
-        unit: 'NTU',
-        icon: 'water-opacity',
-      });
-    if (readings.dissolvedOxygen != null)
-      keyParams.push({
-        label: 'D.O.',
-        value: readings.dissolvedOxygen,
-        unit: 'mg/L',
-        icon: 'molecule-co2',
-      });
+    pushReading('temp', readings.temperature);
+    pushReading('turbidity');
+    pushReading('do', readings.dissolvedOxygen);
   }
 
   return (
@@ -167,6 +170,12 @@ export default function StationCard({
           />
         </View>
       </View>
+
+      {keyParams.length === 0 && (
+        <Text style={[styles.emptyReading, { color: theme.colors.textSecondary }]}>
+          {station.kind === 'prediction' ? 'Tide predictions only' : 'No sensor reading'}
+        </Text>
+      )}
 
       {/* Parameter Grid */}
       {keyParams.length > 0 && (
@@ -267,6 +276,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  emptyReading: {
+    marginTop: 10,
+    fontSize: 13,
   },
   headerLeft: {
     flexDirection: 'row',

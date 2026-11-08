@@ -11,20 +11,17 @@ import {
   ScrollView,
   StyleSheet,
   Switch,
-  TextInput,
   TouchableOpacity,
-  Alert,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../hooks/useTheme';
 import SectionHeader from '../components/common/SectionHeader';
 import Card from '../components/common/Card';
-import { API_BASE_URL } from '../config/api';
+import { useAppUpdate } from '../updates/UpdateProvider';
 
 // Storage keys
 const STORAGE_KEYS = {
-  apiBaseUrl: '@hrecos_api_base_url',
   refreshInterval: '@hrecos_refresh_interval',
   units: '@hrecos_units',
   pushNotifications: '@hrecos_push_notifications',
@@ -32,7 +29,6 @@ const STORAGE_KEYS = {
   dailySummary: '@hrecos_daily_summary',
 };
 
-const DEFAULT_API_URL = API_BASE_URL;
 const REFRESH_OPTIONS = [
   { label: '1 minute', value: 60000 },
   { label: '5 minutes', value: 300000 },
@@ -151,29 +147,26 @@ function Divider() {
 export default function SettingsScreen() {
   const theme = useTheme();
   const { isDark, toggleTheme } = useTheme();
+  const { installedVersion, checkForUpdate, checking } = useAppUpdate();
 
   // Settings state
-  const [apiUrl, setApiUrl] = useState(DEFAULT_API_URL);
   const [refreshInterval, setRefreshInterval] = useState(300000);
   const [units, setUnits] = useState('imperial');
   const [pushNotifications, setPushNotifications] = useState(true);
   const [alertOnAnomalies, setAlertOnAnomalies] = useState(true);
   const [dailySummary, setDailySummary] = useState(false);
-  const [urlEdited, setUrlEdited] = useState(false);
 
   // Load saved settings on mount
   useEffect(() => {
     const loadSettings = async () => {
       try {
         const [
-          savedUrl,
           savedInterval,
           savedUnits,
           savedPush,
           savedAlerts,
           savedDaily,
         ] = await Promise.all([
-          AsyncStorage.getItem(STORAGE_KEYS.apiBaseUrl),
           AsyncStorage.getItem(STORAGE_KEYS.refreshInterval),
           AsyncStorage.getItem(STORAGE_KEYS.units),
           AsyncStorage.getItem(STORAGE_KEYS.pushNotifications),
@@ -181,7 +174,6 @@ export default function SettingsScreen() {
           AsyncStorage.getItem(STORAGE_KEYS.dailySummary),
         ]);
 
-        if (savedUrl) setApiUrl(savedUrl);
         if (savedInterval) setRefreshInterval(parseInt(savedInterval, 10));
         if (savedUnits) setUnits(savedUnits);
         if (savedPush !== null) setPushNotifications(savedPush === 'true');
@@ -203,12 +195,6 @@ export default function SettingsScreen() {
       console.warn(`Failed to save setting ${key}:`, error);
     }
   }, []);
-
-  const handleUrlSave = useCallback(async () => {
-    await persistSetting(STORAGE_KEYS.apiBaseUrl, apiUrl);
-    setUrlEdited(false);
-    Alert.alert('Saved', 'API Base URL has been updated.');
-  }, [apiUrl, persistSetting]);
 
   const handleRefreshIntervalChange = useCallback(async (value) => {
     setRefreshInterval(value);
@@ -258,48 +244,6 @@ export default function SettingsScreen() {
       <View style={styles.section}>
         <SectionHeader title="Data" icon="database-outline" />
         <Card>
-          {/* API Base URL */}
-          <View style={styles.inputGroup}>
-            <View style={styles.inputLabelRow}>
-              <MaterialCommunityIcons name="link" size={16} color={theme.colors.textSecondary} />
-              <Text style={[styles.inputLabel, { color: theme.colors.textSecondary }]}>
-                API Base URL
-              </Text>
-            </View>
-            <TextInput
-              value={apiUrl}
-              onChangeText={(text) => {
-                setApiUrl(text);
-                setUrlEdited(true);
-              }}
-              placeholder="https://..."
-              placeholderTextColor={theme.colors.textSecondary}
-              style={[
-                styles.textInput,
-                {
-                  backgroundColor: theme.colors.surface || theme.colors.card,
-                  color: theme.colors.textPrimary || theme.colors.text,
-                  borderColor: theme.colors.border,
-                },
-              ]}
-              autoCapitalize="none"
-              autoCorrect={false}
-              keyboardType="url"
-            />
-            {urlEdited && (
-              <TouchableOpacity
-                onPress={handleUrlSave}
-                activeOpacity={0.8}
-                style={[styles.saveButton, { backgroundColor: theme.colors.primary || '#0A7EA4' }]}
-              >
-                <MaterialCommunityIcons name="content-save" size={16} color="#FFFFFF" />
-                <Text style={styles.saveButtonText}>Save URL</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-
-          <Divider />
-
           {/* Refresh Interval */}
           <View style={styles.inputGroup}>
             <View style={styles.inputLabelRow}>
@@ -375,6 +319,32 @@ export default function SettingsScreen() {
         </Card>
       </View>
 
+      {/* Updates */}
+      <View style={styles.section}>
+        <SectionHeader title="Updates" icon="update" />
+        <Card>
+          <View style={styles.inputGroup}>
+            <Text style={[styles.toggleLabel, { color: theme.colors.textPrimary || theme.colors.text }]}>
+              Version {installedVersion}
+            </Text>
+            <Text style={[styles.toggleDescription, { color: theme.colors.textSecondary, marginBottom: 12 }]}>
+              Checks GitHub for a newer release of this app.
+            </Text>
+            <TouchableOpacity
+              onPress={() => checkForUpdate(true)}
+              disabled={checking}
+              activeOpacity={0.8}
+              style={[styles.saveButton, { backgroundColor: theme.colors.primary || '#0A7EA4' }]}
+            >
+              <MaterialCommunityIcons name="cloud-download" size={16} color="#FFFFFF" />
+              <Text style={styles.saveButtonText}>
+                {checking ? 'Checking...' : 'Check for updates'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </Card>
+      </View>
+
       {/* About Section */}
       <View style={styles.section}>
         <SectionHeader title="About" icon="information-outline" />
@@ -394,7 +364,7 @@ export default function SettingsScreen() {
                   HRECOS RiverWatch
                 </Text>
                 <Text style={[styles.appVersion, { color: theme.colors.textSecondary }]}>
-                  v1.0.0
+                  Version {installedVersion}
                 </Text>
               </View>
             </View>

@@ -3,21 +3,44 @@ import { View, Text, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
 
+function formatTideTime(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleString([], { weekday: 'short', hour: 'numeric', minute: '2-digit' });
+}
+
 export default function TideCard({
   currentTide,
   nextTide,
   tidePhase,
+  tideData,
 }) {
   const theme = useTheme();
 
-  const isRising = tidePhase === 'rising';
+  const current = currentTide || {
+    height: tideData?.current?.height ?? null,
+  };
+  const next = nextTide || (tideData?.current?.nextTime
+    ? {
+        time: formatTideTime(tideData.current.nextTime),
+        type: String(tideData.current.nextType || '').toLowerCase().startsWith('l') ? 'low' : 'high',
+        height: tideData.current.nextHeight,
+      }
+    : {});
+  const phase = tidePhase || tideData?.current?.phase || 'rising';
+  const place = tideData?.source === 'simulated'
+    ? 'Simulated tide'
+    : (tideData?.stationName ? `${tideData.stationName} · live` : 'Hudson River');
+
+  const isRising = phase === 'rising' || phase === 'high';
   const arrowRotation = isRising ? '0deg' : '180deg';
   const phaseColor = isRising ? theme.colors.success : theme.colors.warning;
   const phaseIcon = isRising ? 'arrow-up' : 'arrow-down';
-  const phaseLabel = isRising ? 'Rising' : 'Falling';
+  const phaseLabel = phase === 'high' ? 'High' : phase === 'low' ? 'Low' : (isRising ? 'Rising' : 'Falling');
 
-  const safeCurrent = currentTide || {};
-  const safeNext = nextTide || {};
+  const safeCurrent = current || {};
+  const safeNext = next || {};
 
   return (
     <View
@@ -54,7 +77,7 @@ export default function TideCard({
               { color: theme.colors.textSecondary },
             ]}
           >
-            Hudson River
+            {place}
           </Text>
         </View>
       </View>

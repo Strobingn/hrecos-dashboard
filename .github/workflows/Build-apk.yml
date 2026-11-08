@@ -3,13 +3,17 @@ name: Build Android APK
 on:
   push:
     branches: [main]
+  pull_request:
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 50
     env:
       NODE_ENV: production
+      CI: "1"
+      EXPO_NO_TELEMETRY: "1"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -17,7 +21,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -25,26 +29,63 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      # setup-android@v3 fails: it still runs `sdkmanager tools`, and Google
+      # removed that package. v4 skips the deprecated package and accepts licenses.
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
+        with:
+          packages: platform-tools platforms;android-36 build-tools;36.0.0
 
       - name: Install dependencies
-        run: |
-          cd mobile
-          npm install --legacy-peer-deps
+        working-directory: mobile
+        run: npm ci --legacy-peer-deps
 
       - name: Prebuild Android
+        working-directory: mobile
+        run: npx expo prebuild --platform android --non-interactive --no-install
+
+      - name: Sign release with the debug keystore
+        working-directory: mobile/android
         run: |
-          cd mobile
-          npx expo prebuild --platform android
+          # The installed 1.0.0 APK (GitHub tag v0.3.0-live) is signed with the
+          # standard Android debug certificate. Always copy that same keystore
+          # over whatever prebuild created. Do not generate a new key.
+          cp ../signing/hrecos-release.keystore app/debug.keystore
+          python3 - << 'PY'
+          import re
+          from pathlib import Path
+          path = Path("app/build.gradle")
+          text = path.read_text()
+          match = re.search(r"\n([ \t]*)release \{", text)
+          if not match:
+              raise SystemExit("release buildType not found in app/build.gradle")
+          start = match.end()
+          indent = match.group(1) + "    "
+          depth = 1
+          i = start
+          while i < len(text) and depth:
+              if text[i] == "{":
+                  depth += 1
+              elif text[i] == "}":
+                  depth -= 1
+              i += 1
+          block = text[start:i]
+          if "signingConfig" not in block:
+              insert = f"\n{indent}signingConfig signingConfigs.debug"
+              text = text[:start] + insert + text[start:]
+              path.write_text(text)
+              print("added debug signingConfig to release")
+          else:
+              print("release already has signingConfig")
+          PY
 
       - name: Build release APK
-        run: |
-          cd mobile/android
-          ./gradlew assembleRelease --no-daemon
+        working-directory: mobile/android
+        run: ./gradlew assembleRelease --no-daemon --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: hrecos-riverwatch-apk
-          path: mobile/android/app/build/outputs/apk/release/app-release.apk
+          path: mobile/android/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
