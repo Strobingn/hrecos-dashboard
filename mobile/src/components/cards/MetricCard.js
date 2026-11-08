@@ -10,6 +10,7 @@ import { useTheme } from '../../hooks/useTheme';
 
 export default function MetricCard({
   title,
+  label,
   value,
   unit,
   icon = 'gauge',
@@ -18,6 +19,7 @@ export default function MetricCard({
   subtitle,
   onPress,
 }) {
+  const heading = title || label || 'Metric';
   const theme = useTheme();
 
   const iconColor = color || theme.colors.primary;
@@ -78,7 +80,7 @@ export default function MetricCard({
       </View>
 
       <Text style={[styles.title, { color: theme.colors.textSecondary }]}>
-        {title || 'Metric'}
+        {heading}
       </Text>
 
       <View style={styles.valueRow}>

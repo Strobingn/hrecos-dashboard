@@ -1,16 +1,14 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_BASE_URL, API_STORAGE_KEY, isIgnoredApiOverride, resolveApiBaseUrl } from '../config/api';
+import { API_BASE_URL } from '../config/api';
 
+const LEGACY_API_STORAGE_KEY = '@hrecos_api_base_url';
+
+/** Drop any previously saved server address and log the baked-in API. */
 export async function ensureApiConfigured() {
   try {
-    const existing = await AsyncStorage.getItem(API_STORAGE_KEY);
-    if (existing && isIgnoredApiOverride(existing)) {
-      await AsyncStorage.removeItem(API_STORAGE_KEY);
-      console.log(`Ignoring stale API override ${existing}; using ${API_BASE_URL}`);
-      return;
-    }
-    console.log(`HRECOS API configured: ${resolveApiBaseUrl(existing)}`);
+    await AsyncStorage.removeItem(LEGACY_API_STORAGE_KEY);
   } catch (e) {
     console.warn('API init failed:', e.message);
   }
+  console.log(`HRECOS API configured: ${API_BASE_URL}`);
 }

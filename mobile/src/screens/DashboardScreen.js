@@ -19,11 +19,11 @@ import { TIDE_PHASES } from '../constants';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
 import { ErrorView } from '../components/common/ErrorView';
 import { SectionHeader } from '../components/common/SectionHeader';
-import { MetricCard } from '../components/cards/MetricCard';
+import MetricCard from '../components/cards/MetricCard';
 import { WaterQualityGauge } from '../components/gauges/WaterQualityGauge';
-import { StationCard } from '../components/cards/StationCard';
-import { AlertCard } from '../components/cards/AlertCard';
-import { TideCard } from '../components/cards/TideCard';
+import StationCard from '../components/cards/StationCard';
+import AlertCard from '../components/cards/AlertCard';
+import TideCard from '../components/cards/TideCard';
 
 const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
 

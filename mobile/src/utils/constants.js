@@ -38,7 +38,7 @@ export const STATIONS_BY_ID = STATIONS.reduce((acc, station) => {
 // API CONFIGURATION
 // =============================================================================
 
-export const API_BASE_URL = 'https://hrecos.yourdomain.com';
+export const API_BASE_URL = 'https://129-213-163-221.sslip.io';
 export const REFRESH_INTERVAL = 300000; // 5 minutes in milliseconds
 export const REQUEST_TIMEOUT = 15000; // 15 seconds
 

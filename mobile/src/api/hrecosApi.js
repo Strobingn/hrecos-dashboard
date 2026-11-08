@@ -2,21 +2,18 @@
  * HRECOS RiverWatch API Client
  *
  * Axios-based API client for the HRECOS (Hudson River Environmental Conditions
- * Observing System) monitoring service. Supports configurable base URL via
- * AsyncStorage, request/response interceptors, offline detection, and
- * comprehensive error handling.
+ * Observing System) monitoring service. The base URL is fixed. Request and
+ * response interceptors handle offline detection and errors.
  */
 
 import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
-import { API_BASE_URL, API_STORAGE_KEY, API_REGION, resolveApiBaseUrl } from '../config/api';
+import { API_BASE_URL, API_REGION } from '../config/api';
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
 const DEFAULT_BASE_URL = API_BASE_URL;
 const REQUEST_TIMEOUT = 15000; // 15 seconds
-const BASE_URL_KEY = API_STORAGE_KEY;
 
 // ── Axios Instance ───────────────────────────────────────────────────────────
 
@@ -32,12 +29,10 @@ const apiClient = axios.create({
 // ── Request Interceptor ──────────────────────────────────────────────────────
 
 /**
- * Request interceptor that reads the base URL from AsyncStorage.
- * Falls back to the default HRECOS API endpoint if none is configured.
+ * Request interceptor. The base URL is always the baked-in live server.
  */
 apiClient.interceptors.request.use(
   async (config) => {
-    // Check network connectivity before making the request
     const netInfo = await NetInfo.fetch();
     if (!netInfo.isConnected) {
       const error = new Error(
@@ -48,14 +43,7 @@ apiClient.interceptors.request.use(
       throw error;
     }
 
-    try {
-      const storedBaseUrl = await AsyncStorage.getItem(BASE_URL_KEY);
-      config.baseURL = resolveApiBaseUrl(storedBaseUrl);
-    } catch (storageError) {
-      // If AsyncStorage fails, use the default base URL
-      config.baseURL = DEFAULT_BASE_URL;
-    }
-
+    config.baseURL = DEFAULT_BASE_URL;
     return config;
   },
   (error) => {
@@ -189,44 +177,10 @@ export const isOnline = async () => {
 };
 
 /**
- * Get the currently configured base URL.
+ * The baked-in API base URL.
  * @returns {Promise<string>}
  */
-export const getBaseUrl = async () => {
-  try {
-    const stored = await AsyncStorage.getItem(BASE_URL_KEY);
-    return resolveApiBaseUrl(stored);
-  } catch {
-    return DEFAULT_BASE_URL;
-  }
-};
-
-/**
- * Set a custom base URL for the API.
- * @param {string} url - The new base URL.
- */
-export const setBaseUrl = async (url) => {
-  try {
-    if (url && url.trim().length > 0) {
-      await AsyncStorage.setItem(BASE_URL_KEY, url.trim());
-    } else {
-      await AsyncStorage.removeItem(BASE_URL_KEY);
-    }
-  } catch (error) {
-    throw new Error(`Failed to save base URL: ${error.message}`);
-  }
-};
-
-/**
- * Reset the base URL to the default HRECOS endpoint.
- */
-export const resetBaseUrl = async () => {
-  try {
-    await AsyncStorage.removeItem(BASE_URL_KEY);
-  } catch (error) {
-    throw new Error(`Failed to reset base URL: ${error.message}`);
-  }
-};
+export const getBaseUrl = async () => DEFAULT_BASE_URL;
 
 // ── API Functions ────────────────────────────────────────────────────────────
 
