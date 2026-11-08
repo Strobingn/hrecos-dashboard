@@ -14,6 +14,7 @@ import { useStationData } from '../hooks/useStationData';
 import { useHistorical } from '../hooks/useHistorical';
 import { useStats } from '../hooks/useStats';
 import { PARAM_INFO, STATUS_CONFIG, TIME_RANGES, SOURCE_COLORS } from '../constants';
+import { windowExtent, formatStat } from '../utils/parameterStatus';
 
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
 import { ErrorView } from '../components/common/ErrorView';
@@ -79,9 +80,32 @@ export default function StationDetailScreen() {
 
   // Chart data for selected parameter
   const chartData = useMemo(() => {
-    if (!historicalData || !historicalData[currentParamKey]) return [];
-    return historicalData[currentParamKey];
-  }, [historicalData, currentParamKey]);
+    const series = Array.isArray(historicalData?.[currentParamKey])
+      ? [...historicalData[currentParamKey]]
+      : [];
+    const current = stationData?.readings?.[currentParamKey];
+    const currentValue = Number(current?.value);
+    if (Number.isFinite(currentValue)) {
+      const timestamp = current.timestamp || new Date().toISOString();
+      const last = series[series.length - 1];
+      const lastTime = last ? new Date(last.timestamp).getTime() : 0;
+      if (!last || new Date(timestamp).getTime() >= lastTime) {
+        if (!last || Number(last.value) !== currentValue || new Date(timestamp).getTime() !== lastTime) {
+          series.push({ timestamp, value: currentValue });
+        }
+      }
+    }
+    return series;
+  }, [historicalData, currentParamKey, stationData]);
+
+  const windowStats = useMemo(() => {
+    const out = {};
+    availableParams.forEach((param) => {
+      const current = stationData?.readings?.[param]?.value;
+      out[param] = windowExtent(historicalData?.[param], current);
+    });
+    return out;
+  }, [availableParams, historicalData, stationData]);
 
   const toggleFavorite = () => {
     setIsFavorite(prev => !prev);
@@ -208,7 +232,7 @@ export default function StationDetailScreen() {
         <View style={styles.paramsGrid}>
           {availableParams.map((param, index) => {
             const reading = stationData.readings?.[param];
-            const stat = statsData?.[param];
+            const extent = windowStats[param] || {};
             return (
               <View key={param} style={styles.paramGridItem}>
                 <ParameterCard
@@ -216,8 +240,8 @@ export default function StationDetailScreen() {
                   value={reading?.value}
                   unit={reading?.unit}
                   trend={reading?.trend}
-                  min={stat?.min}
-                  max={stat?.max}
+                  min={extent.min}
+                  max={extent.max}
                   onPress={() => setSelectedParam(param)}
                   isSelected={currentParamKey === param}
                 />
@@ -333,7 +357,7 @@ export default function StationDetailScreen() {
 
         {/* ===== STATISTICS CARD ===== */}
         <View style={[styles.statsCard, { backgroundColor: theme.colors.card }, theme.shadows.small]}>
-          <SectionHeader title="Statistics (24h)" icon="calculator" />
+          <SectionHeader title={`Statistics (${timeRange})`} icon="calculator" />
           {statsLoading && !Object.keys(statsData).length ? (
             <LoadingSpinner message="Loading statistics..." />
           ) : (
@@ -341,6 +365,7 @@ export default function StationDetailScreen() {
               {availableParams.map(param => {
                 const info = PARAM_INFO[param];
                 const stat = statsData?.[param];
+                const extent = windowStats[param] || {};
                 return (
                   <View
                     key={param}
@@ -356,19 +381,19 @@ export default function StationDetailScreen() {
                       <View style={styles.statItem}>
                         <Text style={[styles.statItemLabel, { color: theme.colors.textTertiary }]}>Avg</Text>
                         <Text style={[styles.statItemValue, { color: theme.colors.textSecondary }]}>
-                          {stat?.avg ?? '--'}
+                          {formatStat(stat?.avg)}
                         </Text>
                       </View>
                       <View style={styles.statItem}>
                         <Text style={[styles.statItemLabel, { color: theme.colors.textTertiary }]}>Min</Text>
                         <Text style={[styles.statItemValue, { color: theme.colors.primary }]}>
-                          {stat?.min ?? '--'}
+                          {formatStat(extent.min)}
                         </Text>
                       </View>
                       <View style={styles.statItem}>
                         <Text style={[styles.statItemLabel, { color: theme.colors.textTertiary }]}>Max</Text>
                         <Text style={[styles.statItemValue, { color: theme.colors.danger }]}>
-                          {stat?.max ?? '--'}
+                          {formatStat(extent.max)}
                         </Text>
                       </View>
                     </View>

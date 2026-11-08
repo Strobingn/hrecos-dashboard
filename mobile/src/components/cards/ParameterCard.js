@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
 import { PARAM_INFO } from '../../constants';
+import { classifyParameter, formatStat } from '../../utils/parameterStatus';
 
 export const ParameterCard = ({
   paramKey,
@@ -17,17 +18,9 @@ export const ParameterCard = ({
   const { theme } = useTheme();
   const info = PARAM_INFO[paramKey] || { label: paramKey, icon: 'circle', chartColor: theme.colors.primary };
 
-  const getValueColor = () => {
-    const v = parseFloat(value);
-    if (isNaN(v)) return theme.colors.textSecondary;
-    const { thresholds } = info;
-    if (!thresholds) return theme.colors.textSecondary;
-    const { concern, caution, good } = thresholds;
-    if (concern !== undefined && v >= concern) return theme.colors.danger;
-    if (caution && v >= caution[0] && v <= caution[1]) return theme.colors.warning;
-    if (good && v >= good[0] && v <= good[1]) return theme.colors.success;
-    return theme.colors.textSecondary;
-  };
+  const status = value !== undefined && value !== null
+    ? classifyParameter(paramKey, value)
+    : null;
 
   const getTrendIcon = () => {
     if (trend === 'up') return 'arrow-up-bold';
@@ -63,7 +56,7 @@ export const ParameterCard = ({
 
       <View style={styles.valueRow}>
         <Text style={[styles.value, { color: theme.colors.text }]}>
-          {value !== undefined && value !== null ? value : 'N/A'}
+          {value !== undefined && value !== null ? formatStat(value) : 'N/A'}
         </Text>
         {value !== undefined && value !== null && (
           <>
@@ -82,13 +75,17 @@ export const ParameterCard = ({
         )}
       </View>
 
+      {status && (
+        <Text style={[styles.status, { color: status.color }]}>{status.label}</Text>
+      )}
+
       {(min !== undefined || max !== undefined) && (
         <View style={styles.rangeRow}>
           <Text style={[styles.rangeText, { color: theme.colors.textTertiary }]}>
-            Min: {min !== undefined ? min : '--'}
+            Min: {formatStat(min)}
           </Text>
           <Text style={[styles.rangeText, { color: theme.colors.textTertiary }]}>
-            Max: {max !== undefined ? max : '--'}
+            Max: {formatStat(max)}
           </Text>
         </View>
       )}
@@ -145,5 +142,10 @@ const styles = StyleSheet.create({
   },
   rangeText: {
     fontSize: 10,
+  },
+  status: {
+    fontSize: 11,
+    fontWeight: '700',
+    marginBottom: 4,
   },
 });

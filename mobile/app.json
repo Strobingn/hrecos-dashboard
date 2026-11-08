@@ -2,7 +2,7 @@
   "expo": {
     "name": "HRECOS RiverWatch",
     "slug": "hrecos-riverwatch",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -20,7 +20,7 @@
         "backgroundColor": "#0A7EA4"
       },
       "package": "com.hrecos.riverwatch",
-      "versionCode": 2,
+      "versionCode": 3,
       "usesCleartextTraffic": true,
       "permissions": [
         "RECEIVE_BOOT_COMPLETED",

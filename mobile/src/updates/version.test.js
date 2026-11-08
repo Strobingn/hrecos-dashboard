@@ -82,9 +82,7 @@ test('live GitHub releases offer the newest tagged apk and skip the installed ve
   const releases = await response.json();
   const older = pickUpdate(releases, '0.1.0');
   assert.ok(older);
-  assert.equal(older.tag, 'v1.0.1');
-  assert.equal(older.version, '1.0.1');
   assert.ok(older.apkUrl.endsWith('.apk'));
-  assert.equal(pickUpdate(releases, '1.0.0').tag, 'v1.0.1');
-  assert.equal(pickUpdate(releases, '1.0.1'), null);
+  assert.ok(compareVersions(older.version, '1.0.1') >= 0);
+  assert.equal(pickUpdate(releases, older.version), null);
 });

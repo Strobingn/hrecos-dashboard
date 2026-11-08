@@ -22,6 +22,7 @@ import ErrorView from '../components/common/ErrorView';
 import SectionHeader from '../components/common/SectionHeader';
 import Card from '../components/common/Card';
 import Badge from '../components/common/Badge';
+import { classifyParameter } from '../utils/parameterStatus';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -144,31 +145,13 @@ function getTurbidityBarColor(turbidity) {
 }
 
 function getParameterStatus(value, param) {
-  switch (param) {
-    case 'do':
-      if (value >= 8) return { label: 'Excellent', color: '#43A047' };
-      if (value >= 6) return { label: 'Good', color: '#8BC34A' };
-      if (value >= 4) return { label: 'Fair', color: '#FFB300' };
-      return { label: 'Poor', color: '#E53935' };
-    case 'ph':
-      if (value >= 7 && value <= 8) return { label: 'Optimal', color: '#43A047' };
-      if (value >= 6.5 && value <= 8.5) return { label: 'Good', color: '#8BC34A' };
-      if (value >= 6 && value <= 9) return { label: 'Fair', color: '#FFB300' };
-      return { label: 'Poor', color: '#E53935' };
-    case 'temp':
-      if (value >= 15 && value <= 25) return { label: 'Optimal', color: '#43A047' };
-      if (value >= 10 && value <= 30) return { label: 'Good', color: '#8BC34A' };
-      if (value >= 5 && value <= 35) return { label: 'Fair', color: '#FFB300' };
-      return { label: 'Extreme', color: '#E53935' };
-    case 'turbidity':
-      if (value < 5) return { label: 'Crystal Clear', color: '#00BCD4' };
-      if (value < 15) return { label: 'Clear', color: '#43A047' };
-      if (value < 25) return { label: 'Slightly Cloudy', color: '#8BC34A' };
-      if (value < 50) return { label: 'Cloudy', color: '#FF9800' };
-      return { label: 'Very Cloudy', color: '#E53935' };
-    default:
-      return { label: 'Unknown', color: '#8A96A5' };
-  }
+  return classifyParameter(param, value);
+}
+
+const QUALITY_KEYS = ['temp', 'turbidity', 'do', 'do_sat', 'ph', 'salinity', 'conductivity', 'chlorophyll', 'phycocyanin'];
+
+function hasQualityReadings(station) {
+  return QUALITY_KEYS.some((key) => station?.readings?.[key]?.value != null);
 }
 
 // Circular gauge component for WQI
@@ -316,7 +299,16 @@ export default function WaterQualityScreen() {
   // Live stations for per-station cards
   const liveStations = useMemo(() => {
     if (!stations) return [];
-    return stations.filter((s) => s.status === 'live');
+    return stations.filter((s) => s.status === 'live' && hasQualityReadings(s));
+  }, [stations]);
+
+  const detailStation = useMemo(() => {
+    const preferred = ['poughkeepsie', 'west_point', 'piermont'];
+    for (const id of preferred) {
+      const match = (stations || []).find((station) => station.id === id && hasQualityReadings(station));
+      if (match) return match;
+    }
+    return (stations || []).find(hasQualityReadings) || null;
   }, [stations]);
 
   const loading = stationsLoading && schodackLoading;
@@ -480,74 +472,122 @@ export default function WaterQualityScreen() {
         );
       })}
 
-      {/* Parameter Breakdown for Schodack */}
-      {schodackData?.readings && (
+      {/* Parameter breakdown for a station that actually has sonde data */}
+      {detailStation?.readings && (
         <View style={styles.breakdownSection}>
           <SectionHeader
             title="Parameter Details"
             icon="flask"
-            subtitle="Schodack Island station"
+            subtitle={detailStation.name}
           />
           <Card>
             <View style={styles.breakdownContent}>
-              {schodackData.readings.do && (
+              {detailStation.readings.temp && (
+                <ParameterBar
+                  label="Water Temperature"
+                  value={parseFloat(detailStation.readings.temp.value)}
+                  unit="°F"
+                  min={32}
+                  max={85}
+                  optimalMin={45}
+                  optimalMax={70}
+                  color="#E74C3C"
+                />
+              )}
+              {detailStation.readings.do && (
                 <ParameterBar
                   label="Dissolved Oxygen"
-                  value={parseFloat(schodackData.readings.do.value)}
+                  value={parseFloat(detailStation.readings.do.value)}
                   unit=" mg/L"
                   min={0}
                   max={15}
                   optimalMin={6}
-                  optimalMax={14}
+                  optimalMax={12}
                   color="#3498DB"
                 />
               )}
-              {schodackData.readings.ph && (
+              {detailStation.readings.do_sat && (
+                <ParameterBar
+                  label="DO Saturation"
+                  value={parseFloat(detailStation.readings.do_sat.value)}
+                  unit="%"
+                  min={0}
+                  max={140}
+                  optimalMin={80}
+                  optimalMax={110}
+                  color="#5DADE2"
+                />
+              )}
+              {detailStation.readings.ph && (
                 <ParameterBar
                   label="pH Balance"
-                  value={parseFloat(schodackData.readings.ph.value)}
+                  value={parseFloat(detailStation.readings.ph.value)}
                   unit=""
-                  min={4}
+                  min={5}
                   max={10}
-                  optimalMin={6.5}
-                  optimalMax={8.5}
+                  optimalMin={6.8}
+                  optimalMax={8.2}
                   color="#2ECC71"
                 />
               )}
-              {schodackData.readings.temp && (
-                <ParameterBar
-                  label="Water Temperature"
-                  value={parseFloat(schodackData.readings.temp.value)}
-                  unit="°C"
-                  min={0}
-                  max={40}
-                  optimalMin={10}
-                  optimalMax={25}
-                  color="#E74C3C"
-                />
-              )}
-              {schodackData.readings.turbidity && (
+              {detailStation.readings.turbidity && (
                 <ParameterBar
                   label="Turbidity"
-                  value={parseFloat(schodackData.readings.turbidity.value)}
+                  value={parseFloat(detailStation.readings.turbidity.value)}
                   unit=" NTU"
                   min={0}
-                  max={60}
+                  max={50}
                   optimalMin={0}
-                  optimalMax={10}
+                  optimalMax={25}
                   color="#8E44AD"
                 />
               )}
-              {schodackData.readings.conductivity && (
+              {detailStation.readings.conductivity && (
                 <ParameterBar
                   label="Conductivity"
-                  value={parseFloat(schodackData.readings.conductivity.value)}
+                  value={parseFloat(detailStation.readings.conductivity.value)}
                   unit=" μS/cm"
                   min={0}
-                  max={1000}
-                  optimalMin={50}
-                  optimalMax={500}
+                  max={25000}
+                  optimalMin={100}
+                  optimalMax={8000}
                   color="#F39C12"
+                />
+              )}
+              {detailStation.readings.salinity && (
+                <ParameterBar
+                  label="Salinity"
+                  value={parseFloat(detailStation.readings.salinity.value)}
+                  unit=" ppt"
+                  min={0}
+                  max={20}
+                  optimalMin={0}
+                  optimalMax={15}
+                  color="#1ABC9C"
+                />
+              )}
+              {detailStation.readings.chlorophyll && (
+                <ParameterBar
+                  label="Chlorophyll"
+                  value={parseFloat(detailStation.readings.chlorophyll.value)}
+                  unit=" RFU"
+                  min={0}
+                  max={20}
+                  optimalMin={0}
+                  optimalMax={10}
+                  color="#27AE60"
+                />
+              )}
+              {detailStation.readings.phycocyanin && (
+                <ParameterBar
+                  label="Phycocyanin"
+                  value={parseFloat(detailStation.readings.phycocyanin.value)}
+                  unit=" RFU"
+                  min={0}
+                  max={15}
+                  optimalMin={0}
+                  optimalMax={8}
+                  color="#16A085"
                 />
               )}
             </View>
