@@ -358,7 +358,7 @@ export default function FishingScreen() {
 
     if (liveTemp != null) {
       const tempF = liveTemp;
-      if (tempF >= 50 && tempF <= 75) {
+      if (tempF >= 60 && tempF <= 75) {
         tipsList.push({
           icon: 'thermometer',
           text: 'Water temperature is in the ideal range for bass fishing. Target areas with structure.',

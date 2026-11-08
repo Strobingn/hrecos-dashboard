@@ -57,7 +57,7 @@ export default function StationDetailScreen() {
     loading: statsLoading,
     error: statsError,
     refetch: refetchStats,
-  } = useStats(stationId, stationData?.parameters || []);
+  } = useStats(stationId, stationData?.parameters || [], hours);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
