@@ -47,15 +47,10 @@ jobs:
       - name: Sign release with the debug keystore
         working-directory: mobile/android
         run: |
-          if [ ! -f app/debug.keystore ]; then
-            keytool -genkeypair -v \
-              -keystore app/debug.keystore \
-              -storepass android \
-              -alias androiddebugkey \
-              -keypass android \
-              -keyalg RSA -keysize 2048 -validity 10000 \
-              -dname "CN=Android Debug,O=Android,C=US"
-          fi
+          # The installed 1.0.0 APK (GitHub tag v0.3.0-live) is signed with the
+          # standard Android debug certificate. Always copy that same keystore
+          # over whatever prebuild created. Do not generate a new key.
+          cp ../signing/hrecos-release.keystore app/debug.keystore
           python3 - << 'PY'
           import re
           from pathlib import Path

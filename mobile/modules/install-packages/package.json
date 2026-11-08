@@ -1,0 +1,9 @@
+{
+  "name": "hrecos-install-packages",
+  "version": "1.0.0",
+  "main": "index.js",
+  "peerDependencies": {
+    "expo": "*",
+    "expo-modules-core": "*"
+  }
+}

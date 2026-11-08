@@ -18,6 +18,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../hooks/useTheme';
 import SectionHeader from '../components/common/SectionHeader';
 import Card from '../components/common/Card';
+import { useAppUpdate } from '../updates/UpdateProvider';
 
 // Storage keys
 const STORAGE_KEYS = {
@@ -146,6 +147,7 @@ function Divider() {
 export default function SettingsScreen() {
   const theme = useTheme();
   const { isDark, toggleTheme } = useTheme();
+  const { installedVersion, checkForUpdate, checking } = useAppUpdate();
 
   // Settings state
   const [refreshInterval, setRefreshInterval] = useState(300000);
@@ -317,6 +319,32 @@ export default function SettingsScreen() {
         </Card>
       </View>
 
+      {/* Updates */}
+      <View style={styles.section}>
+        <SectionHeader title="Updates" icon="update" />
+        <Card>
+          <View style={styles.inputGroup}>
+            <Text style={[styles.toggleLabel, { color: theme.colors.textPrimary || theme.colors.text }]}>
+              Version {installedVersion}
+            </Text>
+            <Text style={[styles.toggleDescription, { color: theme.colors.textSecondary, marginBottom: 12 }]}>
+              Checks GitHub for a newer release of this app.
+            </Text>
+            <TouchableOpacity
+              onPress={() => checkForUpdate(true)}
+              disabled={checking}
+              activeOpacity={0.8}
+              style={[styles.saveButton, { backgroundColor: theme.colors.primary || '#0A7EA4' }]}
+            >
+              <MaterialCommunityIcons name="cloud-download" size={16} color="#FFFFFF" />
+              <Text style={styles.saveButtonText}>
+                {checking ? 'Checking...' : 'Check for updates'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </Card>
+      </View>
+
       {/* About Section */}
       <View style={styles.section}>
         <SectionHeader title="About" icon="information-outline" />
@@ -336,7 +364,7 @@ export default function SettingsScreen() {
                   HRECOS RiverWatch
                 </Text>
                 <Text style={[styles.appVersion, { color: theme.colors.textSecondary }]}>
-                  v0.3.1
+                  Version {installedVersion}
                 </Text>
               </View>
             </View>
