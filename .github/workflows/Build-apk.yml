@@ -81,7 +81,10 @@ jobs:
 
       - name: Build release APK
         working-directory: mobile/android
-        run: ./gradlew assembleRelease --no-daemon --stacktrace
+        run: |
+          # The wrapper's default 10s download timeout fails when services.gradle.org is slow.
+          sed -i 's/networkTimeout=10000/networkTimeout=120000/' gradle/wrapper/gradle-wrapper.properties
+          ./gradlew assembleRelease --no-daemon --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
